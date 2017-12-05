@@ -15,7 +15,7 @@ test:
   pre:
     - find . -name '__pycache__' -or -name '*.pyc' | xargs rm -rf
   override:
-    - mkdir -p $CIRCLE_TEST_REPORTS/pytest
-    - py.test -v --cov=routemaster --junit-xml=$CIRCLE_TEST_REPORTS/pytest/junit.xml routemaster
+    - tox
+    - mv build/pytest/ $CIRCLE_TEST_REPORTS/pytest
     - script/linting/lint
     - mypy -p routemaster --ignore-missing-imports --strict-optional

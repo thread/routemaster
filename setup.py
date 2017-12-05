@@ -43,6 +43,9 @@ setup(
 
     tests_require=(
         'pytest',
+        'networkx',
+        'tox',
+        'pytest-cov',
     ),
 
     entry_points={
