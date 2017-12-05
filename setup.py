@@ -36,6 +36,7 @@ setup(
 
     install_requires=(
         'click',
+        'pyyaml',
     ),
 
     setup_requires=(

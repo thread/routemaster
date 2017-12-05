@@ -1,5 +1,9 @@
 """CLI handling for `routemaster`."""
+import yaml
+
 import click
+
+from routemaster import config
 
 
 @click.command()
@@ -12,4 +16,4 @@ import click
 )
 def main(config_file):
     """Main entrypoint for CLI handling."""
-    print(config_file.read())
+    print(config.load_config(yaml.load(config_file)))

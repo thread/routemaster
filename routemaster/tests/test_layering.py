@@ -14,6 +14,8 @@ except ImportError:
 
 DEPENDENCIES = (
     ('__main__', 'cli'),
+
+    ('cli', 'config'),
 )
 
 EXCLUDED_MODULES = (
