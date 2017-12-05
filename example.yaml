@@ -1,0 +1,75 @@
+state_machines:
+  user_lifecycle:
+
+    - gate: start
+      triggers:
+        - state
+      exit_condition: >
+        jacquard.has_redesigned_first_two_drip_emails is defined
+      next:
+        type: state
+        destinations:
+          send_welcome_email: false
+          send_welcome_email_test: true
+
+    - action: send_welcome_email
+      webhook: https://www.thread.com/hooks/user-emails/send_welcome_email
+      next:
+        type: constant
+        destination: generate_first_recs
+
+    - action: send_welcome_email_test
+      webhook: https://www.thread.com/hooks/user-emails/send_welcome_email_test
+      next:
+        type: constant
+        destination: generate_first_recs
+
+    - action: generate_first_recs
+      webhook: https://www.thread.com/hooks/user-emails/generate_first_recs
+      next:
+        type: constant
+        destination: wait_for_first_recs
+
+    - gate: wait_for_first_recs
+      triggers:
+        - state
+      exit_condition: >
+        recs.has_first_recommendations and
+        (jacquard.has_redesigned_first_two_drip_emails is defined)
+      next:
+        type: state
+        destinations:
+          send_stylist_onboarding_email: false
+          send_stylist_onboarding_email_test: true
+
+    - action: send_stylist_onboarding_email
+      webhook: https://www.thread.com/hooks/user-emails/send_stylist_onboarding_email
+      next:
+        type: constant
+        destination: wait_before_browse_email
+
+    - action: send_stylist_onboarding_email_test
+      webhook: https://www.thread.com/hooks/user-emails/send_stylist_onboarding_email_test
+      next:
+        type: constant
+        destination: wait_before_browse_email
+
+    - gate: wait_before_browse_email
+      triggers:
+        - time: 18:30
+      exit_condition: >
+        (12h passed since current_state.entered) and
+        (time > 18:30)
+      next:
+        type: constant
+        destination: send_browse_email
+
+    - action: send_browse_email
+      webhook: https://www.thread.com/hooks/user-emails/send_browse_email
+      next:
+        type: constant
+        destination: end
+
+    - gate: end
+      triggers: []
+      exit_condition: false
