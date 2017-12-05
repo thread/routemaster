@@ -1,0 +1,21 @@
+machine:
+  python:
+    version: "3.5.2"
+
+dependencies:
+  pre:
+    - pip install pytest pytest-cov fakeredis networkx mypy
+    - pip install -r script/linting/requirements.txt
+    - sudo apt-get update ; sudo apt-get install python3 python3-setuptools
+  override:
+    - rm -rf routemaster.egg-info
+    - pip install -e .
+
+test:
+  pre:
+    - find . -name '__pycache__' -or -name '*.pyc' | xargs rm -rf
+  override:
+    - mkdir -p $CIRCLE_TEST_REPORTS/pytest
+    - py.test -v --cov=routemaster --junit-xml=$CIRCLE_TEST_REPORTS/pytest/junit.xml routemaster
+    - script/linting/lint
+    - mypy -p routemaster --ignore-missing-imports --strict-optional
