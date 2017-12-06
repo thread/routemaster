@@ -17,5 +17,3 @@ test:
   override:
     - tox
     - mv build/pytest/ $CIRCLE_TEST_REPORTS/pytest
-    - script/linting/lint
-    - mypy -p routemaster --ignore-missing-imports --strict-optional
