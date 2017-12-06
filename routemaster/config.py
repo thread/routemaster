@@ -129,7 +129,7 @@ def load_config(yaml: Yaml) -> Config:
 
     return Config(state_machines={
         name: _load_state_machine(
-            ['state_machine', name],
+            ['state_machines', name],
             name,
             yaml_state_machine,
         )
@@ -217,7 +217,7 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
         raise ConfigError(
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
             f"does not meet expected format: %H:%M.",
-        )
+        ) from None
     return TimeTrigger(time=trigger)
 
 
