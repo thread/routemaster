@@ -1,6 +1,5 @@
 """CLI handling for `routemaster`."""
 import yaml
-
 import click
 
 from routemaster import config
