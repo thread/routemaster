@@ -46,3 +46,11 @@ def test_raises_for_action_and_gate_state():
 def test_raises_for_neither_action_nor_gate_state():
     with assert_config_error("State at path state_machines.example.0 must be either a gate or an action."):
         load_config(yaml_data('not_action_or_gate_invalid'))
+
+
+# TODO: test_raises_for_no_state_machines
+# TODO: test_raises_for_time_and_context_trigger
+# TODO: test_raises_for_neither_time_nor_context_trigger
+# TODO: test_raises_for_invalid_time_format_in_trigger
+# TODO: test_raises_for_invalid_path_format_in_trigger
+# TODO: test_raises_for_invalid_next_states_type
