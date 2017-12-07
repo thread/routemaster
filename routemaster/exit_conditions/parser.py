@@ -41,15 +41,24 @@ class _TokenSource(object):
 
     def eat_next(self, *kinds):
         if self.head is None:
-            raise ParseError("Unexpected EOF", self.previous_location)
+            end_of_last_location = self.previous_location[-1]
+            raise ParseError(
+                "Unexpected EOF, expected {kind}".format(
+                    kind=', '.join(x.value for x in kinds),
+                ),
+                location=(
+                    end_of_last_location,
+                    end_of_last_location + 1,
+                ),
+            )
 
         if self.head.kind in kinds:
             old_head = self.head
             self._advance()
             return old_head
         raise ParseError("Expected {kind}, got {actual_kind}".format(
-            kind=', '.join(str(x) for x in kinds),
-            actual_kind=str(self.head.kind),
+            kind=', '.join(x.value for x in kinds),
+            actual_kind=self.head.kind.value,
         ), self.head.location)
 
 
