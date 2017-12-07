@@ -27,7 +27,7 @@ def format_parse_error_message(*, source, error):
     error_character = "~" if error_length > 1 else "^"
 
     message_lines = [
-        f"Error on line {error_line}: {error.message}",
+        f"Error on line {error_line_number}: {error.message}",
         error_line,
         " " * error_offset + error_character * error_length,
     ]
