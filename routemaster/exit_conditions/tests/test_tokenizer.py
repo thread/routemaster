@@ -1,4 +1,4 @@
-from routemaster.exit_conditions.tokenizer import tokenize, Token, TokenKind
+from routemaster.exit_conditions.tokenizer import Token, TokenKind, tokenize
 
 
 def test_tokenize_empty():
