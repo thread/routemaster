@@ -11,6 +11,7 @@ from routemaster.config import (
     StateMachine,
     load_config,
 )
+from routemaster.exit_conditions import ExitConditionProgram
 
 
 def yaml_data(name: str):
@@ -36,7 +37,7 @@ def test_trivial_config():
                         name='start',
                         triggers=[],
                         next_states=NoNextStates(),
-                        exit_condition=None,
+                        exit_condition=ExitConditionProgram('false'),
                     ),
                 ]
             )

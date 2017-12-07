@@ -13,6 +13,8 @@ from typing import (
     NamedTuple,
 )
 
+from routemaster.exit_conditions import ExitConditionProgram
+
 Yaml = Dict[str, Any]
 Path = List[str]
 
@@ -81,7 +83,7 @@ class Gate(NamedTuple):
     name: str
     next_states: Optional[NextStates]
 
-    exit_condition: Any
+    exit_condition: ExitConditionProgram
     triggers: Iterable[Trigger]
 
 
@@ -182,9 +184,18 @@ def _load_action(path: Path, yaml_state: Yaml) -> Action:
 
 
 def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
+    yaml_exit_condition = yaml_state['exit_condition']
+
+    if yaml_exit_condition is True:
+        str_exit_condition = 'true'
+    elif yaml_exit_condition is False:
+        str_exit_condition = 'false'
+    else:
+        str_exit_condition = str(yaml_exit_condition)
+
     return Gate(
         name=yaml_state['gate'],
-        exit_condition=None,
+        exit_condition=ExitConditionProgram(str_exit_condition),
         triggers=[
             _load_trigger(path + ['triggers', str(idx)], yaml_trigger)
             for idx, yaml_trigger in enumerate(yaml_state.get('triggers', []))
