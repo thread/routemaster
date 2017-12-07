@@ -38,7 +38,7 @@ class ExitConditionProgram(object):
         This will eagerly compile and report any errors.
         """
         try:
-            self.instructions = list(parse(source))
+            self._instructions = list(parse(source))
         except ParseError as exc:
             raise ValueError(format_parse_error_message(
                 source=source,
@@ -49,7 +49,7 @@ class ExitConditionProgram(object):
 
     def accessed_variables(self) -> typing.Iterable[str]:
         """Iterable of names of variables accessed in this program."""
-        for accessed_key in find_accessed_keys(self.instructions):
+        for accessed_key in find_accessed_keys(self._instructions):
             yield '.'.join(accessed_key)
 
     def run(
@@ -64,10 +64,19 @@ class ExitConditionProgram(object):
         )
 
         return evaluate(
-            self.instructions,
+            self._instructions,
             context.lookup,
             context.property_handler,
         )
+
+    def __eq__(self, other_program: typing.Any) -> bool:
+        if not isinstance(other_program, ExitConditionProgram):
+            return False
+
+        return other_program._instructions == self._instructions
+
+    def __hash__(self) -> int:
+        return hash(self._instructions)
 
     def __repr__(self):
         return f"{type(self).__name__}({self.source!r})"
