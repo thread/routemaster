@@ -196,7 +196,7 @@ def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
 def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
     if 'time' in yaml_trigger and 'context' in yaml_trigger:
         raise ConfigError(
-            f"Trigger at path {'.'.join('path')} cannot be both a time and a "
+            f"Trigger at path {'.'.join(path)} cannot be both a time and a "
             f"context trigger."
         )
 
@@ -213,7 +213,7 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
 
 def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
     try:
-        dt = datetime.datetime.strptime(yaml_trigger['time'], '%H:%M')
+        dt = datetime.datetime.strptime(str(yaml_trigger['time']), '%H:%M')
         trigger = dt.time()
     except ValueError:
         raise ConfigError(

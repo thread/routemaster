@@ -55,9 +55,26 @@ def test_raises_for_neither_action_nor_gate_state():
         load_config(yaml_data('not_action_or_gate_invalid'))
 
 
-# TODO: test_raises_for_no_state_machines
-# TODO: test_raises_for_time_and_context_trigger
-# TODO: test_raises_for_neither_time_nor_context_trigger
-# TODO: test_raises_for_invalid_time_format_in_trigger
-# TODO: test_raises_for_invalid_path_format_in_trigger
-# TODO: test_raises_for_invalid_next_states_type
+def test_raises_for_no_state_machines():
+    with assert_config_error("No top-level state_machines key defined."):
+        load_config(yaml_data('no_state_machines_invalid'))
+
+
+def test_raises_for_time_and_context_trigger():
+    with assert_config_error("Trigger at path state_machines.example.0.triggers.0 cannot be both a time and a context trigger."):
+        load_config(yaml_data('time_and_context_invalid'))
+
+
+def test_raises_for_neither_time_nor_context_trigger():
+    with assert_config_error("Trigger at path state_machines.example.0.triggers.0 must be either a time or a context trigger."):
+        load_config(yaml_data('not_time_or_context_invalid'))
+
+
+def test_raises_for_invalid_time_format_in_trigger():
+    with assert_config_error("Time trigger '1800' at path state_machines.example.0.triggers.0 does not meet expected format: %H:%M."):
+        load_config(yaml_data('invalid_trigger_time_format_invalid'))
+
+
+def test_raises_for_invalid_path_format_in_trigger():
+    with assert_config_error("Context trigger 'foo.bar+' at path state_machines.example.0.triggers.0 is not a valid dotted path."):
+        load_config(yaml_data('path_format_context_trigger_invalid'))

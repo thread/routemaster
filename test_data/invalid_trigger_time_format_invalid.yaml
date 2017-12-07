@@ -1,0 +1,6 @@
+state_machines:
+  example:
+    - gate: start
+      triggers:
+        - time: 1800
+      exit_condition: false

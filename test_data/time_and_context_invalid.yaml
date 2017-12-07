@@ -1,0 +1,7 @@
+state_machines:
+  example:
+    - gate: start
+      triggers:
+        - time: 18:30
+          context: foo.bar
+      exit_condition: false
