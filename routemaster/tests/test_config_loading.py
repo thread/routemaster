@@ -3,7 +3,14 @@ import contextlib
 import yaml
 import pytest
 
-from routemaster.config import load_config, Config, StateMachine, Gate, ConfigError
+from routemaster.config import (
+    Gate,
+    Config,
+    ConfigError,
+    NoNextStates,
+    StateMachine,
+    load_config,
+)
 
 
 def yaml_data(name: str):
@@ -28,7 +35,7 @@ def test_trivial_config():
                     Gate(
                         name='start',
                         triggers=[],
-                        next_states=None,
+                        next_states=NoNextStates(),
                         exit_condition=None,
                     ),
                 ]

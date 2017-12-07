@@ -1,7 +1,6 @@
 """Loading and validation of config files."""
 
 import re
-import abc
 import datetime
 from typing import (
     Any,
@@ -11,7 +10,7 @@ from typing import (
     Mapping,
     Iterable,
     Optional,
-    NamedTuple
+    NamedTuple,
 )
 
 Yaml = Dict[str, Any]
@@ -31,18 +30,7 @@ class ContextTrigger(NamedTuple):
 Trigger = Union[TimeTrigger, ContextTrigger]
 
 
-class NextStates(NamedTuple):
-    """Represents logic for how to continue from a state."""
-
-    def next_state_for_label(self, label_context: Any) -> str:
-        """
-        Returns the name of the state that a given label should move to next.
-        """
-
-        raise NotImplementedError()
-
-
-class ConstantNextState(NextStates):
+class ConstantNextState(NamedTuple):
     """Defines a constant choice, always chooses `next_state`."""
     next_state: str
 
@@ -51,16 +39,16 @@ class ConstantNextState(NextStates):
         return self.next_state
 
 
-class ContextNextStateOption(NamedTuple):
+class ContextNextStatesOption(NamedTuple):
     """Represents an option for a context conditional next state."""
     state: str
     value: Any
 
 
-class ContextNextState(NextStates):
+class ContextNextStates(NamedTuple):
     """Defined a choice based on a path in the given `label_context`."""
     path: str
-    destinations: Iterable[ContextNextStateOption]
+    destinations: Iterable[ContextNextStatesOption]
 
     def next_state_for_label(self, label_context: Any) -> str:
         """Returns next state based on context value at `self.path`."""
@@ -79,6 +67,9 @@ class NoNextStates(NamedTuple):
         raise RuntimeError(
             "Attempted to progress from a state with no next state",
         )
+
+
+NextStates = Union[ConstantNextState, ContextNextStates, NoNextStates]
 
 
 class Gate(NamedTuple):
@@ -253,12 +244,11 @@ def _load_next_states(
     if yaml_next_states is None:
         return NoNextStates()
 
-    try:
-        return {
-            'constant': _load_constant_next_state,
-            'context': _load_context_next_states,
-        }[yaml_next_states['type']](path, yaml_next_states)
-    except KeyError:
+    if yaml_next_states['type'] == 'constant':
+        return _load_constant_next_state(path, yaml_next_states)
+    elif yaml_next_states['type'] == 'context':
+        return _load_context_next_states(path, yaml_next_states)
+    else:
         raise ConfigError(
             f"Next state config at path {'.'.join(path)} must be of type "
             f"'constant' or 'context'",
@@ -268,15 +258,15 @@ def _load_next_states(
 def _load_constant_next_state(
     path: Path,
     yaml_next_states: Yaml,
-) -> ConstantNextState:
+) -> NextStates:
     return ConstantNextState(next_state=yaml_next_states['destination'])
 
 
 def _load_context_next_states(
     path: Path,
     yaml_next_states: Yaml,
-) -> ContextNextState:
-    return ContextNextState(
+) -> NextStates:
+    return ContextNextStates(
         path=yaml_next_states['path'],
         destinations=[
             _load_context_next_state_option(
@@ -291,8 +281,8 @@ def _load_context_next_states(
 def _load_context_next_state_option(
     path: Path,
     yaml_option: Yaml,
-) -> ContextNextStateOption:
-    return ContextNextStateOption(
+) -> ContextNextStatesOption:
+    return ContextNextStatesOption(
         state=yaml_option['state'],
         value=yaml_option['value'],
     )
