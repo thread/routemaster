@@ -71,13 +71,28 @@ class ExitConditionProgram(object):
         )
 
     def __eq__(self, other_program: typing.Any) -> bool:
+        """
+        Equality test.
+
+        Programs are compared as equal iff their instruction sequences compare
+        as equal. This means that the equivalence relation will treat, for
+        instance, `foo = bar` and `(foo    = bar) # hats` as equal, but not
+        `bar = foo` and `foo = bar`.
+        """
         if not isinstance(other_program, ExitConditionProgram):
             return False
 
         return other_program._instructions == self._instructions
 
     def __hash__(self) -> int:
+        """
+        Identity hashing.
+
+        This preserves the equivalence relation from `__eq__`: that is, if
+        a == b for programs a, b then hash(a) == hash(b).
+        """
         return hash(self._instructions)
 
     def __repr__(self) -> str:
+        """Convenient debug representation."""
         return f"{type(self).__name__}({self.source!r})"
