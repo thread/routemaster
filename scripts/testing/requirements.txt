@@ -1,0 +1,6 @@
+tox
+pytest
+pytest-cov
+fakeredis
+networkx
+mypy
