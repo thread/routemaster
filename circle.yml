@@ -1,17 +1,12 @@
-machine:
-  post:
-    - pyenv global 3.6.3
-
 dependencies:
-  cache_directories:
-    - "~/.pyenv"
   pre:
     - pip install -r scripts/testing/requirements.txt
     - pip install -r scripts/linting/requirements.txt
     - sudo apt-get update ; sudo apt-get install python3 python3-setuptools
   override:
+    - pip install tox tox-pyenv
+    - pyenv local 3.6.3
     - rm -rf routemaster.egg-info
-    - pip install -e .
 
 test:
   pre:
