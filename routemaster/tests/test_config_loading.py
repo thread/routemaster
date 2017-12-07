@@ -67,7 +67,7 @@ def test_realistic_config():
                             ContextTrigger(context_path='foo.bar'),
                         ],
                         next_states=ConstantNextState(state='stage2'),
-                        exit_condition=None,
+                        exit_condition=ExitConditionProgram('true'),
                     ),
                     Gate(
                         name='stage2',
@@ -79,7 +79,7 @@ def test_realistic_config():
                                 ContextNextStatesOption(state='stage3', value='2'),
                             ]
                         ),
-                        exit_condition=None,
+                        exit_condition=ExitConditionProgram('foo.bar is defined'),
                     ),
                     Action(
                         name='stage3',
@@ -89,7 +89,7 @@ def test_realistic_config():
                     Gate(
                         name='end',
                         triggers=[],
-                        exit_condition=None,
+                        exit_condition=ExitConditionProgram('false'),
                         next_states=NoNextStates(),
                     ),
                 ]

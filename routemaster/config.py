@@ -191,7 +191,7 @@ def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
     elif yaml_exit_condition is False:
         str_exit_condition = 'false'
     else:
-        str_exit_condition = str(yaml_exit_condition)
+        str_exit_condition = str(yaml_exit_condition).strip()
 
     return Gate(
         name=yaml_state['gate'],

@@ -5,13 +5,15 @@ state_machines:
       triggers:
         - time: 18h30m
         - context: foo.bar
-      exit_condition: NULL
+      exit_condition: true
       next:
         type: constant
         state: stage2
 
     - gate: stage2
       triggers: []
+      exit_condition: >
+        foo.bar is defined
       next:
         type: context
         path: foo.bar
