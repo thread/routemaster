@@ -183,6 +183,13 @@ def _parse_tokens(token_stream):
     # Always end in a final TO_BOOL
     yield Operation.TO_BOOL,
 
+    # Verify that this is actually the entire stream
+    if source.head is not None:
+        raise ParseError(
+            f"Unexpected token after end of program: {source.head.kind.value}",
+            location=source.head.location,
+        )
+
 
 def parse(source):
     """Compile from arbitrary source to a sequence of program instructions."""
