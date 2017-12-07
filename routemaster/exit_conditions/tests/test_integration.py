@@ -47,7 +47,7 @@ ERRORS = [
     (
         "(a = b",
         """
-        Error on line 1: Unexpected EOF, expected RIGHT_PAREN
+        Error on line 1: Unexpected EOF, expected ")"
         (a = b
               ^
         """,
@@ -55,7 +55,7 @@ ERRORS = [
     (
         "a = b)",
         """
-        Error on line 1: Unexpected token after end of program: RIGHT_PAREN
+        Error on line 1: Unexpected token after end of program: ")"
         a = b)
              ^
         """,
@@ -63,7 +63,7 @@ ERRORS = [
     (
         "a = ?",
         """
-        Error on line 1: Expected a value, got OPERATOR
+        Error on line 1: Expected a value, got operator
         a = ?
             ^
         """,
@@ -96,6 +96,14 @@ ERRORS = [
         Error on line 1: Expected a value but this program is empty
         # hats
         ^
+        """,
+    ),
+    (
+        "\na == b",
+        """
+        Error on line 2: Unknown operator == (did you mean =?)
+        a == b
+          ~~
         """,
     ),
 ]

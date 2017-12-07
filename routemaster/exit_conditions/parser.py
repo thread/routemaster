@@ -5,6 +5,13 @@ from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.operations import Operation
 
 
+OPERATOR_DID_YOU_MEAN = {
+    '==': '=',
+    '!=': '/=',
+    '<>': '/=',
+}
+
+
 class _TokenSource(object):
     """A source of tokens in a form which is convenient for parsing."""
 
@@ -121,12 +128,24 @@ def _parse_base_expr(source):
                 '>=': (Operation.LT, True),
             }[source.head.value]
         except KeyError:
-            raise ParseError(
-                "Unknown operator {operator}".format(
-                    operator=source.head.value,
-                ),
-                location=source.head.location,
-            ) from None
+            try:
+                suggested_replacement = \
+                    OPERATOR_DID_YOU_MEAN[source.head.value]
+                raise ParseError(
+                    "Unknown operator {operator} "
+                    "(did you mean {suggestion}?)".format(
+                        operator=source.head.value,
+                        suggestion=suggested_replacement,
+                    ),
+                    location=source.head.location,
+                ) from None
+            except KeyError:
+                raise ParseError(
+                    "Unknown operator {operator}".format(
+                        operator=source.head.value,
+                    ),
+                    location=source.head.location,
+                ) from None
 
         if is_negative:
             negated = not negated
