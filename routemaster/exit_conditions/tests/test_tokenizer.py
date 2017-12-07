@@ -1,3 +1,6 @@
+import pytest
+
+from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.tokenizer import Token, TokenKind, tokenize
 
 
@@ -36,3 +39,8 @@ def test_tokenize_exhaustive():
         Token(kind=TokenKind.LITERAL, value=None, location=(172, 176)),
     ]
     assert list(tokenize(source)) == expected
+
+
+def test_parse_error_on_invalid_characters():
+    with pytest.raises(ParseError):
+        print(list(tokenize("abc]")))
