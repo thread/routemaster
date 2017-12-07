@@ -99,7 +99,7 @@ def _parse_base_expr(source):
         if source.get_next(TokenKind.NOT):
             negated = not negated
 
-        adjective = source.get_next(TokenKind.ATOM)
+        adjective = source.eat_next(TokenKind.ATOM)
         yield Operation.PROPERTY, adjective.value
 
         known_bool = True
