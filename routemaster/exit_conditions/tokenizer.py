@@ -183,6 +183,8 @@ def raw_tokenize(src: str) -> typing.Iterable[RawToken]:
 
         if next_state != state:
             if start != index:
+                assert state is not None
+
                 yield RawToken(
                     kind=state,
                     value=src[start:index],
@@ -192,6 +194,8 @@ def raw_tokenize(src: str) -> typing.Iterable[RawToken]:
             state = next_state
 
     if start != len(src):
+        assert state is not None
+
         yield RawToken(
             kind=state,
             value=src[start:],
