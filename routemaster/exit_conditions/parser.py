@@ -134,8 +134,8 @@ def _parse_base_expr(source):
 
     if negated:
         if not known_bool:
-            yield TokenKind.TO_BOOL,
-        yield TokenKind.NOT,
+            yield Operation.TO_BOOL,
+        yield Operation.NOT,
 
 
 def _parse_value(source):
