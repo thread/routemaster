@@ -72,13 +72,19 @@ ERRORS = [
           ~~
         """,
     ),
+    (
+        "a is ftaghn",
+        """
+        Unknown property ftaghn
+        """,
+    ),
 ]
 
 
 @pytest.mark.parametrize("program, error", ERRORS)
 def test_errors(program, error):
     with pytest.raises(ValueError) as compile_error:
-        ExitConditionProgram(program)
+        ExitConditionProgram(program).run(VARIABLES, TIME_ELAPSED)
 
     message = str(compile_error.value)
 
