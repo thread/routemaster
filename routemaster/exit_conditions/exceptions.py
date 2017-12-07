@@ -4,7 +4,7 @@
 class ParseError(Exception):
     """Errors that occur when tokenizing or parsing."""
 
-    def __init__(self, message, *, location):
+    def __init__(self, message, location):
         """
         Construct by message and location.
 
