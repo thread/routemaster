@@ -1,6 +1,5 @@
 """Exit condition program evaluator."""
 
-
 from routemaster.exit_conditions.operations import Operation
 
 

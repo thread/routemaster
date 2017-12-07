@@ -1,7 +1,7 @@
 import pytest
 
-from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.tokenizer import Token, TokenKind, tokenize
+from routemaster.exit_conditions.exceptions import ParseError
 
 
 def test_tokenize_empty():
