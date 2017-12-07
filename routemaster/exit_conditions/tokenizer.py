@@ -2,7 +2,7 @@
 
 import re
 import enum
-import collections
+import typing
 import unicodedata
 
 from routemaster.exit_conditions.exceptions import ParseError
@@ -45,8 +45,21 @@ RAW_TOKEN_KIND_TO_TOKEN_KIND = {
 }
 
 
-RawToken = collections.namedtuple('RawToken', 'kind value location')
-Token = collections.namedtuple('Token', 'kind value location')
+class RawToken(typing.NamedTuple):
+    """A single raw (in-text, undigested) token."""
+
+    kind: RawTokenKind
+    value: str
+    location: typing.Tuple[int, int]
+
+
+class Token(typing.NamedTuple):
+    """A single digested (usable) token."""
+
+    kind: TokenKind
+    value: typing.Any
+    location: typing.Tuple[int, int]
+
 
 LITERALS = {
     'true': (TokenKind.LITERAL, True),
@@ -136,7 +149,7 @@ STATE_MACHINE = {
 }
 
 
-def raw_tokenize(src):
+def raw_tokenize(src: str) -> typing.Iterable[RawToken]:
     """
     Split the string `src` into an iterable of `RawToken`s.
 
@@ -186,7 +199,7 @@ def raw_tokenize(src):
         )
 
 
-def _digest_atom(raw_token):
+def _digest_atom(raw_token: RawToken) -> Token:
     """Turn a raw `Atom` token into the more specific kinds."""
 
     # Is this an integer value?
@@ -243,7 +256,7 @@ def _digest_atom(raw_token):
     )
 
 
-def tokenize(src):
+def tokenize(src: str) -> typing.Iterable[Token]:
     """Split the string `src` into an iterable of `Token`s."""
     for raw_token in raw_tokenize(src):
         if (
