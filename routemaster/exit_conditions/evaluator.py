@@ -72,7 +72,11 @@ EVALUATORS = {
 
 
 def evaluate(instructions, lookup, property_handler):
-    """Run the instructions given in `instructions` and return the single result."""
+    """
+    Run the instructions given in `instructions`.
+
+    Returns the single result.
+    """
     stack = []
     for instruction, *args in instructions:
         EVALUATORS[instruction](stack, lookup, property_handler, *args)

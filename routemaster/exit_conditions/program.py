@@ -4,6 +4,7 @@ from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.analysis import find_accessed_keys
 from routemaster.exit_conditions.evaluator import evaluate
 
+
 class _ProgramContext(object):
     def __init__(self, *, variables, time_elapsed):
         self.variables = variables
@@ -15,7 +16,9 @@ class _ProgramContext(object):
     def property_handler(self, property_name, value):
         if tuple(property_name) == ('passed',):
             return self.time_elapsed > value
-        raise ValueError("Unknown property {}".format(property_name))
+        raise ValueError("Unknown property {name}".format(
+            name='.'.join(property_name)),
+        )
 
 
 class ExitConditionProgram(object):

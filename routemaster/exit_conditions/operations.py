@@ -5,6 +5,8 @@ import enum
 
 @enum.unique
 class Operation(enum.Enum):
+    """Classes of instructions for the exit condition machine."""
+
     # Pop `value` from the stack, interpret it as a boolean, and push
     # that to the stack.
     TO_BOOL = 'to_bool'
