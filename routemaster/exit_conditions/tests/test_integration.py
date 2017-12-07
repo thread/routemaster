@@ -20,6 +20,7 @@ PROGRAMS = [
     ("foo is defined", True, ('foo',)),
     ("bar is defined", False, ('bar',)),
     ("null is not defined", True, ()),
+    ("(1 < 2) and (2 < foo)", True, ('foo',)),
 ]
 
 
