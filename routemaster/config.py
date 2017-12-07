@@ -71,6 +71,16 @@ class ContextNextState(NextStates):
         raise RuntimeError("Handle this gracefully.")
 
 
+class NoNextStates(NamedTuple):
+    """Represents the lack of a next state to progress to."""
+
+    def next_state_for_label(self, label_context: Any) -> str:
+        """Invalid to call, raise an exception."""
+        raise RuntimeError(
+            "Attempted to progress from a state with no next state",
+        )
+
+
 class Gate(NamedTuple):
     """
     A state that restricts a label from moving based on an exit condition.
@@ -241,7 +251,7 @@ def _load_next_states(
 ) -> NextStates:
 
     if yaml_next_states is None:
-        return None
+        return NoNextStates()
 
     try:
         return {
