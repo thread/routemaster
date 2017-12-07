@@ -4,8 +4,9 @@ import sys
 
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.exceptions import ParseError
-from routemaster.exit_conditions.error_display import \
-    format_parse_error_message
+from routemaster.exit_conditions.error_display import (
+    format_parse_error_message,
+)
 
 source = sys.stdin.read()
 try:
