@@ -186,6 +186,8 @@ def _parse_value(source):
 def _parse_tokens(token_stream):
     source = _TokenSource(token_stream)
     yield from _parse_and_expr(source)
+    # Always end in a final TO_BOOL
+    yield Operation.TO_BOOL,
 
 
 def parse(source):
