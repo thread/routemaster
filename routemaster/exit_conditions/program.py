@@ -3,6 +3,8 @@
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.analysis import find_accessed_keys
 from routemaster.exit_conditions.evaluator import evaluate
+from routemaster.exit_conditions.error_display import format_parse_error_message
+from routemaster.exit_conditions.exceptions import ParseError
 
 
 class _ProgramContext(object):
@@ -30,8 +32,13 @@ class ExitConditionProgram(object):
 
         This will eagerly compile and report any errors.
         """
-        # TODO: Error handling
-        self.instructions = list(parse(source))
+        try:
+            self.instructions = list(parse(source))
+        except ParseError as exc:
+            raise ValueError(format_parse_error_message(
+                source=source,
+                error=exc,
+            )) from None
 
     def accessed_variables(self):
         """Iterable of names of variables accessed in this program."""
