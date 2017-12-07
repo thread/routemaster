@@ -9,13 +9,7 @@ class _TokenSource(object):
     """A source of tokens in a form which is convenient for parsing."""
 
     def __init__(self, iterable):
-        self.iterable = filter(
-            lambda token: token.kind not in (
-                TokenKind.COMMENT,
-                TokenKind.WHITESPACE,
-            ),
-            iterable,
-        )
+        self.iterable = iterable
         self.previous_location = None
         self.head = object()
         self._advance()
