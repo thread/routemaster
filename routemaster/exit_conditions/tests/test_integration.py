@@ -78,6 +78,22 @@ ERRORS = [
         Unknown property ftaghn
         """,
     ),
+    (
+        "",
+        """
+        Error on line 1: Expected a value but this program is empty
+
+        ^
+        """,
+    ),
+    (
+        "# hats",
+        """
+        Error on line 1: Expected a value but this program is empty
+        # hats
+        ^
+        """,
+    ),
 ]
 
 
