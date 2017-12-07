@@ -94,7 +94,7 @@ def _parse_base_expr(source):
         negated = not negated
 
     yield from _parse_value(source)
-    if source.peek_next(TokenKind.COPULA):
+    if source.get_next(TokenKind.COPULA):
         # `is` or `has` expression
         if source.get_next(TokenKind.NOT):
             negated = not negated
