@@ -1,8 +1,10 @@
 machine:
-  python:
-    version: "3.6.3"
+  post:
+    - pyenv global 3.6.3
 
 dependencies:
+  cache_directories:
+    - "~/.pyenv"
   pre:
     - pip install -r scripts/testing/requirements.txt
     - pip install -r scripts/linting/requirements.txt
