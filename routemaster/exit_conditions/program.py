@@ -9,6 +9,7 @@ from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.error_display import (
     format_parse_error_message,
 )
+from routemaster.exit_conditions.peephole import peephole_optimise
 
 
 class _ProgramContext(object):
@@ -45,6 +46,8 @@ class ExitConditionProgram(object):
                 source=source,
                 error=exc,
             )) from None
+
+        self._instructions = list(peephole_optimise(self._instructions))
 
         self.source = source
 
