@@ -9,13 +9,7 @@ class _TokenSource(object):
     """A source of tokens in a form which is convenient for parsing."""
 
     def __init__(self, iterable):
-        self.iterable = filter(
-            lambda token: token.kind not in (
-                TokenKind.COMMENT,
-                TokenKind.WHITESPACE,
-            ),
-            iterable,
-        )
+        self.iterable = iterable
         self.previous_location = None
         self.head = object()
         self._advance()
@@ -30,14 +24,14 @@ class _TokenSource(object):
         except StopIteration:
             self.head = None
 
-    def get_next(self, *kinds):
-        if not self.peek_next(*kinds):
+    def try_eat_next(self, *kinds):
+        if not self.match_next(*kinds):
             return False
 
         self._advance()
         return True
 
-    def peek_next(self, *kinds):
+    def match_next(self, *kinds):
         if self.head is None:
             return False
 
@@ -64,7 +58,7 @@ def _parse_and_expr(source):
 
     yield from _parse_or_expr(source)
 
-    while source.get_next(TokenKind.AND):
+    while source.try_eat_next(TokenKind.AND):
         if not already_bool_converted:
             already_bool_converted = True
             yield Operation.TO_BOOL,
@@ -78,7 +72,7 @@ def _parse_or_expr(source):
 
     yield from _parse_base_expr(source)
 
-    while source.get_next(TokenKind.OR):
+    while source.try_eat_next(TokenKind.OR):
         if not already_bool_converted:
             already_bool_converted = True
             yield Operation.TO_BOOL,
@@ -90,13 +84,13 @@ def _parse_or_expr(source):
 def _parse_base_expr(source):
     negated = False
     known_bool = False
-    while source.get_next(TokenKind.NOT):
+    while source.try_eat_next(TokenKind.NOT):
         negated = not negated
 
     yield from _parse_value(source)
-    if source.get_next(TokenKind.COPULA):
+    if source.try_eat_next(TokenKind.COPULA):
         # `is` or `has` expression
-        if source.get_next(TokenKind.NOT):
+        if source.try_eat_next(TokenKind.NOT):
             negated = not negated
 
         adjective = source.eat_next(TokenKind.ATOM)
@@ -104,7 +98,7 @@ def _parse_base_expr(source):
 
         known_bool = True
 
-    elif source.peek_next(TokenKind.OPERATOR):
+    elif source.match_next(TokenKind.OPERATOR):
         try:
             operator, is_negative, known_bool = {
                 '=': (Operation.EQ, False, True),
@@ -137,7 +131,7 @@ def _parse_base_expr(source):
 
 def _parse_value(source):
     # Immediate special-case: parentheticals
-    if source.get_next(TokenKind.LEFT_PAREN):
+    if source.try_eat_next(TokenKind.LEFT_PAREN):
         yield from _parse_and_expr(source)
         source.eat_next(TokenKind.RIGHT_PAREN)
         return
