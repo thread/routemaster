@@ -79,5 +79,5 @@ class ExitConditionProgram(object):
     def __hash__(self) -> int:
         return hash(self._instructions)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}({self.source!r})"
