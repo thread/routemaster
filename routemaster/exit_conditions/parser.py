@@ -41,6 +41,13 @@ class _TokenSource(object):
 
     def eat_next(self, *kinds):
         if self.head is None:
+            if self.previous_location is None:
+                # Empty program
+                raise ParseError(
+                    "Surprisingly, program was empty",
+                    location=(0, 1),
+                )
+
             end_of_last_location = self.previous_location[-1]
             raise ParseError(
                 "Unexpected EOF, expected {kind}".format(
@@ -178,12 +185,24 @@ def _parse_value(source):
         pass
 
     # No match
-    raise ParseError(
-        "Expected a value, got {kind}".format(
-            kind=source.head.kind.value,
-        ),
-        location=source.head.location,
-    )
+    if source.head is not None:
+        raise ParseError(
+            "Expected a value, got {kind}".format(
+                kind=source.head.kind.value,
+            ),
+            location=source.head.location,
+        )
+    else:
+        if source.previous_location is not None:
+            raise ParseError(
+                "Expected a value, but the EOF was reached",
+                location=source.previous_location,
+            )
+        else:
+            raise ParseError(
+                "Expected a value but this program is empty",
+                location=(0, 1),
+            )
 
 
 def _parse_tokens(token_stream):
