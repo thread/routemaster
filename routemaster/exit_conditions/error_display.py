@@ -1,5 +1,6 @@
 """Human-readable ParseError handling."""
 
+
 def _find_line_containing(source, index):
     """Find (line number, line, offset) triple for an index into a string."""
     lines = source.splitlines()
