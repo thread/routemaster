@@ -5,6 +5,8 @@ import enum
 import collections
 import unicodedata
 
+from routemaster.exit_conditions.exceptions import ParseError
+
 
 RE_DURATION = re.compile('^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$')
 
