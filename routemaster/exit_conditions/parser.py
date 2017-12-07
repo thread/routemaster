@@ -180,7 +180,7 @@ def _parse_value(source):
     # No match
     raise ParseError(
         "Expected a value, got {kind}".format(
-            kind=str(source.head.kind),
+            kind=source.head.kind.value,
         ),
         location=source.head.location,
     )
