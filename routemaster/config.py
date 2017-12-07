@@ -2,7 +2,7 @@
 
 import re
 import abc
-import time
+import datetime
 from typing import (
     Any,
     Dict,
@@ -20,7 +20,7 @@ Path = List[str]
 
 class TimeTrigger(NamedTuple):
     """Time based trigger for exit condition evaluation."""
-    time: time.struct_time
+    time: datetime.time
 
 
 class ContextTrigger(NamedTuple):
@@ -212,7 +212,8 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
 
 def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
     try:
-        trigger = time.strptime(yaml_trigger['time'], '%H:%M')
+        dt = datetime.datetime.strptime(yaml_trigger['time'], '%H:%M')
+        trigger = dt.time()
     except ValueError:
         raise ConfigError(
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
