@@ -16,6 +16,7 @@ def _find_line_containing(source, index):
 
 
 def format_parse_error_message(*, source, error):
+    """Format a parse error on some source for nicer display."""
     error_line_number, error_line, error_offset = _find_line_containing(
         source,
         error.location[0],
