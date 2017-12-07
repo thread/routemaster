@@ -15,8 +15,7 @@ class _TokenSource(object):
         self._advance()
 
     def _advance(self):
-        if self.head is None:
-            return
+        assert self.head is not None
 
         try:
             self.previous_location = getattr(self.head, 'location', None)
