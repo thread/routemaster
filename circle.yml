@@ -5,7 +5,7 @@ machine:
 dependencies:
   pre:
     - pip install pytest pytest-cov fakeredis networkx mypy
-    - pip install -r script/linting/requirements.txt
+    - pip install -r scripts/linting/requirements.txt
     - sudo apt-get update ; sudo apt-get install python3 python3-setuptools
   override:
     - rm -rf routemaster.egg-info
