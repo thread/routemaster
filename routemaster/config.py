@@ -33,12 +33,12 @@ Trigger = Union[TimeTrigger, ContextTrigger]
 
 
 class ConstantNextState(NamedTuple):
-    """Defines a constant choice, always chooses `next_state`."""
-    next_state: str
+    """Defines a constant choice, always chooses `state`."""
+    state: str
 
     def next_state_for_label(self, label_context: Any) -> str:
         """Returns the constant next state."""
-        return self.next_state
+        return self.state
 
 
 class ContextNextStatesOption(NamedTuple):
@@ -223,13 +223,14 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
 
 
 def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
+    format = '%Hh%Mm'
     try:
-        dt = datetime.datetime.strptime(str(yaml_trigger['time']), '%H:%M')
+        dt = datetime.datetime.strptime(str(yaml_trigger['time']), format)
         trigger = dt.time()
     except ValueError:
         raise ConfigError(
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
-            f"does not meet expected format: %H:%M.",
+            f"does not meet expected format: {format}.",
         ) from None
     return TimeTrigger(time=trigger)
 
@@ -270,7 +271,7 @@ def _load_constant_next_state(
     path: Path,
     yaml_next_states: Yaml,
 ) -> NextStates:
-    return ConstantNextState(next_state=yaml_next_states['destination'])
+    return ConstantNextState(state=yaml_next_states['state'])
 
 
 def _load_context_next_states(

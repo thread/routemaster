@@ -1,0 +1,31 @@
+state_machines:
+  example:
+
+    - gate: start
+      triggers:
+        - time: 18h30m
+        - context: foo.bar
+      exit_condition: NULL
+      next:
+        type: constant
+        state: stage2
+
+    - gate: stage2
+      triggers: []
+      next:
+        type: context
+        path: foo.bar
+        destinations:
+          - state: stage3
+            value: '1'
+          - state: stage3
+            value: '2'
+
+    - action: stage3
+      webhook: https://localhost/hook
+      next:
+        type: constant
+        state: end
+
+    - gate: end
+      exit_condition: false
