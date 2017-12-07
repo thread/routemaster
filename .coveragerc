@@ -1,0 +1,9 @@
+[run]
+branch = True
+omit = **/__main__.py,**/tests/*.py,
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
