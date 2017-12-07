@@ -17,6 +17,9 @@ PROGRAMS = [
     ("3h has passed", True, ()),
     ("not 4 >= 6", True, ()),
     ("3h has not passed", False, ()),
+    ("foo is defined", True, ('foo',)),
+    ("bar is defined", False, ('bar',)),
+    ("null is not defined", True, ()),
 ]
 
 

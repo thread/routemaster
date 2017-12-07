@@ -19,6 +19,8 @@ class _ProgramContext(object):
     def property_handler(self, property_name, value):
         if tuple(property_name) == ('passed',):
             return self.time_elapsed > value
+        if tuple(property_name) == ('defined',):
+            return value is not None
         raise ValueError("Unknown property {name}".format(
             name='.'.join(property_name)),
         )
