@@ -25,17 +25,17 @@ class RawTokenKind(enum.Enum):
 class TokenKind(enum.Enum):
     """Types of major program token."""
 
-    LEFT_PAREN = 'LEFT_PAREN'
-    RIGHT_PAREN = 'RIGHT_PAREN'
-    ATOM = 'ATOM'
-    OPERATOR = 'OPERATOR'
-    NUMBER = 'NUMBER'
-    DURATION = 'DURATION'
-    AND = 'AND'
-    OR = 'OR'
-    NOT = 'NOT'
-    LITERAL = 'LITERAL'
-    COPULA = 'COPULA'
+    LEFT_PAREN = '"("'
+    RIGHT_PAREN = '")"'
+    ATOM = 'atom'
+    OPERATOR = 'operator'
+    NUMBER = 'number'
+    DURATION = 'duration'
+    AND = '"and"'
+    OR = '"or"'
+    NOT = '"not"'
+    LITERAL = 'constant'
+    COPULA = 'is/has'
 
 
 RAW_TOKEN_KIND_TO_TOKEN_KIND = {
