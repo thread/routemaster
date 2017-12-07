@@ -45,6 +45,8 @@ class ExitConditionProgram(object):
                 error=exc,
             )) from None
 
+        self.source = source
+
     def accessed_variables(self) -> typing.Iterable[str]:
         """Iterable of names of variables accessed in this program."""
         for accessed_key in find_accessed_keys(self.instructions):
@@ -66,3 +68,6 @@ class ExitConditionProgram(object):
             context.lookup,
             context.property_handler,
         )
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.source!r})"
