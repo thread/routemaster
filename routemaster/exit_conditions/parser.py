@@ -42,7 +42,7 @@ class _TokenSource(object):
     def eat_next(self, *kinds):
         if self.head is None:
             if self.previous_location is None:
-                # Empty program
+                # Empty program
                 raise ParseError(
                     "Surprisingly, program was empty",
                     location=(0, 1),
