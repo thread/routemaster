@@ -153,7 +153,7 @@ def _parse_value(source):
     # Literals
     try:
         literal = source.eat_next(TokenKind.LITERAL)
-        yield Operation.LITERAL, atom.value
+        yield Operation.LITERAL, literal.value
         return
     except ParseError:
         pass
@@ -161,7 +161,7 @@ def _parse_value(source):
     # Durations
     try:
         duration = source.eat_next(TokenKind.DURATION)
-        yield Operation.LITERAL, atom.value
+        yield Operation.LITERAL, duration.value
         return
     except ParseError:
         pass
@@ -169,7 +169,7 @@ def _parse_value(source):
     # Numbers
     try:
         number = source.eat_next(TokenKind.NUMBER)
-        yield Operation.LITERAL, atom.value
+        yield Operation.LITERAL, number.value
         return
     except ParseError:
         pass
