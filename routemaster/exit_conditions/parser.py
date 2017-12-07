@@ -98,7 +98,6 @@ def _parse_or_expr(source):
 
 def _parse_base_expr(source):
     negated = False
-    known_bool = False
     while source.try_eat_next(TokenKind.NOT):
         negated = not negated
 
@@ -111,17 +110,15 @@ def _parse_base_expr(source):
         adjective = source.eat_next(TokenKind.ATOM)
         yield Operation.PROPERTY, adjective.value
 
-        known_bool = True
-
     elif source.match_next(TokenKind.OPERATOR):
         try:
-            operator, is_negative, known_bool = {
-                '=': (Operation.EQ, False, True),
-                '/=': (Operation.EQ, True, True),
-                '<': (Operation.LT, False, True),
-                '>': (Operation.GT, False, True),
-                '<=': (Operation.GT, True, True),
-                '>=': (Operation.LT, True, True),
+            operator, is_negative = {
+                '=': (Operation.EQ, False),
+                '/=': (Operation.EQ, True),
+                '<': (Operation.LT, False),
+                '>': (Operation.GT, False),
+                '<=': (Operation.GT, True),
+                '>=': (Operation.LT, True),
             }[source.head.value]
         except KeyError:
             raise ParseError(
@@ -139,8 +136,7 @@ def _parse_base_expr(source):
         yield operator,
 
     if negated:
-        if not known_bool:
-            yield Operation.TO_BOOL,
+        yield Operation.TO_BOOL,
         yield Operation.NOT,
 
 
