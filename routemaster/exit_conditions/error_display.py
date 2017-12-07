@@ -11,7 +11,7 @@ def _find_line_containing(source, index):
 
     this_line_start = 0
     for zero_index_line_number, line in enumerate(lines):
-        next_line_start = this_line_start + len(line)
+        next_line_start = this_line_start + len(line) + 1
         if next_line_start > index:
             return zero_index_line_number + 1, line, index - this_line_start
         this_line_start = next_line_start
