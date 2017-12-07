@@ -4,6 +4,11 @@
 def _find_line_containing(source, index):
     """Find (line number, line, offset) triple for an index into a string."""
     lines = source.splitlines()
+
+    if not lines:
+        # Special case: empty program
+        return 1, '', 0
+
     this_line_start = 0
     for zero_index_line_number, line in enumerate(lines):
         next_line_start = this_line_start + len(line)
