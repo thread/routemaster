@@ -11,6 +11,17 @@ RE_DURATION = re.compile('^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$')
 
 
 @enum.unique
+class RawTokenKind(enum.Enum):
+    """Types of (pre-digestion) program token."""
+    LEFT_PAREN = 'LEFT_PAREN'
+    RIGHT_PAREN = 'RIGHT_PAREN'
+    ATOM = 'ATOM'
+    OPERATOR = 'OPERATOR'
+    COMMENT = 'COMMENT'
+    WHITESPACE = 'WHITESPACE'
+
+
+@enum.unique
 class TokenKind(enum.Enum):
     """Types of major program token."""
 
@@ -18,8 +29,6 @@ class TokenKind(enum.Enum):
     RIGHT_PAREN = 'RIGHT_PAREN'
     ATOM = 'ATOM'
     OPERATOR = 'OPERATOR'
-    COMMENT = 'COMMENT'
-    WHITESPACE = 'WHITESPACE'
     NUMBER = 'NUMBER'
     DURATION = 'DURATION'
     AND = 'AND'
@@ -29,6 +38,14 @@ class TokenKind(enum.Enum):
     COPULA = 'COPULA'
 
 
+RAW_TOKEN_KIND_TO_TOKEN_KIND = {
+    RawTokenKind.LEFT_PAREN: TokenKind.LEFT_PAREN,
+    RawTokenKind.RIGHT_PAREN: TokenKind.RIGHT_PAREN,
+    RawTokenKind.OPERATOR: TokenKind.OPERATOR,
+}
+
+
+RawToken = collections.namedtuple('RawToken', 'kind value location')
 Token = collections.namedtuple('Token', 'kind value location')
 
 LITERALS = {
@@ -44,78 +61,78 @@ LITERALS = {
 }
 
 STATE_MACHINE = {
-    (None, 'Ps('): TokenKind.LEFT_PAREN,
-    (None, 'Pe)'): TokenKind.RIGHT_PAREN,
-    (None, 'Z'): TokenKind.WHITESPACE,
-    (None, 'Cc'): TokenKind.WHITESPACE,
-    (None, 'Po#'): TokenKind.COMMENT,
-    (None, 'L'): TokenKind.ATOM,
-    (None, 'Pd'): TokenKind.ATOM,
-    (None, 'Pc'): TokenKind.ATOM,
-    (None, 'N'): TokenKind.ATOM,
-    (None, 'S'): TokenKind.OPERATOR,
-    (None, 'Po'): TokenKind.OPERATOR,
-    (TokenKind.WHITESPACE, 'Ps('): TokenKind.LEFT_PAREN,
-    (TokenKind.WHITESPACE, 'Pe)'): TokenKind.RIGHT_PAREN,
-    (TokenKind.WHITESPACE, 'Z'): TokenKind.WHITESPACE,
-    (TokenKind.WHITESPACE, 'Cc'): TokenKind.WHITESPACE,
-    (TokenKind.WHITESPACE, 'Po#'): TokenKind.COMMENT,
-    (TokenKind.WHITESPACE, 'L'): TokenKind.ATOM,
-    (TokenKind.WHITESPACE, 'Pd'): TokenKind.ATOM,
-    (TokenKind.WHITESPACE, 'Pc'): TokenKind.ATOM,
-    (TokenKind.WHITESPACE, 'N'): TokenKind.ATOM,
-    (TokenKind.WHITESPACE, 'S'): TokenKind.OPERATOR,
-    (TokenKind.WHITESPACE, 'Po'): TokenKind.OPERATOR,
-    (TokenKind.LEFT_PAREN, 'Ps('): TokenKind.LEFT_PAREN,
-    (TokenKind.LEFT_PAREN, 'Pe)'): TokenKind.RIGHT_PAREN,
-    (TokenKind.LEFT_PAREN, 'Z'): TokenKind.WHITESPACE,
-    (TokenKind.LEFT_PAREN, 'Cc'): TokenKind.WHITESPACE,
-    (TokenKind.LEFT_PAREN, 'Po#'): TokenKind.COMMENT,
-    (TokenKind.LEFT_PAREN, 'L'): TokenKind.ATOM,
-    (TokenKind.LEFT_PAREN, 'Pd'): TokenKind.ATOM,
-    (TokenKind.LEFT_PAREN, 'Pc'): TokenKind.ATOM,
-    (TokenKind.LEFT_PAREN, 'N'): TokenKind.ATOM,
-    (TokenKind.LEFT_PAREN, 'S'): TokenKind.OPERATOR,
-    (TokenKind.LEFT_PAREN, 'Po'): TokenKind.OPERATOR,
-    (TokenKind.RIGHT_PAREN, 'Ps('): TokenKind.LEFT_PAREN,
-    (TokenKind.RIGHT_PAREN, 'Pe)'): TokenKind.RIGHT_PAREN,
-    (TokenKind.RIGHT_PAREN, 'Z'): TokenKind.WHITESPACE,
-    (TokenKind.RIGHT_PAREN, 'Cc'): TokenKind.WHITESPACE,
-    (TokenKind.RIGHT_PAREN, 'Po#'): TokenKind.COMMENT,
-    (TokenKind.RIGHT_PAREN, 'L'): TokenKind.ATOM,
-    (TokenKind.RIGHT_PAREN, 'Pd'): TokenKind.ATOM,
-    (TokenKind.RIGHT_PAREN, 'Pc'): TokenKind.ATOM,
-    (TokenKind.RIGHT_PAREN, 'N'): TokenKind.ATOM,
-    (TokenKind.RIGHT_PAREN, 'S'): TokenKind.OPERATOR,
-    (TokenKind.RIGHT_PAREN, 'Po'): TokenKind.OPERATOR,
-    (TokenKind.COMMENT, 'Cc'): TokenKind.WHITESPACE,
-    (TokenKind.COMMENT, 'L'): TokenKind.COMMENT,
-    (TokenKind.COMMENT, 'N'): TokenKind.COMMENT,
-    (TokenKind.COMMENT, 'P'): TokenKind.COMMENT,
-    (TokenKind.COMMENT, 'S'): TokenKind.COMMENT,
-    (TokenKind.COMMENT, 'Z'): TokenKind.COMMENT,
-    (TokenKind.ATOM, 'Ps('): TokenKind.LEFT_PAREN,
-    (TokenKind.ATOM, 'Pe)'): TokenKind.RIGHT_PAREN,
-    (TokenKind.ATOM, 'Z'): TokenKind.WHITESPACE,
-    (TokenKind.ATOM, 'Cc'): TokenKind.WHITESPACE,
-    (TokenKind.ATOM, 'Po#'): TokenKind.COMMENT,
-    (TokenKind.ATOM, 'L'): TokenKind.ATOM,
-    (TokenKind.ATOM, 'Pd'): TokenKind.ATOM,
-    (TokenKind.ATOM, 'Pc'): TokenKind.ATOM,
-    (TokenKind.ATOM, 'N'): TokenKind.ATOM,
-    (TokenKind.ATOM, 'S'): TokenKind.OPERATOR,
-    (TokenKind.ATOM, 'Po'): TokenKind.ATOM,
-    (TokenKind.OPERATOR, 'Ps('): TokenKind.LEFT_PAREN,
-    (TokenKind.OPERATOR, 'Pe)'): TokenKind.RIGHT_PAREN,
-    (TokenKind.OPERATOR, 'Z'): TokenKind.WHITESPACE,
-    (TokenKind.OPERATOR, 'Cc'): TokenKind.WHITESPACE,
-    (TokenKind.OPERATOR, 'Po#'): TokenKind.COMMENT,
-    (TokenKind.OPERATOR, 'L'): TokenKind.ATOM,
-    (TokenKind.OPERATOR, 'Pd'): TokenKind.ATOM,
-    (TokenKind.OPERATOR, 'Pc'): TokenKind.ATOM,
-    (TokenKind.OPERATOR, 'N'): TokenKind.ATOM,
-    (TokenKind.OPERATOR, 'S'): TokenKind.OPERATOR,
-    (TokenKind.OPERATOR, 'Po'): TokenKind.OPERATOR,
+    (None, 'Ps('): RawTokenKind.LEFT_PAREN,
+    (None, 'Pe)'): RawTokenKind.RIGHT_PAREN,
+    (None, 'Z'): RawTokenKind.WHITESPACE,
+    (None, 'Cc'): RawTokenKind.WHITESPACE,
+    (None, 'Po#'): RawTokenKind.COMMENT,
+    (None, 'L'): RawTokenKind.ATOM,
+    (None, 'Pd'): RawTokenKind.ATOM,
+    (None, 'Pc'): RawTokenKind.ATOM,
+    (None, 'N'): RawTokenKind.ATOM,
+    (None, 'S'): RawTokenKind.OPERATOR,
+    (None, 'Po'): RawTokenKind.OPERATOR,
+    (RawTokenKind.WHITESPACE, 'Ps('): RawTokenKind.LEFT_PAREN,
+    (RawTokenKind.WHITESPACE, 'Pe)'): RawTokenKind.RIGHT_PAREN,
+    (RawTokenKind.WHITESPACE, 'Z'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.WHITESPACE, 'Cc'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.WHITESPACE, 'Po#'): RawTokenKind.COMMENT,
+    (RawTokenKind.WHITESPACE, 'L'): RawTokenKind.ATOM,
+    (RawTokenKind.WHITESPACE, 'Pd'): RawTokenKind.ATOM,
+    (RawTokenKind.WHITESPACE, 'Pc'): RawTokenKind.ATOM,
+    (RawTokenKind.WHITESPACE, 'N'): RawTokenKind.ATOM,
+    (RawTokenKind.WHITESPACE, 'S'): RawTokenKind.OPERATOR,
+    (RawTokenKind.WHITESPACE, 'Po'): RawTokenKind.OPERATOR,
+    (RawTokenKind.LEFT_PAREN, 'Ps('): RawTokenKind.LEFT_PAREN,
+    (RawTokenKind.LEFT_PAREN, 'Pe)'): RawTokenKind.RIGHT_PAREN,
+    (RawTokenKind.LEFT_PAREN, 'Z'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.LEFT_PAREN, 'Cc'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.LEFT_PAREN, 'Po#'): RawTokenKind.COMMENT,
+    (RawTokenKind.LEFT_PAREN, 'L'): RawTokenKind.ATOM,
+    (RawTokenKind.LEFT_PAREN, 'Pd'): RawTokenKind.ATOM,
+    (RawTokenKind.LEFT_PAREN, 'Pc'): RawTokenKind.ATOM,
+    (RawTokenKind.LEFT_PAREN, 'N'): RawTokenKind.ATOM,
+    (RawTokenKind.LEFT_PAREN, 'S'): RawTokenKind.OPERATOR,
+    (RawTokenKind.LEFT_PAREN, 'Po'): RawTokenKind.OPERATOR,
+    (RawTokenKind.RIGHT_PAREN, 'Ps('): RawTokenKind.LEFT_PAREN,
+    (RawTokenKind.RIGHT_PAREN, 'Pe)'): RawTokenKind.RIGHT_PAREN,
+    (RawTokenKind.RIGHT_PAREN, 'Z'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.RIGHT_PAREN, 'Cc'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.RIGHT_PAREN, 'Po#'): RawTokenKind.COMMENT,
+    (RawTokenKind.RIGHT_PAREN, 'L'): RawTokenKind.ATOM,
+    (RawTokenKind.RIGHT_PAREN, 'Pd'): RawTokenKind.ATOM,
+    (RawTokenKind.RIGHT_PAREN, 'Pc'): RawTokenKind.ATOM,
+    (RawTokenKind.RIGHT_PAREN, 'N'): RawTokenKind.ATOM,
+    (RawTokenKind.RIGHT_PAREN, 'S'): RawTokenKind.OPERATOR,
+    (RawTokenKind.RIGHT_PAREN, 'Po'): RawTokenKind.OPERATOR,
+    (RawTokenKind.COMMENT, 'Cc'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.COMMENT, 'L'): RawTokenKind.COMMENT,
+    (RawTokenKind.COMMENT, 'N'): RawTokenKind.COMMENT,
+    (RawTokenKind.COMMENT, 'P'): RawTokenKind.COMMENT,
+    (RawTokenKind.COMMENT, 'S'): RawTokenKind.COMMENT,
+    (RawTokenKind.COMMENT, 'Z'): RawTokenKind.COMMENT,
+    (RawTokenKind.ATOM, 'Ps('): RawTokenKind.LEFT_PAREN,
+    (RawTokenKind.ATOM, 'Pe)'): RawTokenKind.RIGHT_PAREN,
+    (RawTokenKind.ATOM, 'Z'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.ATOM, 'Cc'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.ATOM, 'Po#'): RawTokenKind.COMMENT,
+    (RawTokenKind.ATOM, 'L'): RawTokenKind.ATOM,
+    (RawTokenKind.ATOM, 'Pd'): RawTokenKind.ATOM,
+    (RawTokenKind.ATOM, 'Pc'): RawTokenKind.ATOM,
+    (RawTokenKind.ATOM, 'N'): RawTokenKind.ATOM,
+    (RawTokenKind.ATOM, 'S'): RawTokenKind.OPERATOR,
+    (RawTokenKind.ATOM, 'Po'): RawTokenKind.ATOM,
+    (RawTokenKind.OPERATOR, 'Ps('): RawTokenKind.LEFT_PAREN,
+    (RawTokenKind.OPERATOR, 'Pe)'): RawTokenKind.RIGHT_PAREN,
+    (RawTokenKind.OPERATOR, 'Z'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.OPERATOR, 'Cc'): RawTokenKind.WHITESPACE,
+    (RawTokenKind.OPERATOR, 'Po#'): RawTokenKind.COMMENT,
+    (RawTokenKind.OPERATOR, 'L'): RawTokenKind.ATOM,
+    (RawTokenKind.OPERATOR, 'Pd'): RawTokenKind.ATOM,
+    (RawTokenKind.OPERATOR, 'Pc'): RawTokenKind.ATOM,
+    (RawTokenKind.OPERATOR, 'N'): RawTokenKind.ATOM,
+    (RawTokenKind.OPERATOR, 'S'): RawTokenKind.OPERATOR,
+    (RawTokenKind.OPERATOR, 'Po'): RawTokenKind.OPERATOR,
 }
 
 
@@ -146,7 +163,7 @@ def _raw_tokenize(src):
 
         if next_state != state:
             if start != index:
-                yield Token(
+                yield RawToken(
                     kind=state,
                     value=src[start:index],
                     location=(start, index),
@@ -155,36 +172,38 @@ def _raw_tokenize(src):
             state = next_state
 
     if start != len(src):
-        yield Token(
+        yield RawToken(
             kind=state,
             value=src[start:],
             location=(start, index + 1),
         )
 
 
-def _unscramble_atom(token):
-    """Turn a general `Atom` token into the more specific kinds."""
+def _digest_atom(raw_token):
+    """Turn a raw `Atom` token into the more specific kinds."""
 
     # Is this an integer value?
     try:
-        return token._replace(
+        return Token(
             kind=TokenKind.NUMBER,
-            value=int(token.value),
+            value=int(raw_token.value),
+            location=raw_token.location,
         )
     except ValueError:
         pass
 
     # A float?
     try:
-        return token._replace(
+        return Token(
             kind=TokenKind.NUMBER,
-            value=float(token.value),
+            value=float(raw_token.value),
+            location=raw_token.location,
         )
     except ValueError:
         pass
 
     # A duration?
-    duration_match = RE_DURATION.match(token.value)
+    duration_match = RE_DURATION.match(raw_token.value)
     if duration_match is not None:
         total_length = (
             int(duration_match.group(1) or '0') * 24 * 60 * 60 +
@@ -192,37 +211,44 @@ def _unscramble_atom(token):
             int(duration_match.group(3) or '0') * 60 +
             int(duration_match.group(4) or '0')
         )
-        return token._replace(
+        return Token(
             kind=TokenKind.DURATION,
             value=total_length,
+            location=raw_token.location,
         )
 
     # A literal?
     try:
-        kind, value = LITERALS[token.value]
-        return token._replace(
+        kind, value = LITERALS[raw_token.value]
+        return Token(
             kind=kind,
             value=value,
+            location=raw_token.location,
         )
     except KeyError:
         pass
 
     # Pass through, split by dots
-    return token._replace(
-        value=token.value.split('.'),
+    return Token(
+        kind=TokenKind.ATOM,
+        value=raw_token.value.split('.'),
+        location=raw_token.location,
     )
 
 
-def tokenize(src, drop_whitespace=True):
+def tokenize(src):
     """Split the string `src` into an iterable of `Token`s."""
-    for token in _raw_tokenize(src):
+    for raw_token in _raw_tokenize(src):
         if (
-            token.kind in (TokenKind.COMMENT, TokenKind.WHITESPACE) and
-            drop_whitespace
+            raw_token.kind in (RawTokenKind.COMMENT, RawTokenKind.WHITESPACE)
         ):
             continue
 
-        if token.kind == TokenKind.ATOM:
-            yield _unscramble_atom(token)
+        if raw_token.kind == RawTokenKind.ATOM:
+            yield _digest_atom(raw_token)
         else:
-            yield token
+            yield Token(
+                kind=RAW_TOKEN_KIND_TO_TOKEN_KIND[raw_token.kind],
+                value=raw_token.value,
+                location=raw_token.location,
+            )
