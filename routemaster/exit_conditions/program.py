@@ -1,5 +1,7 @@
 """Top-level utility for exit condition programs."""
 
+import typing
+
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.analysis import find_accessed_keys
 from routemaster.exit_conditions.evaluator import evaluate
@@ -29,7 +31,7 @@ class _ProgramContext(object):
 class ExitConditionProgram(object):
     """Compiled exit condition program."""
 
-    def __init__(self, source):
+    def __init__(self, source: str) -> None:
         """
         Construct from source.
 
@@ -43,12 +45,16 @@ class ExitConditionProgram(object):
                 error=exc,
             )) from None
 
-    def accessed_variables(self):
+    def accessed_variables(self) -> typing.Iterable[str]:
         """Iterable of names of variables accessed in this program."""
         for accessed_key in find_accessed_keys(self.instructions):
             yield '.'.join(accessed_key)
 
-    def run(self, variables, time_elapsed):
+    def run(
+        self,
+        variables: typing.Mapping[str, typing.Any],
+        time_elapsed: int,
+    ) -> bool:
         """Evaluate this program with a given context."""
         context = _ProgramContext(
             variables=variables,
