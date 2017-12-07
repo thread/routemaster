@@ -136,7 +136,14 @@ STATE_MACHINE = {
 }
 
 
-def _raw_tokenize(src):
+def raw_tokenize(src):
+    """
+    Split the string `src` into an iterable of `RawToken`s.
+
+    The raw tokens are sufficient to completely reproduce the input stream and
+    so may be useful for editing applications, most users will probably want
+    `tokenize`.
+    """
     # Raw token handling; there is a later semantic mapping stage which
     # annotates atoms for the special handling of keywords and numbers.
     # We treat tokenization as an explicit state machine.
@@ -238,7 +245,7 @@ def _digest_atom(raw_token):
 
 def tokenize(src):
     """Split the string `src` into an iterable of `Token`s."""
-    for raw_token in _raw_tokenize(src):
+    for raw_token in raw_tokenize(src):
         if (
             raw_token.kind in (RawTokenKind.COMMENT, RawTokenKind.WHITESPACE)
         ):
