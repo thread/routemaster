@@ -17,7 +17,7 @@ def _find_line_containing(source, index):
         this_line_start = next_line_start
 
     # Must be at the end of file
-    return len(lines), lines[-1], len(lines[-1])
+    raise AssertionError("index >> len(source)")
 
 
 def format_parse_error_message(*, source, error):
