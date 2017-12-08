@@ -17,6 +17,5 @@ jobs:
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
           paths:
             - ".tox"
-      - store_artifacts:
+      - store_test_results:
           path: build/pytest
-          destination: test-reports
