@@ -35,4 +35,4 @@ jobs:
 
       # Testing done, store results
       - store_test_results:
-          path: build/pytest
+          path: build/results
