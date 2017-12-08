@@ -21,11 +21,13 @@ PROGRAMS = [
     ("bar is defined", False, ('bar',)),
     ("null is not defined", True, ()),
     ("(1 < 2) and (2 < foo)", True, ('foo',)),
+    ("3 is not in objects", True, ('objects',)),
 ]
 
 
 VARIABLES = {
     "foo": 4,
+    "objects": (2, 4),
 }
 
 TIME_ELAPSED = 11200
@@ -104,6 +106,22 @@ ERRORS = [
         Error on line 2: Unknown operator == (did you mean =?)
         a == b
           ~~
+        """,
+    ),
+    (
+        "this is",
+        """
+        Error on line 1: Expected an adjective or preposition afterwards, but got the EOF
+        this is
+             ~~
+        """,
+    ),
+    (
+        "this is and",
+        """
+        Error on line 1: Expected an adjective or preposition
+        this is and
+                ~~~
         """,
     ),
 ]
