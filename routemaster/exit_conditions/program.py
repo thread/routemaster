@@ -21,9 +21,9 @@ class _ProgramContext(object):
         return self.variables.get('.'.join(key))
 
     def property_handler(self, property_name, value, **kwargs):
-        if tuple(property_name) == ('passed',):
+        if property_name == ('passed',):
             return self.time_elapsed > value
-        if tuple(property_name) == ('defined',):
+        if property_name == ('defined',):
             return value is not None
         raise ValueError("Unknown property {name}".format(
             name='.'.join(property_name)),
