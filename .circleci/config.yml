@@ -7,15 +7,32 @@ jobs:
       - image: circleci/python:3.6.3
     steps:
       - checkout
+
+      # Set up a cached virtualenv in which to install tox
+      - restore_cache:
+          key: deps-venv-{{ .Branch }}-2.9.1
+      - run:
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install tox==2.9.1
+      - save_cache:
+          key: key: deps-venv-{{ .Branch }}-2.9.1
+          paths:
+            - "venv"
+
+      # Run tox, caching the .tox directory
       - restore_cache:
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
       - run:
           command: |
-            pip install tox
+            . venv/bin/activate
             tox
       - save_cache:
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
           paths:
             - ".tox"
+
+      # Testing done, store results
       - store_test_results:
           path: build/pytest
