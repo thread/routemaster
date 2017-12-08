@@ -7,3 +7,4 @@ import enum
 class Preposition(enum.Enum):
     """Prepositions used in property clauses."""
     SINCE = 'since'
+    IN = 'in'
