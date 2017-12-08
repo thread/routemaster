@@ -113,7 +113,11 @@ def _parse_base_expr(source):
         if source.try_eat_next(TokenKind.NOT):
             negated = not negated
 
-        adjective = source.eat_next(TokenKind.ATOM)
+        try:
+            adjective = tuple(source.eat_next(TokenKind.ATOM).value)
+        except ParseError:
+            # Must be a prepositional phrase
+            adjective = ()
 
         prepositions = []
         while source.match_next(TokenKind.PREPOSITION):
@@ -121,7 +125,20 @@ def _parse_base_expr(source):
             source.eat_next(TokenKind.PREPOSITION)
             yield from _parse_value(source)
 
-        yield Operation.PROPERTY, adjective.value, prepositions
+        if not adjective and not prepositions:
+            if source.head is not None:
+                raise ParseError(
+                    "Expected an adjective or preposition",
+                    source.head.location,
+                )
+            else:
+                raise ParseError(
+                    "Expected an adjective or preposition afterwards, "
+                    "but got the EOF",
+                    source.previous_location,
+                )
+
+        yield Operation.PROPERTY, tuple(adjective), tuple(prepositions)
 
     elif source.match_next(TokenKind.OPERATOR):
         try:
