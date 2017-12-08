@@ -4,12 +4,11 @@ import typing
 
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.analysis import find_accessed_keys
+from routemaster.exit_conditions.peephole import peephole_optimise
 from routemaster.exit_conditions.evaluator import evaluate
 from routemaster.exit_conditions.exceptions import ParseError
-from routemaster.exit_conditions.error_display import (
-    format_parse_error_message,
-)
-from routemaster.exit_conditions.peephole import peephole_optimise
+from routemaster.exit_conditions.error_display import \
+    format_parse_error_message
 
 
 class _ProgramContext(object):

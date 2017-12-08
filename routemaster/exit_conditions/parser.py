@@ -4,7 +4,6 @@ from routemaster.exit_conditions.tokenizer import TokenKind, tokenize
 from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.operations import Operation
 
-
 OPERATOR_DID_YOU_MEAN = {
     '==': '=',
     '!=': '/=',
