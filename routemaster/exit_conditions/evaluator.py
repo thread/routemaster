@@ -51,9 +51,18 @@ def _evaluate_gt(stack, lookup, property_handler):
     stack.append(lhs > rhs)
 
 
-def _evaluate_property(stack, lookup, property_handler, property_name):
+def _evaluate_property(
+    stack,
+    lookup,
+    property_handler,
+    property_name,
+    prepositions,
+):
+    prepositional_arguments = {}
+    for preposition in reversed(prepositions):
+        prepositional_arguments[preposition.value] = stack.pop()
     subject = stack.pop()
-    stack.append(property_handler(property_name, subject))
+    stack.append(property_handler(property_name, subject, **prepositional_arguments))
 
 
 EVALUATORS = {
