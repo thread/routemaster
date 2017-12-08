@@ -98,4 +98,14 @@ def peephole_optimise(instructions):
                     any_changes = True
                     break
 
+        # TO_BOOL after property elimination
+        for index in range(len(instructions) - 1):
+            if (
+                instructions[index][0] == Operation.PROPERTY and
+                instructions[index + 1][0] == Operation.TO_BOOL
+            ):
+                del instructions[index + 1]
+                any_changes = True
+                break
+
     return instructions
