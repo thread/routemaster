@@ -8,7 +8,8 @@ jobs:
     steps:
       - checkout
 
-      - restore_cache: # Set up a cached virtualenv in which to install tox
+        # Set up a cached virtualenv in which to install tox
+      - restore_cache:
           key: deps-venv-{{ .Branch }}-2.9.1
       - run:
           command: |
@@ -16,11 +17,12 @@ jobs:
             . venv/bin/activate
             pip install tox==2.9.1
       - save_cache:
-          key: key: deps-venv-{{ .Branch }}-2.9.1
+          key: deps-venv-{{ .Branch }}-2.9.1
           paths:
             - "venv"
 
-      - restore_cache: # Run tox, caching the .tox directory
+      # Run tox, caching the .tox directory
+      - restore_cache:
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
       - run:
           command: |
@@ -31,5 +33,6 @@ jobs:
           paths:
             - ".tox"
 
-      - store_test_results: # Testing done, store results
+      # Testing done, store results
+      - store_test_results:
           path: build/pytest
