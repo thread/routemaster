@@ -6,6 +6,7 @@ import typing
 import unicodedata
 
 from routemaster.exit_conditions.exceptions import ParseError
+from routemaster.exit_conditions.prepositions import Preposition
 
 RE_DURATION = re.compile('^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$')
 
@@ -36,6 +37,7 @@ class TokenKind(enum.Enum):
     NOT = '"not"'
     LITERAL = 'constant'
     COPULA = 'is/has'
+    PREPOSITION = 'preposition'
 
 
 RAW_TOKEN_KIND_TO_TOKEN_KIND = {
@@ -205,6 +207,16 @@ def raw_tokenize(src: str) -> typing.Iterable[RawToken]:
 
 def _digest_atom(raw_token: RawToken) -> Token:
     """Turn a raw `Atom` token into the more specific kinds."""
+
+    # Is this a preposition
+    try:
+        return Token(
+            kind=TokenKind.PREPOSITION,
+            value=Preposition(raw_token.value),
+            location=raw_token.location,
+        )
+    except ValueError:
+        pass
 
     # Is this an integer value?
     try:
