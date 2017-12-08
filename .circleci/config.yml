@@ -23,13 +23,13 @@ jobs:
 
       # Run tox, caching the .tox directory
       - restore_cache:
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
           command: |
             . venv/bin/activate
             tox
       - save_cache:
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
           paths:
             - ".tox"
 

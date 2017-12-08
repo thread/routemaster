@@ -96,7 +96,7 @@ class ExitConditionProgram(object):
         This preserves the equivalence relation from `__eq__`: that is, if
         a == b for programs a, b then hash(a) == hash(b).
         """
-        return hash(self._instructions)
+        return hash(tuple(self._instructions))
 
     def __repr__(self) -> str:
         """Convenient debug representation."""
