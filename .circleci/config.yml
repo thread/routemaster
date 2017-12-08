@@ -1,0 +1,20 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: ~/routemaster
+    docker:
+      - image: circleci/python:3.6.3
+    steps:
+      - checkout
+      - restore_cache:
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
+      - run:
+          command: tox
+      - save_cache:
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
+          paths:
+            - ".tox"
+      - store_artifacts:
+          path: build/pytest
+          destination: test-reports
