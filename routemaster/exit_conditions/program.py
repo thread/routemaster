@@ -47,7 +47,7 @@ class ExitConditionProgram(object):
                 error=exc,
             )) from None
 
-        self._instructions = list(peephole_optimise(self._instructions))
+        self._instructions = tuple(peephole_optimise(self._instructions))
 
         self.source = source
 
