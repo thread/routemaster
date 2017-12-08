@@ -25,6 +25,8 @@ class _ProgramContext(object):
             return self.time_elapsed > value
         if property_name == ('defined',):
             return value is not None
+        if property_name == () and 'in' in kwargs:
+            return value in kwargs['in']
         raise ValueError("Unknown property {name}".format(
             name='.'.join(property_name)),
         )
