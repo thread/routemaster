@@ -1,5 +1,7 @@
 # Routemaster
 
+![CircleCI](https://circleci.com/gh/thread/routemaster.svg?style=shield&circle-token=3973777302b4f7f00f5b9eb1c07e3c681ea94f35)
+
 State machines as a service.
 
 (The _master_ of _routes_ through a state machine.)
