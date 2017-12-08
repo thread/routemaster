@@ -74,16 +74,6 @@ MATCHERS = [
             (Operation.GT,),
         ],
     ),
-    (
-        [
-            (Operation.PROPERTY, ['defined']),
-        ],
-        [
-            (Operation.LITERAL, None),
-            (Operation.EQ,),
-            (Operation.NOT,),
-        ],
-    ),
 ]
 
 
