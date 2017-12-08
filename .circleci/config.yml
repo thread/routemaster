@@ -1,0 +1,41 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: ~/routemaster
+    docker:
+      - image: circleci/python:3.6.3
+    steps:
+      - checkout
+
+        # Set up a cached virtualenv in which to install tox
+      - restore_cache:
+          key: deps-venv-{{ .Branch }}-2.9.1
+      - run:
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install tox==2.9.1
+      - save_cache:
+          key: deps-venv-{{ .Branch }}-2.9.1
+          paths:
+            - "venv"
+
+      # Run tox, caching the .tox directory
+      - restore_cache:
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
+      - run:
+          command: |
+            . venv/bin/activate
+            tox
+      - save_cache:
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}
+          paths:
+            - ".tox"
+
+      # Testing done, store results
+      - store_test_results:
+          path: build/results
+      - store_artifacts:
+          path: build/artifacts/coverage
+          destination: coverage
