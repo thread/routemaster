@@ -235,7 +235,7 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
     return TimeTrigger(time=trigger)
 
 
-RE_PATH = re.compile(r'^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*$')
+RE_PATH = re.compile(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$')
 
 
 def _load_context_trigger(path: Path, yaml_trigger: Yaml) -> ContextTrigger:

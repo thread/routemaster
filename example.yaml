@@ -3,7 +3,7 @@ state_machines:
 
     - gate: start
       triggers:
-        - state
+        - context: jacquard.has_redesigned_first_two_drip_emails
       exit_condition: >
         jacquard.has_redesigned_first_two_drip_emails is defined
       next:
