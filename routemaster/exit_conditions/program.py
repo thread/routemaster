@@ -20,7 +20,7 @@ class _ProgramContext(object):
     def lookup(self, key):
         return self.variables.get('.'.join(key))
 
-    def property_handler(self, property_name, value):
+    def property_handler(self, property_name, value, **kwargs):
         if tuple(property_name) == ('passed',):
             return self.time_elapsed > value
         if tuple(property_name) == ('defined',):
