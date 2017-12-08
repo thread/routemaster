@@ -36,3 +36,6 @@ jobs:
       # Testing done, store results
       - store_test_results:
           path: build/results
+      - store_artifacts:
+          path: build/artifacts/coverage
+          destination: coverage
