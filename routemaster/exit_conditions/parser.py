@@ -114,7 +114,14 @@ def _parse_base_expr(source):
             negated = not negated
 
         adjective = source.eat_next(TokenKind.ATOM)
-        yield Operation.PROPERTY, adjective.value
+
+        prepositions = []
+        while source.match_next(TokenKind.PREPOSITION):
+            prepositions.append(source.head.value)
+            source.eat_next(TokenKind.PREPOSITION)
+            yield from _parse_value(source)
+
+        yield Operation.PROPERTY, adjective.value, prepositions
 
     elif source.match_next(TokenKind.OPERATOR):
         try:
