@@ -1,7 +1,11 @@
 """Loading and validation of config files."""
 
 import re
+import yaml
 import datetime
+import functools
+import jsonschema
+import pkg_resources
 from typing import (
     Any,
     Dict,
@@ -17,6 +21,16 @@ from routemaster.exit_conditions import ExitConditionProgram
 
 Yaml = Dict[str, Any]
 Path = List[str]
+
+def _schema_validate(config: Yaml) -> None:
+    # Load schema from package resources
+    schema_raw = pkg_resources.resource_string(
+        'routemaster',
+        'config_schema.yaml',
+    ).decode('utf-8')
+    schema_yaml = yaml.load(schema_raw)
+
+    jsonschema.validate(config, schema_yaml)
 
 
 class TimeTrigger(NamedTuple):
@@ -124,6 +138,7 @@ class ConfigError(ValueError):
 
 def load_config(yaml: Yaml) -> Config:
     """Unpack a parsed YAML file into a `Config` object."""
+    _schema_validate(yaml)
 
     try:
         yaml_state_machines = yaml['state_machines']
