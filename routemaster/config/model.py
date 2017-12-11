@@ -27,6 +27,9 @@ class ConstantNextState(NamedTuple):
         """Returns the constant next state."""
         return self.state
 
+    def all_destinations(self) -> Iterable[str]:
+        return [self.state]
+
 
 class ContextNextStatesOption(NamedTuple):
     """Represents an option for a context conditional next state."""
@@ -47,6 +50,9 @@ class ContextNextStates(NamedTuple):
                 return destination.state
         raise RuntimeError("Handle this gracefully.")
 
+    def all_destinations(self) -> Iterable[str]:
+        return [x.state for x in self.destinations]
+
 
 class NoNextStates(NamedTuple):
     """Represents the lack of a next state to progress to."""
@@ -56,6 +62,9 @@ class NoNextStates(NamedTuple):
         raise RuntimeError(
             "Attempted to progress from a state with no next state",
         )
+
+    def all_destinations(self) -> Iterable[str]:
+        return []
 
 
 NextStates = Union[ConstantNextState, ContextNextStates, NoNextStates]
