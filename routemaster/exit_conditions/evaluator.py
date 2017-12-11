@@ -62,7 +62,9 @@ def _evaluate_property(
     for preposition in reversed(prepositions):
         prepositional_arguments[preposition.value] = stack.pop()
     subject = stack.pop()
-    stack.append(property_handler(property_name, subject, **prepositional_arguments))
+    stack.append(
+        property_handler(property_name, subject, **prepositional_arguments),
+    )
 
 
 EVALUATORS = {

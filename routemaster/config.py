@@ -1,11 +1,8 @@
 """Loading and validation of config files."""
 
 import re
-import yaml
 import datetime
 import functools
-import jsonschema
-import pkg_resources
 from typing import (
     Any,
     Dict,
@@ -16,6 +13,10 @@ from typing import (
     Optional,
     NamedTuple,
 )
+
+import yaml
+import jsonschema
+import pkg_resources
 
 from routemaster.exit_conditions import ExitConditionProgram
 
