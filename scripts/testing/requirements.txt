@@ -1,6 +1,7 @@
 tox
 pytest
 pytest-cov
+pytest-sanic
 fakeredis
 networkx
 mypy
