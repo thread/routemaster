@@ -21,6 +21,7 @@ setup(
     zip_safe=False,
 
     packages=find_packages(),
+    include_package_data=True,
 
     classifiers=(
         'Development Status :: 2 - Pre-Alpha',
