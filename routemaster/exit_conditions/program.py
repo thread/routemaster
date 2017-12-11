@@ -42,7 +42,7 @@ class ExitConditionProgram(object):
         This will eagerly compile and report any errors.
         """
         try:
-            self._instructions = list(parse(source))
+            self._instructions = tuple(parse(source))
         except ParseError as exc:
             raise ValueError(format_parse_error_message(
                 source=source,
