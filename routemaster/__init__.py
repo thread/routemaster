@@ -3,4 +3,10 @@
 from routemaster.app import App
 
 
-app = App()
+def initialise():
+    """Initialise the global app singleton."""
+    global app
+    app = App()
+
+
+initialise()
