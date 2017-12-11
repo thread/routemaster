@@ -1,140 +1,33 @@
-"""Loading and validation of config files."""
+"""Data model for configuration format."""
 
 import re
 import datetime
-import functools
-from typing import (
-    Any,
-    Dict,
-    List,
-    Union,
-    Mapping,
-    Iterable,
-    Optional,
-    NamedTuple,
-)
+from typing import Any, Dict, List, Iterable, Optional
 
 import yaml
 import jsonschema
 import pkg_resources
 
+from routemaster.config.model import (
+    Gate,
+    State,
+    Action,
+    Config,
+    Trigger,
+    NextStates,
+    TimeTrigger,
+    NoNextStates,
+    StateMachine,
+    ContextTrigger,
+    ConstantNextState,
+    ContextNextStates,
+    ContextNextStatesOption,
+)
 from routemaster.exit_conditions import ExitConditionProgram
+from routemaster.config.exceptions import ConfigError
 
 Yaml = Dict[str, Any]
 Path = List[str]
-
-def _schema_validate(config: Yaml) -> None:
-    # Load schema from package resources
-    schema_raw = pkg_resources.resource_string(
-        'routemaster',
-        'config_schema.yaml',
-    ).decode('utf-8')
-    schema_yaml = yaml.load(schema_raw)
-
-    jsonschema.validate(config, schema_yaml)
-
-
-class TimeTrigger(NamedTuple):
-    """Time based trigger for exit condition evaluation."""
-    time: datetime.time
-
-
-class ContextTrigger(NamedTuple):
-    """Context update based trigger for exit condition evaluation."""
-    context_path: str
-
-
-Trigger = Union[TimeTrigger, ContextTrigger]
-
-
-class ConstantNextState(NamedTuple):
-    """Defines a constant choice, always chooses `state`."""
-    state: str
-
-    def next_state_for_label(self, label_context: Any) -> str:
-        """Returns the constant next state."""
-        return self.state
-
-
-class ContextNextStatesOption(NamedTuple):
-    """Represents an option for a context conditional next state."""
-    state: str
-    value: Any
-
-
-class ContextNextStates(NamedTuple):
-    """Defined a choice based on a path in the given `label_context`."""
-    path: str
-    destinations: Iterable[ContextNextStatesOption]
-
-    def next_state_for_label(self, label_context: Any) -> str:
-        """Returns next state based on context value at `self.path`."""
-        val = label_context.get_path(self.path)
-        for destination in self.destinations:
-            if destination.value == val:
-                return destination.state
-        raise RuntimeError("Handle this gracefully.")
-
-
-class NoNextStates(NamedTuple):
-    """Represents the lack of a next state to progress to."""
-
-    def next_state_for_label(self, label_context: Any) -> str:
-        """Invalid to call, raise an exception."""
-        raise RuntimeError(
-            "Attempted to progress from a state with no next state",
-        )
-
-
-NextStates = Union[ConstantNextState, ContextNextStates, NoNextStates]
-
-
-class Gate(NamedTuple):
-    """
-    A state that restricts a label from moving based on an exit condition.
-
-    Gates cannot perform an action.
-    """
-    name: str
-    next_states: Optional[NextStates]
-
-    exit_condition: ExitConditionProgram
-    triggers: Iterable[Trigger]
-
-
-class Action(NamedTuple):
-    """
-    A state that performs an action via a webhook.
-
-    A label staying in this state means that the action has not succeeded, i.e.
-    the webhook returned an error status.
-    """
-    name: str
-    next_states: Optional[NextStates]
-
-    webhook: str
-
-
-State = Union[Action, Gate]
-
-
-class StateMachine(NamedTuple):
-    """A state machine."""
-    name: str
-    states: Iterable[State]
-
-
-class Config(NamedTuple):
-    """
-    The top-level configuration object.
-
-    Stores the configured state machines, and other system-level configuration.
-    """
-    state_machines: Mapping[str, StateMachine]
-
-
-class ConfigError(ValueError):
-    """Represents an error validating the configuration file."""
 
 
 def load_config(yaml: Yaml) -> Config:
@@ -154,6 +47,17 @@ def load_config(yaml: Yaml) -> Config:
         )
         for name, yaml_state_machine in yaml_state_machines.items()
     })
+
+
+def _schema_validate(config: Yaml) -> None:
+    # Load schema from package resources
+    schema_raw = pkg_resources.resource_string(
+        'routemaster.config',
+        'schema.yaml',
+    ).decode('utf-8')
+    schema_yaml = yaml.load(schema_raw)
+
+    jsonschema.validate(config, schema_yaml)
 
 
 def _load_state_machine(

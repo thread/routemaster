@@ -16,7 +16,6 @@ DEPENDENCIES = (
     ('__main__', 'cli'),
 
     ('cli', 'config'),
-    ('config', 'exit_conditions'),
 )
 
 EXCLUDED_MODULES = (
