@@ -38,6 +38,7 @@ setup(
         'click',
         'pyyaml',
         'jsonschema >=2.6',
+        'sanic',
     ),
 
     setup_requires=(
