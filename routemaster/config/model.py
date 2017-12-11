@@ -28,6 +28,7 @@ class ConstantNextState(NamedTuple):
         return self.state
 
     def all_destinations(self) -> Iterable[str]:
+        """Returns the constant next state."""
         return [self.state]
 
 
@@ -51,6 +52,7 @@ class ContextNextStates(NamedTuple):
         raise RuntimeError("Handle this gracefully.")
 
     def all_destinations(self) -> Iterable[str]:
+        """Returns all possible destination states."""
         return [x.state for x in self.destinations]
 
 
@@ -64,6 +66,7 @@ class NoNextStates(NamedTuple):
         )
 
     def all_destinations(self) -> Iterable[str]:
+        """Returns no states."""
         return []
 
 
