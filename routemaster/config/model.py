@@ -1,7 +1,7 @@
 """Loading and validation of config files."""
 
 import datetime
-from typing import Any, Union, Mapping, Iterable, Optional, NamedTuple
+from typing import Any, Union, Mapping, Iterable, NamedTuple
 
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -80,7 +80,7 @@ class Gate(NamedTuple):
     Gates cannot perform an action.
     """
     name: str
-    next_states: Optional[NextStates]
+    next_states: NextStates
 
     exit_condition: ExitConditionProgram
     triggers: Iterable[Trigger]
@@ -94,7 +94,7 @@ class Action(NamedTuple):
     the webhook returned an error status.
     """
     name: str
-    next_states: Optional[NextStates]
+    next_states: NextStates
 
     webhook: str
 
