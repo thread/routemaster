@@ -17,6 +17,7 @@ DEPENDENCIES = (
 
     ('cli', 'config'),
     ('config', 'exit_conditions'),
+    ('validation', 'config'),
 )
 
 EXCLUDED_MODULES = (
