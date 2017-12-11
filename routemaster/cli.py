@@ -33,6 +33,9 @@ def validate(ctx):
     '--host',
     help="Host for service.",
     type=str,
+
+    # TODO: `::` once v6 is fixed in Sanic.
+    # https://github.com/channelcat/sanic/pull/1053
     default='127.0.0.1',
 )
 @click.option(
