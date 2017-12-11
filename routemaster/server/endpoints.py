@@ -11,4 +11,4 @@ server = Sanic('routemaster')
 @server.route("/")
 async def status(request):
     """Status check endpoint."""
-    return json(app.raw_config)
+    return json({'config': app.raw_config})
