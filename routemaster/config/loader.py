@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Iterable, Optional
 import yaml
 import jsonschema
 import pkg_resources
+import jsonschema.exceptions
 
 from routemaster.config.model import (
     Gate,
@@ -57,7 +58,10 @@ def _schema_validate(config: Yaml) -> None:
     ).decode('utf-8')
     schema_yaml = yaml.load(schema_raw)
 
-    jsonschema.validate(config, schema_yaml)
+    try:
+        jsonschema.validate(config, schema_yaml)
+    except jsonschema.exceptions.ValidationError:
+        pass
 
 
 def _load_state_machine(
