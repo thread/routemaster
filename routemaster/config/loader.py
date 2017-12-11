@@ -61,7 +61,7 @@ def _schema_validate(config: Yaml) -> None:
     try:
         jsonschema.validate(config, schema_yaml)
     except jsonschema.exceptions.ValidationError:
-        pass
+        raise ConfigError("Could not validate config file against schema.")
 
 
 def _load_state_machine(
