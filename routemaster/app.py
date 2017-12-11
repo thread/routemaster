@@ -15,5 +15,5 @@ class App(object):
 
     def load_config(self, config_file: IO[str]) -> None:
         """Load configuration from a file."""
-        self.raw_config = config_file.read()
-        self.config = load_config(yaml.load(self.raw_config))
+        self.raw_config = yaml.load(config_file.read())
+        self.config = load_config(self.raw_config)
