@@ -1,6 +1,7 @@
 state_machines:
   example:
-    - gate: start
-      triggers:
-        - context: foo.bar+
-      exit_condition: false
+    states:
+      - gate: start
+        triggers:
+          - context: foo.bar+
+        exit_condition: false

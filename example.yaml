@@ -1,79 +1,79 @@
 state_machines:
   user_lifecycle:
+    states:
+      - gate: start
+        triggers:
+          - context: jacquard.has_redesigned_first_two_drip_emails
+        exit_condition: >
+          jacquard.has_redesigned_first_two_drip_emails is defined
+        next:
+          type: context
+          path: jacquard.has_redesigned_first_two_drip_emails
+          destinations:
+            - value: false
+              state: send_welcome_email
+            - value: true
+              state: send_welcome_email_test
 
-    - gate: start
-      triggers:
-        - context: jacquard.has_redesigned_first_two_drip_emails
-      exit_condition: >
-        jacquard.has_redesigned_first_two_drip_emails is defined
-      next:
-        type: context
-        path: jacquard.has_redesigned_first_two_drip_emails
-        destinations:
-          - value: false
-            state: send_welcome_email
-          - value: true
-            state: send_welcome_email_test
+      - action: send_welcome_email
+        webhook: https://www.thread.com/hooks/user-emails/send_welcome_email
+        next:
+          type: constant
+          state: generate_first_recs
 
-    - action: send_welcome_email
-      webhook: https://www.thread.com/hooks/user-emails/send_welcome_email
-      next:
-        type: constant
-        state: generate_first_recs
+      - action: send_welcome_email_test
+        webhook: https://www.thread.com/hooks/user-emails/send_welcome_email_test
+        next:
+          type: constant
+          state: generate_first_recs
 
-    - action: send_welcome_email_test
-      webhook: https://www.thread.com/hooks/user-emails/send_welcome_email_test
-      next:
-        type: constant
-        state: generate_first_recs
+      - action: generate_first_recs
+        webhook: https://www.thread.com/hooks/user-emails/generate_first_recs
+        next:
+          type: constant
+          state: wait_for_first_recs
 
-    - action: generate_first_recs
-      webhook: https://www.thread.com/hooks/user-emails/generate_first_recs
-      next:
-        type: constant
-        state: wait_for_first_recs
+      - gate: wait_for_first_recs
+        triggers:
+          - context: recs.has_first_recommendations
+        exit_condition: >
+          recs.has_first_recommendations and
+          (jacquard.has_redesigned_first_two_drip_emails is defined)
+        next:
+          type: context
+          path: jacquard.has_redesigned_first_two_drip_emails
+          destinations:
+            - value: false
+              state: send_stylist_onboarding_email
+            - value: true
+              state: send_stylist_onboarding_email_test
 
-    - gate: wait_for_first_recs
-      triggers:
-        - context: recs.has_first_recommendations
-      exit_condition: >
-        recs.has_first_recommendations and
-        (jacquard.has_redesigned_first_two_drip_emails is defined)
-      next:
-        type: context
-        path: jacquard.has_redesigned_first_two_drip_emails
-        destinations:
-          - value: false
-            state: send_stylist_onboarding_email
-          - value: true
-            state: send_stylist_onboarding_email_test
+      - action: send_stylist_onboarding_email
+        webhook: https://www.thread.com/hooks/user-emails/send_stylist_onboarding_email
+        next:
+          type: constant
+          state: wait_before_browse_email
 
-    - action: send_stylist_onboarding_email
-      webhook: https://www.thread.com/hooks/user-emails/send_stylist_onboarding_email
-      next:
-        type: constant
-        state: wait_before_browse_email
+      - action: send_stylist_onboarding_email_test
+        webhook: https://www.thread.com/hooks/user-emails/send_stylist_onboarding_email_test
+        next:
+          type: constant
+          state: wait_before_browse_email
 
-    - action: send_stylist_onboarding_email_test
-      webhook: https://www.thread.com/hooks/user-emails/send_stylist_onboarding_email_test
-      next:
-        type: constant
-        state: wait_before_browse_email
+      - gate: wait_before_browse_email
+        triggers:
+          - time: 18h30m
+        exit_condition: >
+          12h has passed since current_state.entered
+        next:
+          type: constant
+          state: send_browse_email
 
-    - gate: wait_before_browse_email
-      triggers:
-        - time: 18h30m
-      exit_condition: >
-        12h has passed since current_state.entered
-      next:
-        type: constant
-        state: send_browse_email
+      - action: send_browse_email
+        webhook: https://www.thread.com/hooks/user-emails/send_browse_email
+        next:
+          type: constant
+          state: end
 
-    - action: send_browse_email
-      webhook: https://www.thread.com/hooks/user-emails/send_browse_email
-      next:
-        type: constant
-        state: end
-
-    - gate: end
-      exit_condition: false
+      - gate: end
+        exit_condition: false

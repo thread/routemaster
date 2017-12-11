@@ -1,4 +1,5 @@
 state_machines:
   example:
-    - name: start
-      exit_condition: false
+    states:
+      - name: start
+        exit_condition: false

@@ -2,7 +2,7 @@
 
 import re
 import datetime
-from typing import Any, Dict, List, Iterable, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 import jsonschema
@@ -67,13 +67,13 @@ def _schema_validate(config: Yaml) -> None:
 def _load_state_machine(
     path: Path,
     name: str,
-    yaml_state_machine: Iterable[Yaml],
+    yaml_state_machine: Yaml,
 ) -> StateMachine:
     return StateMachine(
         name=name,
         states=[
-            _load_state(path + [str(idx)], yaml_state)
-            for idx, yaml_state in enumerate(yaml_state_machine)
+            _load_state(path + ['states', str(idx)], yaml_state)
+            for idx, yaml_state in enumerate(yaml_state_machine['states'])
         ],
     )
 
