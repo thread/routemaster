@@ -39,6 +39,7 @@ setup(
         'pyyaml',
         'jsonschema >=2.6',
         'sanic',
+        'sqlalchemy',
     ),
 
     setup_requires=(
