@@ -35,7 +35,7 @@ jobs:
       - run:
           name: Setup Database
           command: |
-            sudo -u postgres psql -d $PG_DB <<END_SQL
+            sudo -u $PG_USER psql -d $PG_DB <<END_SQL
             CREATE TABLE labels (
             	name VARCHAR NOT NULL,
             	state_machine VARCHAR NOT NULL,
