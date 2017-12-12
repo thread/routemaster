@@ -6,18 +6,11 @@ from routemaster.app import App
 from routemaster.server import server
 
 
-def app(config=None, config_file='realistic.yaml'):
+def app(config_file='realistic.yaml'):
     """Create an instance of App with the given config for testing."""
 
-    app = App()
-
-    if config is None:
-        with open(os.path.join('test_data', config_file)) as f:
-            app.load_config(f)
-    else:
-        app.config = config
-
-    return app
+    with open(os.path.join('test_data', config_file)) as f:
+        return App(f)
 
 
 @pytest.fixture()

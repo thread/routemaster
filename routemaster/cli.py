@@ -52,6 +52,6 @@ def serve(ctx, host, port):
     server.run(host=host, port=port)
 
 
-def main():
+def main(args):
     """Application entrypoint."""
-    return cli(obj={})
+    return cli(args, obj={})
