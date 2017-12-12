@@ -1,6 +1,3 @@
-from routemaster.config import Config
-
-
 async def test_root(app_client):
     client = await app_client(config_file='trivial.yaml')
     response = await client.get('/')
