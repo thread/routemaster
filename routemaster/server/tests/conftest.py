@@ -1,23 +1,30 @@
-import os.path
-
 import pytest
 
 from routemaster.app import App
+from routemaster.config import Config, DatabaseConfig
 from routemaster.server import server
 
+try:
+    from test_settings import TEST_DATABASE_CONFIG
+    database = DatabaseConfig(**TEST_DATABASE_CONFIG)
+except ImportError:
+    database = DatabaseConfig(
+        host='localhost',
+        port=5432,
+        name='routemaster',
+        username='',
+        password='',
+    )
 
-def app(config_file='realistic.yaml'):
-    """Create an instance of App with the given config for testing."""
 
-    with open(os.path.join('test_data', config_file)) as f:
-        return App(f)
+TEST_CONFIG = Config(state_machines=[], database=database)
 
 
 @pytest.fixture()
 def app_client(test_client, loop):
     """Create a test client for the server running under an app config."""
-    async def _create_client(*args, **kwargs):
-        server.config.app = app(*args, **kwargs)
+    async def _create_client(config=TEST_CONFIG):
+        server.config.app = App(config)
         client = await test_client(server)
         return client
     return _create_client

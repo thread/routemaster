@@ -1,27 +1,15 @@
-import contextlib
-
-import pytest
+from click.testing import CliRunner
 
 from routemaster.cli import main
 
-
-@contextlib.contextmanager
-def clean_exit():
-    with pytest.raises(SystemExit) as excinfo:
-        yield
-
-    exit_code = excinfo.value.code
-    assert exit_code == 0
+runner = CliRunner()
 
 
 def test_cli_with_no_config_fails():
-    with pytest.raises(SystemExit) as excinfo:
-        main(['validate'])
-
-    exit_code = excinfo.value.code
-    assert exit_code == 2
+    result = runner.invoke(main, ['validate'])
+    assert result.exit_code == 2
 
 
 def test_cli_with_trivial_config():
-    with clean_exit():
-        main(['-c', 'test_data/trivial.yaml', 'validate'])
+    result = runner.invoke(main, ['-c', 'test_data/trivial.yaml', 'validate'])
+    assert result.exit_code == 0, result.output

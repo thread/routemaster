@@ -1,7 +1,9 @@
 """CLI handling for `routemaster`."""
+import yaml
 import click
 
 from routemaster.app import App
+from routemaster.config import load_config
 from routemaster.server import server
 
 
@@ -14,20 +16,21 @@ from routemaster.server import server
     required=True,
 )
 @click.pass_context
-def cli(ctx, config_file):
+def main(ctx, config_file):
     """Shared entrypoint configuration."""
-    ctx.obj['app'] = App(config_file)
+    config = load_config(yaml.load(config_file))
+    ctx.obj = App(config)
 
 
-@cli.command()
+@main.command()
 @click.pass_context
 def validate(ctx):
     """Entrypoint for validation of configuration files."""
     print("Validating")
-    print(ctx.obj['app'])
+    print(ctx.obj)
 
 
-@cli.command()
+@main.command()
 @click.option(
     '-h',
     '--host',
@@ -48,10 +51,5 @@ def validate(ctx):
 @click.pass_context
 def serve(ctx, host, port):
     """Entrypoint for serving the Routemaster HTTP service."""
-    server.config.app = ctx.obj['app']
+    server.config.app = ctx.obj
     server.run(host=host, port=port)
-
-
-def main(args):
-    """Application entrypoint."""
-    return cli(args, obj={})

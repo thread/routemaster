@@ -1,18 +1,17 @@
 """Core App singleton that holds state for the application."""
-from typing import IO, Any, Dict
+from sqlalchemy.engine import Engine
 
-import yaml
-
-from routemaster.config import Config, load_config
+from routemaster.db import initialise_db
+from routemaster.config import Config
 
 
 class App:
     """Core application state."""
 
+    db: Engine
     config: Config
-    raw_config: Dict[str, Any]
 
-    def __init__(self, config_file: IO[str]) -> None:
+    def __init__(self, config: Config) -> None:
         """Initialisation of the app state."""
-        self.raw_config = yaml.load(config_file)
-        self.config = load_config(self.raw_config)
+        self.config = config
+        self.db = initialise_db(self.config.database)
