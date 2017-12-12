@@ -9,4 +9,10 @@ server = Sanic('routemaster')
 @server.route("/")
 async def status(request):
     """Status check endpoint."""
-    return json_response({'config': server.config.app.raw_config})
+    async with server.config.app.db.begin() as conn:
+        num_labels = await conn.scalar('select count(*) from labels')
+        num_state_machines = len(server.config.app.config.state_machines)
+        return json_response({
+            'labels': num_labels,
+            'state_machines': num_state_machines,
+        })
