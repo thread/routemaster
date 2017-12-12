@@ -4,20 +4,13 @@ from routemaster.app import App
 from routemaster.config import Config, DatabaseConfig
 from routemaster.server import server
 
-try:
-    from test_settings import TEST_DATABASE_CONFIG
-    database = DatabaseConfig(**TEST_DATABASE_CONFIG)
-except ImportError:
-    database = DatabaseConfig(
-        host='localhost',
-        port=5432,
-        name='routemaster',
-        username='',
-        password='',
-    )
-
-
-TEST_CONFIG = Config(state_machines=[], database=database)
+TEST_CONFIG = Config(state_machines=[], database=DatabaseConfig(
+    host='localhost',
+    port=5432,
+    name='routemaster',
+    username='',
+    password='',
+))
 
 
 @pytest.fixture()
