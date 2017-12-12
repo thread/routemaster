@@ -39,7 +39,9 @@ setup(
         'pyyaml',
         'jsonschema >=2.6',
         'sanic',
+        'psycopg2',
         'sqlalchemy',
+        'sqlalchemy_aio',
     ),
 
     setup_requires=(
