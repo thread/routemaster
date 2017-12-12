@@ -20,6 +20,7 @@ from routemaster.config.model import (
     NoNextStates,
     StateMachine,
     ContextTrigger,
+    DatabaseConfig,
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
@@ -40,14 +41,17 @@ def load_config(yaml: Yaml) -> Config:
     except KeyError:
         raise ConfigError("No top-level state_machines key defined.") from None
 
-    return Config(state_machines={
-        name: _load_state_machine(
-            ['state_machines', name],
-            name,
-            yaml_state_machine,
-        )
-        for name, yaml_state_machine in yaml_state_machines.items()
-    })
+    return Config(
+        state_machines={
+            name: _load_state_machine(
+                ['state_machines', name],
+                name,
+                yaml_state_machine,
+            )
+            for name, yaml_state_machine in yaml_state_machines.items()
+        },
+        database=_load_database(yaml.get('database', {})),
+    )
 
 
 def _schema_validate(config: Yaml) -> None:
@@ -62,6 +66,16 @@ def _schema_validate(config: Yaml) -> None:
         jsonschema.validate(config, schema_yaml)
     except jsonschema.exceptions.ValidationError:
         raise ConfigError("Could not validate config file against schema.")
+
+
+def _load_database(yaml: Yaml) -> DatabaseConfig:
+    return DatabaseConfig(
+        host=yaml.get('host', 'localhost'),
+        port=yaml.get('port', 5432),
+        name=yaml.get('name', 'routemaster'),
+        username=yaml.get('username', ''),
+        password=yaml.get('password', ''),
+    )
 
 
 def _load_state_machine(

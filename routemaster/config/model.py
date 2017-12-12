@@ -108,6 +108,15 @@ class StateMachine(NamedTuple):
     states: Iterable[State]
 
 
+class DatabaseConfig(NamedTuple):
+    """Database connection configuration."""
+    host: str
+    port: int
+    name: str
+    username: str
+    password: str
+
+
 class Config(NamedTuple):
     """
     The top-level configuration object.
@@ -115,3 +124,4 @@ class Config(NamedTuple):
     Stores the configured state machines, and other system-level configuration.
     """
     state_machines: Mapping[str, StateMachine]
+    database: DatabaseConfig
