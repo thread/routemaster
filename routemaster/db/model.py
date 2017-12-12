@@ -1,7 +1,15 @@
 """Database model definition."""
 from typing import Any
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKeyConstraint
+from sqlalchemy import (
+    Column,
+    String,
+    Boolean,
+    Integer,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -14,8 +22,6 @@ class Label(Base):
 
     name = Column(String, primary_key=True)
     state_machine = Column(String, primary_key=True)
-
-    state = Column(String)
 
     context = Column(JSONB)
 
@@ -39,6 +45,37 @@ class History(Base):
 
     created = Column(DateTime)
 
+    # `forced = True` represents a manual transition that may not be in
+    # accordance with the state machine logic.
+    forced = Column(Boolean, default=False)
+
     # Null indicates starting a state machine
     old_state = Column(String, nullable=True)
     new_state = Column(String)
+
+
+class StateMachine(Base):
+    """
+    Represents a state machine.
+
+    We serialise versions of the configuration into the database so that:
+     - The structure of the state machines can be exported to a data warehouse.
+     - We don't rely on stringly-typed fields in rest of the data model.
+    """
+    __tablename__ = 'state_machines'
+
+    name = Column(String, primary_key=True)
+    updated = Column(DateTime)
+
+
+class State(Base):
+    """Represents a state in a state machine."""
+    __tablename__ = 'states'
+
+    name = Column(String, primary_key=True)
+    state_machine = Column(ForeignKey('state_machine.id'), primary_key=True)
+
+    # `deprecated = True` represents a state that is no longer accessible.
+    deprecated = Column(Boolean, default=False)
+
+    updated = Column(DateTime)
