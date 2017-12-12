@@ -31,3 +31,10 @@ state_machines:
 
       - gate: end
         exit_condition: false
+
+database:
+  host: localhost
+  port: 5432
+  name: routemaster_test
+  username: routemaster
+  password: routemaster

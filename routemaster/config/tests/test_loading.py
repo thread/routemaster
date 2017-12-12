@@ -13,6 +13,7 @@ from routemaster.config import (
     NoNextStates,
     StateMachine,
     ContextTrigger,
+    DatabaseConfig,
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
@@ -48,7 +49,14 @@ def test_trivial_config():
                     ),
                 ]
             )
-        }
+        },
+        database=DatabaseConfig(
+            host='localhost',
+            port=5432,
+            name='routemaster',
+            username='',
+            password='',
+        ),
     )
     assert load_config(data) == expected
 
@@ -92,9 +100,16 @@ def test_realistic_config():
                         exit_condition=ExitConditionProgram('false'),
                         next_states=NoNextStates(),
                     ),
-                ]
-            )
-        }
+                ],
+            ),
+        },
+        database=DatabaseConfig(
+            host='localhost',
+            port=5432,
+            name='routemaster_test',
+            username='routemaster',
+            password='routemaster',
+        ),
     )
     assert load_config(data) == expected
 
