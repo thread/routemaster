@@ -73,7 +73,11 @@ class State(Base):
     __tablename__ = 'states'
 
     name = Column(String, primary_key=True)
-    state_machine = Column(ForeignKey('state_machine.id'), primary_key=True)
+    state_machine = Column(
+        String,
+        ForeignKey(StateMachine.name),
+        primary_key=True,
+    )
 
     # `deprecated = True` represents a state that is no longer accessible.
     deprecated = Column(Boolean, default=False)
