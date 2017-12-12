@@ -116,6 +116,20 @@ class DatabaseConfig(NamedTuple):
     username: str
     password: str
 
+    @property
+    def connstr(self) -> str:
+        """Connection string for given configuration."""
+        if not self.host:
+            return f'postgresql:///{self.name}'
+
+        auth = ''
+        if self.username and not self.password:
+            auth = f'{self.username}@'
+        elif self.username and self.password:
+            auth = f'{self.username}:{self.password}@'
+
+        return f'postgresql://{auth}{self.host}/{self.name}'
+
 
 class Config(NamedTuple):
     """
