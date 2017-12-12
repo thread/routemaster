@@ -16,11 +16,16 @@ DEPENDENCIES = (
     ('__main__', 'cli'),
 
     ('cli', 'config'),
+    ('cli', 'server'),
+    ('cli', 'app'),
+
+    ('app', 'config'),
     ('config', 'exit_conditions'),
     ('validation', 'config'),
 )
 
 EXCLUDED_MODULES = (
+    'conftest',
 )
 
 
