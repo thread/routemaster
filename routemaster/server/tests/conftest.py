@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from routemaster.app import App
@@ -5,11 +7,11 @@ from routemaster.config import Config, DatabaseConfig
 from routemaster.server import server
 
 TEST_CONFIG = Config(state_machines=[], database=DatabaseConfig(
-    host='localhost',
-    port=5432,
-    name='routemaster',
-    username='',
-    password='',
+    host=os.environ.get('PG_HOST', 'localhost'),
+    port=os.environ.get('PG_PORT', 5432),
+    name=os.environ.get('PG_DB', 'routemaster'),
+    username=os.environ.get('PG_USER', ''),
+    password=os.environ.get('PG_PASS', ''),
 ))
 
 
