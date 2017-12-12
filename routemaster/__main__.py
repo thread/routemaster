@@ -7,4 +7,4 @@ normal use should be to use the `routemaster` command-line tool directly.
 
 from routemaster.cli import main
 
-main([])
+main()
