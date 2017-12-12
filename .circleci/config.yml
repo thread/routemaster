@@ -9,10 +9,10 @@ jobs:
           - PG_HOST=localhost
           - PG_PORT=5432
           - PG_DB=routemaster
-          - PG_USER=routemaster
+          - PG_USER=ubuntu
       - image: postgres:9.6
         environment:
-          - POSTGRES_USER=routemaster
+          - POSTGRES_USER=ubuntu
           - POSTGRES_DB=routemaster
     steps:
       - checkout
