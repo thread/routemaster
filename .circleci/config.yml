@@ -23,24 +23,27 @@ jobs:
 
         # Set up a cached virtualenv in which to install tox
       - restore_cache:
+          name: Restore build dependency cache
           key: deps-venv-{{ .Branch }}-2.9.1
       - run:
+          name: Install tox
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install tox==2.9.1
       - save_cache:
+          name: Save build dependency cache
           key: deps-venv-{{ .Branch }}-2.9.1
           paths:
             - "venv"
 
       # Setup the database
       - run:
-          name: Wait for Database with Dockerize
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
-      - run:
           name: Install psql
           command: sudo apt install postgresql-client
+      - run:
+          name: Wait for Database with Dockerize
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
       - run:
           name: Setup Database
           command: |
@@ -79,12 +82,15 @@ jobs:
 
       # Run tox, caching the .tox directory
       - restore_cache:
+          name: Restore .tox cache
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
+          name: Test/Lint/Typecheck
           command: |
             . venv/bin/activate
             tox
       - save_cache:
+          name: Save .tox cache
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
           paths:
             - ".tox"
