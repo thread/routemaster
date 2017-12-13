@@ -35,7 +35,7 @@ History = Table(
     Column('label_state_machine', String),
     ForeignKeyConstraint(
         ['label_name', 'label_state_machine'],
-        ['label.name', 'label.state_machine'],
+        ['labels.name', 'labels.state_machine'],
     ),
 
     Column('created', DateTime),
@@ -47,14 +47,20 @@ History = Table(
     # Null indicates starting a state machine
     Column('old_state', String, nullable=True),
     Column('new_state', String),
-    ForeignKeyConstraint(
-        ['old_state'],
-        ['states.name'],
-    ),
-    ForeignKeyConstraint(
-        ['new_state'],
-        ['states.name'],
-    ),
+
+    # Can we get foreign key constraints on these as well?
+    # Currently: no, because those columns are not unique themselves, however
+    # we could add `old_state_state_machine` and `new_state_state_machine`, add
+    # the constraints with them, and then add a constraint that the three
+    # state machine references are all identical.
+    # ForeignKeyConstraint(
+    #     ['old_state'],
+    #     ['states.name'],
+    # ),
+    # ForeignKeyConstraint(
+    #     ['new_state'],
+    #     ['states.name'],
+    # ),
 )
 
 
@@ -82,7 +88,7 @@ State = Table(
     Column(
         'state_machine',
         String,
-        ForeignKey(StateMachine.name),
+        ForeignKey('state_machines.name'),
         primary_key=True,
     ),
 
