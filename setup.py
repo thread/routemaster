@@ -42,6 +42,7 @@ setup(
         'psycopg2',
         'sqlalchemy',
         'sqlalchemy_aio',
+        'alembic >=0.9.6',
     ),
 
     setup_requires=(
