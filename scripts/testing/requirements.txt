@@ -2,6 +2,7 @@ tox
 pytest
 pytest-cov
 pytest-sanic
+pytest-sugar
 fakeredis
 networkx
 mypy
