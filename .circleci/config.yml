@@ -72,7 +72,7 @@ jobs:
             );
             CREATE TABLE states (
             	name VARCHAR NOT NULL,
-            	state_machine INTEGER NOT NULL,
+            	state_machine VARCHAR NOT NULL,
             	deprecated BOOLEAN,
             	updated TIMESTAMP WITHOUT TIME ZONE,
             	PRIMARY KEY (name, state_machine),
