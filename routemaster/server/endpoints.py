@@ -19,7 +19,7 @@ async def status(request):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:str>/labels',
+    '/state-machines/<state_machine_name:string>/labels',
     methods=['GET'],
 )
 async def get_labels(request, state_machine_name):
@@ -28,7 +28,7 @@ async def get_labels(request, state_machine_name):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:str>/labels/<label:str>',
+    '/state-machines/<state_machine_name:string>/labels/<label:string>',
     methods=['GET'],
 )
 async def get_label(request, state_machine_name, label):
@@ -45,7 +45,7 @@ async def get_label(request, state_machine_name, label):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:str>/labels/<label:str>',
+    '/state-machines/<state_machine_name:string>/labels/<label:string>',
     methods=['POST'],
 )
 async def create_label(request, state_machine_name, label):
@@ -60,11 +60,11 @@ async def create_label(request, state_machine_name, label):
 
     Successful return codes return the full created context for the label.
     """
-    pass
+    return json_response({'success': True}, status=201)
 
 
 @server.route(
-    '/state-machines/<state_machine_name:str>/labels/<label:str>/update',
+    '/state-machines/<state_machine_name:string>/labels/<label:string>/update',
     methods=['POST'],
 )
 async def update_label(request, state_machine_name, label):
@@ -85,7 +85,7 @@ async def update_label(request, state_machine_name, label):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:str>/labels/<label:str>',
+    '/state-machines/<state_machine_name:string>/labels/<label:string>',
     methods=['DELETE'],
 )
 async def delete_label(request, state_machine_name, label):
