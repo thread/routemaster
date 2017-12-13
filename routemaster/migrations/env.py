@@ -5,8 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 
 from routemaster.config import load_config
-from routemaster.db import initialise_db
-from routemaster.db.model import Base
+from routemaster.db import Base, initialise_db
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
