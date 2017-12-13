@@ -52,7 +52,6 @@ def database_creation():
 def database_clear():
     """Truncate all tables after each test."""
     yield
-    import time; time.sleep(10)
     with TEST_ENGINE.begin() as conn:
         for table in metadata.tables:
             conn.execute(f'truncate table {table} cascade')
