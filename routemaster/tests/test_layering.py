@@ -29,6 +29,7 @@ DEPENDENCIES = (
 
 EXCLUDED_MODULES = (
     'conftest',
+    'migrations',
 )
 
 
