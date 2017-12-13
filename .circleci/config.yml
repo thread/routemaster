@@ -37,48 +37,9 @@ jobs:
           paths:
             - "venv"
 
-      # Setup the database
-      - run:
-          name: Install psql
-          command: sudo apt install postgresql-client
       - run:
           name: Wait for Database with Dockerize
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
-      - run:
-          name: Setup Database
-          command: |
-            psql --host=$PG_HOST --username=$PG_USER $PG_DB <<END_SQL
-            CREATE TABLE labels (
-            	name VARCHAR NOT NULL,
-            	state_machine VARCHAR NOT NULL,
-            	context JSONB,
-            	PRIMARY KEY (name, state_machine)
-            );
-            CREATE TABLE label_history (
-            	id SERIAL NOT NULL,
-            	label_name VARCHAR,
-            	label_state_machine VARCHAR,
-            	created TIMESTAMP WITHOUT TIME ZONE,
-            	forced BOOLEAN,
-            	old_state VARCHAR,
-            	new_state VARCHAR,
-            	PRIMARY KEY (id),
-            	FOREIGN KEY(label_name, label_state_machine) REFERENCES labels (name, state_machine)
-            );
-            CREATE TABLE state_machines (
-            	name VARCHAR NOT NULL,
-            	updated TIMESTAMP WITHOUT TIME ZONE,
-            	PRIMARY KEY (name)
-            );
-            CREATE TABLE states (
-            	name VARCHAR NOT NULL,
-            	state_machine VARCHAR NOT NULL,
-            	deprecated BOOLEAN,
-            	updated TIMESTAMP WITHOUT TIME ZONE,
-            	PRIMARY KEY (name, state_machine),
-            	FOREIGN KEY(state_machine) REFERENCES state_machines (name)
-            );
-            END_SQL
 
       # Run tox, caching the .tox directory
       - restore_cache:
