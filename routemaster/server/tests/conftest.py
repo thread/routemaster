@@ -14,6 +14,8 @@ TEST_CONFIG = Config(state_machines=[], database=DatabaseConfig(
     password=os.environ.get('PG_PASS', ''),
 ))
 
+print(f"Database config: {TEST_CONFIG}")
+
 
 @pytest.fixture()
 def app_client(test_client, loop):
