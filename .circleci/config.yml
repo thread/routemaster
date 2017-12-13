@@ -10,12 +10,12 @@ jobs:
           - PG_HOST=localhost
           - PG_PORT=5432
           - PG_DB=routemaster
-          - PG_USER=ubuntu
+          - PG_USER=routemaster
 
       # Ancilliary containers
       - image: postgres:9.6
         environment:
-          - POSTGRES_USER=ubuntu
+          - POSTGRES_USER=routemaster
           - POSTGRES_DB=routemaster
 
     steps:
@@ -39,12 +39,12 @@ jobs:
           name: Wait for Database with Dockerize
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
       - run:
-          name: Add Postgres binaries to $PATH
-          command: echo '/usr/lib/postgresql/9.6/bin/:$PATH' >> $BASH_ENV
+          name: Install psql
+          command: sudo apt install postgresql-client
       - run:
           name: Setup Database
           command: |
-            sudo -u $PG_USER psql -d $PG_DB <<END_SQL
+            psql --host=$PG_HOST --username=$PG_USER $PG_DB <<END_SQL
             CREATE TABLE labels (
             	name VARCHAR NOT NULL,
             	state_machine VARCHAR NOT NULL,
