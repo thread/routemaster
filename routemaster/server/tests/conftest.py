@@ -9,7 +9,7 @@ from routemaster.server import server
 TEST_DATABASE_CONFIG = DatabaseConfig(
     host=os.environ.get('PG_HOST', 'localhost'),
     port=os.environ.get('PG_PORT', 5432),
-    name=os.environ.get('PG_DB', 'routemaster'),
+    name=os.environ.get('PG_DB', 'routemaster_test'),
     username=os.environ.get('PG_USER', ''),
     password=os.environ.get('PG_PASS', ''),
 )
