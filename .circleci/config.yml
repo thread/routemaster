@@ -4,16 +4,20 @@ jobs:
   build:
     working_directory: ~/routemaster
     docker:
+      # First container is where our steps run.
       - image: circleci/python:3.6.3
         environment:
           - PG_HOST=localhost
           - PG_PORT=5432
           - PG_DB=routemaster
           - PG_USER=ubuntu
+
+      # Ancilliary containers
       - image: postgres:9.6
         environment:
           - POSTGRES_USER=ubuntu
           - POSTGRES_DB=routemaster
+
     steps:
       - checkout
 
@@ -31,7 +35,20 @@ jobs:
             - "venv"
 
       # Setup the database
-      - run: echo '/usr/lib/postgresql/9.6/bin/:$PATH' >> $BASH_ENV
+      - run:
+          name: Install Dockerize Utility
+          command: |
+            wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+            tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+            rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.3.0
+      - run:
+          name: Wait for Database with Dockerize
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+      - run:
+          name: Add Postgres binaries to $PATH
+          command: echo '/usr/lib/postgresql/9.6/bin/:$PATH' >> $BASH_ENV
       - run:
           name: Setup Database
           command: |
