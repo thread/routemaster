@@ -6,7 +6,9 @@ from sqlalchemy.engine import Engine
 from routemaster.config import DatabaseConfig
 
 
-def initialise_db(config: DatabaseConfig) -> Engine:
+def initialise_db(config: DatabaseConfig, *, asyncio: bool = True) -> Engine:
     """Initialise a database given the connection string."""
-    engine = create_engine(config.connstr, strategy=ASYNCIO_STRATEGY)
-    return engine
+    if asyncio:
+        return create_engine(config.connstr, strategy=ASYNCIO_STRATEGY)
+    else:
+        return create_engine(config.connstr)
