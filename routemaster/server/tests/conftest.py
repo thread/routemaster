@@ -1,7 +1,10 @@
 import os
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 
+from routemaster.db import metadata
 from routemaster.app import App
 from routemaster.config import Config, DatabaseConfig
 from routemaster.server import server
@@ -14,6 +17,7 @@ TEST_DATABASE_CONFIG = DatabaseConfig(
     password=os.environ.get('PG_PASS', ''),
 )
 TEST_CONFIG = Config(state_machines={}, database=TEST_DATABASE_CONFIG)
+TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
 
 @pytest.fixture()
@@ -34,3 +38,21 @@ def app_config() -> Config:
             database=kwargs.get('database', TEST_DATABASE_CONFIG)
         )
     return _create
+
+
+@pytest.yield_fixture(autouse=True, scope='session')
+def database_creation():
+    """Wrap test session in creating and destroying all required tables."""
+    metadata.create_all(bind=TEST_ENGINE)
+    yield
+    metadata.drop_all(bind=TEST_ENGINE)
+
+
+@pytest.yield_fixture(autouse=True)
+def database_clear():
+    """Truncate all tables after each test."""
+    yield
+    import time; time.sleep(10)
+    with TEST_ENGINE.begin() as conn:
+        for table in metadata.tables:
+            conn.execute(f'truncate table {table} cascade')
