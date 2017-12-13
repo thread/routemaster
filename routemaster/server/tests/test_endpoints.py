@@ -51,3 +51,12 @@ async def test_create_label(app_client, app_config):
         data=json.dumps({'bar': 'baz'}),
     )
     assert response.status == 201
+
+
+async def test_create_label_404_for_not_found_state_machine(app_client):
+    client = await app_client()
+    response = await client.post(
+        '/state-machines/nonexistent_machine/labels/foo',
+        data=json.dumps({'bar': 'baz'}),
+    )
+    assert response.status == 404
