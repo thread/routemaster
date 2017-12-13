@@ -28,10 +28,10 @@ async def get_labels(request, state_machine_name):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label:string>',
+    '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
     methods=['GET'],
 )
-async def get_label(request, state_machine_name, label):
+async def get_label(request, state_machine_name, label_name):
     """
     Get a label within a given state machine.
 
@@ -45,10 +45,10 @@ async def get_label(request, state_machine_name, label):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label:string>',
+    '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
     methods=['POST'],
 )
-async def create_label(request, state_machine_name, label):
+async def create_label(request, state_machine_name, label_name):
     """
     Create a label with a given context, and start it in the state machine.
 
@@ -64,10 +64,10 @@ async def create_label(request, state_machine_name, label):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label:string>/update',
+    '/state-machines/<state_machine_name:string>/labels/<label_name:string>/update', # noqa
     methods=['POST'],
 )
-async def update_label(request, state_machine_name, label):
+async def update_label(request, state_machine_name, label_name):
     """
     Update a label in a state machine.
 
@@ -85,10 +85,10 @@ async def update_label(request, state_machine_name, label):
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label:string>',
+    '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
     methods=['DELETE'],
 )
-async def delete_label(request, state_machine_name, label):
+async def delete_label(request, state_machine_name, label_name):
     """
     Delete a label in a state machine.
 
