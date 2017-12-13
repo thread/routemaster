@@ -2,6 +2,7 @@
 
 from sanic import Sanic
 from sanic.response import json as json_response
+from sanic.exceptions import NotFound
 
 from routemaster.db import Label
 
@@ -62,7 +63,21 @@ async def create_label(request, state_machine_name, label_name):
 
     Successful return codes return the full created context for the label.
     """
-    return json_response({'success': True}, status=201)
+    app = server.config.app
+
+    try:
+        state_machine = app.config.state_machines[state_machine_name]
+    except KeyError as k:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        raise NotFound(msg) from k
+
+    async with server.config.app.db.begin() as conn:
+        await conn.execute(Label.insert().values(
+            name=label_name,
+            state_machine=state_machine.name,
+            context={},
+        ))
+        return json_response({}, status=201)
 
 
 @server.route(
