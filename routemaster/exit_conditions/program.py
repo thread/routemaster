@@ -1,6 +1,7 @@
 """Top-level utility for exit condition programs."""
 
 import typing
+import datetime
 
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.analysis import find_accessed_keys
@@ -13,16 +14,22 @@ from routemaster.exit_conditions.error_display import (
 
 
 class _ProgramContext(object):
-    def __init__(self, *, variables, time_elapsed):
+    def __init__(self, *, variables, now):
+        if now.tzinfo is None:
+            raise ValueError(
+                "Cannot evaluate exit conditions with naive datetimes",
+            )
+
         self.variables = variables
-        self.time_elapsed = time_elapsed
+        self.now = now
 
     def lookup(self, key):
         return self.variables.get('.'.join(key))
 
     def property_handler(self, property_name, value, **kwargs):
         if property_name == ('passed',):
-            return self.time_elapsed > value
+            epoch = kwargs['since']
+            return (self.now - epoch).total_seconds() >= value
         if property_name == ('defined',):
             return value is not None
         if property_name == () and 'in' in kwargs:
@@ -61,12 +68,12 @@ class ExitConditionProgram(object):
     def run(
         self,
         variables: typing.Mapping[str, typing.Any],
-        time_elapsed: int,
+        now: datetime.datetime,
     ) -> bool:
         """Evaluate this program with a given context."""
         context = _ProgramContext(
             variables=variables,
-            time_elapsed=time_elapsed,
+            now=now,
         )
 
         return evaluate(
