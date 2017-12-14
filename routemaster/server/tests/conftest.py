@@ -23,20 +23,22 @@ TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 @pytest.fixture()
 def app_client(test_client):
     """Create a test client for the server running under an app config."""
-    def _create_client(config=TEST_CONFIG):
-        server.config.app = App(config)
+    def _create_client(app=None):
+        if app is None:
+            app = app_factory()()
+        server.config.app = app
         return test_client(server)
     return _create_client
 
 
 @pytest.fixture()
-def app_config() -> Config:
-    """Create a config, prefilled with test defaults."""
+def app_factory() -> Config:
+    """Create an app, prefilled with test defaults."""
     def _create(**kwargs):
-        return Config(
+        return App(Config(
             state_machines=kwargs.get('state_machines', {}),
             database=kwargs.get('database', TEST_DATABASE_CONFIG)
-        )
+        ))
     return _create
 
 
