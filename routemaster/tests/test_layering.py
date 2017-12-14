@@ -22,10 +22,12 @@ DEPENDENCIES = (
     ('config', 'exit_conditions'),
     ('db', 'config'),
     ('validation', 'config'),
-    ('server', 'db'),
 
     ('app', 'db'),
     ('app', 'config'),
+
+    ('server', 'db'),
+    ('server', 'utils'),
 )
 
 EXCLUDED_MODULES = (
