@@ -67,12 +67,10 @@ def app_client(test_client):
 def app_factory() -> Config:
     """Create an app, prefilled with test defaults."""
     def _create(**kwargs):
-        a =  App(Config(
+        return App(Config(
             state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
             database=kwargs.get('database', TEST_DATABASE_CONFIG)
         ))
-        print(a.config)
-        return a
     return _create
 
 
