@@ -2,8 +2,8 @@
 
 from sanic import Sanic
 from sqlalchemy import and_
-from sqlalchemy.sql import select
 from sanic.response import json as json_response
+from sqlalchemy.sql import select
 from sanic.exceptions import NotFound
 
 from routemaster.db import Label
