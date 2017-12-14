@@ -21,6 +21,8 @@ DEPENDENCIES = (
 
     ('config', 'exit_conditions'),
     ('db', 'config'),
+
+    ('validation', 'app'),
     ('validation', 'config'),
 
     ('app', 'db'),
