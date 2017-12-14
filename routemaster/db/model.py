@@ -16,7 +16,7 @@ metadata = MetaData()
 
 
 """The representation of the state of a label."""
-Label = Table(
+labels = Table(
     'labels',
     metadata,
     Column('name', String, primary_key=True),
@@ -26,8 +26,8 @@ Label = Table(
 
 
 """Represents history of state transitions for a label."""
-History = Table(
-    'label_history',
+history = Table(
+    'history',
     metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
 
@@ -71,7 +71,7 @@ We serialise versions of the configuration into the database so that:
 - The structure of the state machines can be exported to a data warehouse.
 - We don't rely on stringly-typed fields in rest of the data model.
 """
-StateMachine = Table(
+state_machines = Table(
     'state_machines',
     metadata,
 
@@ -81,7 +81,7 @@ StateMachine = Table(
 
 
 """Represents a state in a state machine."""
-State = Table(
+states = Table(
     'states',
     metadata,
     Column('name', String, primary_key=True),

@@ -1,13 +1,19 @@
 """Public Database interface."""
 
-from routemaster.db.model import Label, State, History, StateMachine, metadata
+from routemaster.db.model import (
+    labels,
+    states,
+    history,
+    metadata,
+    state_machines,
+)
 from routemaster.db.initialisation import initialise_db
 
 __all__ = (
-    'Label',
-    'State',
-    'History',
+    'labels',
+    'states',
+    'history',
     'metadata',
-    'StateMachine',
+    'state_machines',
     'initialise_db',
 )

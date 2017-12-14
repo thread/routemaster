@@ -4,7 +4,7 @@ from typing import Any, Dict
 import pytest
 from sqlalchemy import create_engine
 
-from routemaster.db import Label, metadata
+from routemaster.db import labels, metadata
 from routemaster.app import App
 from routemaster.config import (
     Gate,
@@ -97,7 +97,7 @@ def create_label(app_factory):
 
     async def _create(name: str, state_machine: str, context: Dict[str, Any]):
         async with app.db.begin() as conn:
-            await conn.execute(Label.insert().values(
+            await conn.execute(labels.insert().values(
                 name=name,
                 state_machine=state_machine,
                 context=context,

@@ -1,6 +1,6 @@
 import json
 
-from routemaster.db import Label, History
+from routemaster.db import labels, history
 
 
 async def test_root(app_client, create_label):
@@ -32,8 +32,8 @@ async def test_create_label(app_client, app_factory):
     assert response_json == {'bar': 'baz'}
 
     async with app.db.begin() as conn:
-        assert await conn.scalar(Label.count()) == 1
-        result = await conn.execute(Label.select())
+        assert await conn.scalar(labels.count()) == 1
+        result = await conn.execute(labels.select())
         label = await result.fetchone()
         assert label.name == label_name
         assert label.state_machine == state_machine_name
@@ -73,7 +73,7 @@ async def test_update_label(app_client, app_factory, create_label):
     assert response_json == label_context
 
     async with app.db.begin() as conn:
-        result = await conn.execute(Label.select())
+        result = await conn.execute(labels.select())
         label = await result.fetchone()
         assert label.context == label_context
 
