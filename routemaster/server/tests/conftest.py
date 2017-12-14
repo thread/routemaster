@@ -1,13 +1,22 @@
 import os
+from typing import Any, Dict
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 
-from routemaster.db import metadata
+from routemaster.db import Label, metadata
 from routemaster.app import App
-from routemaster.config import Config, DatabaseConfig
+from routemaster.config import (
+    Gate,
+    Config,
+    NoNextStates,
+    StateMachine,
+    ContextTrigger,
+    DatabaseConfig,
+    ConstantNextState,
+)
 from routemaster.server import server
+from routemaster.exit_conditions import ExitConditionProgram
 
 TEST_DATABASE_CONFIG = DatabaseConfig(
     host=os.environ.get('PG_HOST', 'localhost'),
@@ -16,7 +25,30 @@ TEST_DATABASE_CONFIG = DatabaseConfig(
     username=os.environ.get('PG_USER', ''),
     password=os.environ.get('PG_PASS', ''),
 )
-TEST_CONFIG = Config(state_machines={}, database=TEST_DATABASE_CONFIG)
+
+TEST_STATE_MACHINES = {
+    'test_machine': StateMachine(
+        name='test_machine',
+        states=[
+            Gate(
+                name='start',
+                triggers=[
+                    ContextTrigger(context_path='should_progress'),
+                ],
+                next_states=ConstantNextState(state='end'),
+                exit_condition=ExitConditionProgram('should_progress = true'),
+            ),
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    ),
+}
+print(TEST_STATE_MACHINES)
+
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
 
@@ -35,10 +67,12 @@ def app_client(test_client):
 def app_factory() -> Config:
     """Create an app, prefilled with test defaults."""
     def _create(**kwargs):
-        return App(Config(
-            state_machines=kwargs.get('state_machines', {}),
+        a =  App(Config(
+            state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
             database=kwargs.get('database', TEST_DATABASE_CONFIG)
         ))
+        print(a.config)
+        return a
     return _create
 
 
@@ -57,3 +91,19 @@ def database_clear():
     with TEST_ENGINE.begin() as conn:
         for table in metadata.tables:
             conn.execute(f'truncate table {table} cascade')
+
+
+@pytest.fixture()
+def create_label(app_factory):
+    """Create a label in the database."""
+    app = app_factory()
+
+    async def _create(name: str, state_machine: str, context: Dict[str, Any]):
+        async with app.db.begin() as conn:
+            await conn.execute(Label.insert().values(
+                name=name,
+                state_machine=state_machine,
+                context=context,
+            ))
+
+    return _create

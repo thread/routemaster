@@ -1,38 +1,6 @@
 import json
 
-import pytest
-
-from routemaster.config import (
-    Gate,
-    NoNextStates,
-    StateMachine,
-    ContextTrigger,
-    ConstantNextState,
-)
 from routemaster.db import Label, History
-from routemaster.exit_conditions import ExitConditionProgram
-
-TEST_STATE_MACHINES = {
-    'test_machine': StateMachine(
-        name='test_machine',
-        states=[
-            Gate(
-                name='start',
-                triggers=[
-                    ContextTrigger(context_path='should_progress'),
-                ],
-                next_states=ConstantNextState(state='end'),
-                exit_condition=ExitConditionProgram('should_progress = true'),
-            ),
-            Gate(
-                name='end',
-                triggers=[],
-                next_states=NoNextStates(),
-                exit_condition=ExitConditionProgram('false'),
-            ),
-        ],
-    ),
-}
 
 
 async def test_root(app_client):
@@ -40,17 +8,18 @@ async def test_root(app_client):
     response = await client.get('/')
     data = await response.json()
     assert data == {
-        'state_machines': 0,
+        'state_machines': 1,
         'labels': 0,
     }
 
 
 async def test_create_label(app_client, app_factory):
+    app = app_factory()
+
     label_name = 'foo'
-    state_machine_name = 'test_machine'
+    state_machine_name = list(app.config.state_machines.keys())[0]
     label_context = {'bar': 'baz'}
 
-    app = app_factory(state_machines=TEST_STATE_MACHINES)
     client = await app_client(app)
     response = await client.post(
         f'/state-machines/{state_machine_name}/labels/{label_name}',
@@ -79,8 +48,8 @@ async def test_create_label_404_for_not_found_state_machine(app_client):
     assert response.status == 404
 
 
-async def test_create_label_400_for_invalid_body(app_client, app_factory):
-    client = await app_client(app_factory(state_machines=TEST_STATE_MACHINES))
+async def test_create_label_400_for_invalid_body(app_client):
+    client = await app_client()
     response = await client.post(
         '/state-machines/test_machine/labels/foo',
         data='not valid json',
