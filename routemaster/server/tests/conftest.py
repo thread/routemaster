@@ -47,7 +47,6 @@ TEST_STATE_MACHINES = {
         ],
     ),
 }
-print(TEST_STATE_MACHINES)
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
