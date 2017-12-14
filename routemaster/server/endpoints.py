@@ -1,10 +1,13 @@
 """Core API endpoints for routemaster service."""
 
 from sanic import Sanic
+from sqlalchemy import and_
+from sqlalchemy.sql import select
 from sanic.response import json as json_response
 from sanic.exceptions import NotFound
 
 from routemaster.db import Label
+from routemaster.utils import dict_merge
 
 server = Sanic('routemaster')
 
@@ -98,7 +101,32 @@ async def update_label(request, state_machine_name, label_name):
 
     Successful return codes return the full new context for a label.
     """
-    pass
+    app = server.config.app
+
+    context_field = Label.c.context
+    label_filter = and_(
+        Label.c.name == label_name,
+        Label.c.state_machine == state_machine_name,
+    )
+
+    async with app.db.begin() as conn:
+        result = await conn.execute(
+            select([context_field]).where(label_filter),
+        )
+        existing_context = await result.fetchone()
+        if not existing_context:
+            raise NotFound(
+                f"Label {label_name} in state machine '{state_machine_name}' "
+                f"does not exist."
+            )
+
+        new_context = dict_merge(existing_context[context_field], request.json)
+
+        await conn.execute(Label.update().where(label_filter).values(
+            context=new_context,
+        ))
+
+        return json_response(new_context, status=200)
 
 
 @server.route(

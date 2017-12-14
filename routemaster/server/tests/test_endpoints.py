@@ -55,3 +55,42 @@ async def test_create_label_400_for_invalid_body(app_client):
         data='not valid json',
     )
     assert response.status == 400
+
+
+async def test_update_label(app_client, app_factory, create_label):
+    app = app_factory()
+    await create_label('foo', 'test_machine', {})
+
+    label_context = {'bar': 'baz'}
+    client = await app_client()
+    response = await client.post(
+        '/state-machines/test_machine/labels/foo/update',
+        data=json.dumps(label_context),
+    )
+    response_json = await response.json()
+    assert response.status == 200
+    assert response_json == label_context
+
+    async with app.db.begin() as conn:
+        result = await conn.execute(Label.select())
+        label = await result.fetchone()
+        assert label.context == label_context
+
+
+async def test_update_label_404_for_not_found_label(app_client):
+    client = await app_client()
+    response = await client.post(
+        '/state-machines/test_machine/labels/foo/update',
+        data={'foo': 'bar'},
+    )
+    assert response.status == 404
+
+
+async def test_update_label_400_for_invalid_body(app_client, create_label):
+    await create_label('foo', 'test_machine', {})
+    client = await app_client()
+    response = await client.post(
+        '/state-machines/test_machine/labels/foo/update',
+        data='not valid json',
+    )
+    assert response.status == 400
