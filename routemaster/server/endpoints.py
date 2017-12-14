@@ -75,9 +75,9 @@ async def create_label(request, state_machine_name, label_name):
         await conn.execute(Label.insert().values(
             name=label_name,
             state_machine=state_machine.name,
-            context={},
+            context=request.json,
         ))
-        return json_response({}, status=201)
+        return json_response(request.json, status=201)
 
 
 @server.route(
