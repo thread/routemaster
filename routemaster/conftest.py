@@ -1,3 +1,5 @@
+"""Global test setup and fixtures."""
+
 import os
 from typing import Any, Dict
 
