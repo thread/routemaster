@@ -27,8 +27,8 @@ async def test_create_label(app_client, app_factory):
         data=json.dumps(label_context),
     )
 
-    response_json = await response.json()
     assert response.status == 201
+    response_json = await response.json()
     assert response_json == {'bar': 'baz'}
 
     async with app.db.begin() as conn:
@@ -68,8 +68,8 @@ async def test_update_label(app_client, app_factory, create_label):
         '/state-machines/test_machine/labels/foo/update',
         data=json.dumps(label_context),
     )
-    response_json = await response.json()
     assert response.status == 200
+    response_json = await response.json()
     assert response_json == label_context
 
     async with app.db.begin() as conn:
