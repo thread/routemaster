@@ -3,13 +3,14 @@ import json
 from routemaster.db import Label, History
 
 
-async def test_root(app_client):
+async def test_root(app_client, create_label):
+    await create_label('foo', 'test_machine', {})
     client = await app_client()
     response = await client.get('/')
     data = await response.json()
     assert data == {
         'state_machines': 1,
-        'labels': 0,
+        'labels': 1,
     }
 
 
