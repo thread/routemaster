@@ -22,7 +22,7 @@ from routemaster.exit_conditions import ExitConditionProgram
 
 TEST_DATABASE_CONFIG = DatabaseConfig(
     host=os.environ.get('PG_HOST', 'localhost'),
-    port=os.environ.get('PG_PORT', 5432),
+    port=int(os.environ.get('PG_PORT', 5432)),
     name=os.environ.get('PG_DB', 'routemaster_test'),
     username=os.environ.get('PG_USER', ''),
     password=os.environ.get('PG_PASS', ''),
@@ -65,7 +65,7 @@ def app_client(test_client):
 
 
 @pytest.fixture()
-def app_factory() -> Config:
+def app_factory():
     """Create an app, prefilled with test defaults."""
     def _create(**kwargs):
         return App(Config(
