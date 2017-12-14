@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 
 from routemaster.config import load_config
-from routemaster.db import Base, initialise_db
+from routemaster.db import metadata as routemaster_metadata, initialise_db
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,7 +15,7 @@ config = context.config
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = routemaster_metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
