@@ -77,3 +77,12 @@ async def test_create_label_404_for_not_found_state_machine(app_client):
         data=json.dumps({'bar': 'baz'}),
     )
     assert response.status == 404
+
+
+async def test_create_label_400_for_invalid_body(app_client, app_factory):
+    client = await app_client(app_factory(state_machines=TEST_STATE_MACHINES))
+    response = await client.post(
+        '/state-machines/test_machine/labels/foo',
+        data='not valid json',
+    )
+    assert response.status == 400

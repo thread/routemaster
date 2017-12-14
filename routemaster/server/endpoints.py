@@ -71,7 +71,7 @@ async def create_label(request, state_machine_name, label_name):
         msg = f"State machine '{state_machine_name}' does not exist"
         raise NotFound(msg) from k
 
-    async with server.config.app.db.begin() as conn:
+    async with app.db.begin() as conn:
         await conn.execute(Label.insert().values(
             name=label_name,
             state_machine=state_machine.name,
