@@ -54,6 +54,29 @@ def test_disconnected_state_machine_invalid(app_config):
         validate(app_config, state_machine)
 
 
+def test_no_path_from_start_to_end_state_machine_invalid():
+    state_machine = StateMachine(
+        name='example',
+        states=[
+            Gate(
+                name='start',
+                triggers=[],
+                next_states=ConstantNextState(state='start'),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError):
+        validate(state_machine)
+
+
 def test_nonexistent_node_destination_invalid(app_config):
     state_machine = StateMachine(
         name='example',
