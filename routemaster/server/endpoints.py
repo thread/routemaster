@@ -47,7 +47,23 @@ async def get_label(request, state_machine_name, label_name):
 
     Successful return codes return the full context for the label.
     """
-    pass
+    app = server.config.app
+
+    async with app.db.begin() as conn:
+        result = await conn.execute(
+            select([Label.c.context]).where(and_(
+                Label.c.name == label_name,
+                Label.c.state_machine == state_machine_name,
+            )),
+        )
+        context = await result.fetchone()
+        if not context:
+            raise NotFound(
+                f"Label {label_name} in state machine '{state_machine_name}' "
+                f"does not exist."
+            )
+
+        return json_response(context[Label.c.context], status=200)
 
 
 @server.route(

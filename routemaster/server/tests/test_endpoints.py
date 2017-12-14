@@ -95,3 +95,12 @@ async def test_update_label_400_for_invalid_body(app_client, create_label):
         data='not valid json',
     )
     assert response.status == 400
+
+
+async def test_get_label(app_client, create_label):
+    await create_label('foo', 'test_machine', {'bar': 'baz'})
+    client = await app_client()
+    response = await client.get('/state-machines/test_machine/labels/foo')
+    assert response.status == 200
+    response_json = await response.json()
+    assert response_json == {'bar': 'baz'}
