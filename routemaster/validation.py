@@ -7,11 +7,11 @@ from routemaster.app import App
 from routemaster.config import StateMachine
 
 
-async def validate(app: App, state_machine: StateMachine):
+def validate(app: App, state_machine: StateMachine):
     """Validate that a given state machine is internally consistent."""
     _validate_route_start_to_end(state_machine)
     _validate_all_states_exist(state_machine)
-    await _validate_no_labels_in_nonexistent_states(state_machine, app)
+    _validate_no_labels_in_nonexistent_states(state_machine, app)
 
 
 def _build_graph(state_machine: StateMachine) -> networkx.Graph:
@@ -37,9 +37,9 @@ def _validate_all_states_exist(state_machine):
                 raise ValueError(f"{destination_name} does not exist")
 
 
-async def _validate_no_labels_in_nonexistent_states(state_machine, app):
+def _validate_no_labels_in_nonexistent_states(state_machine, app):
     states = [x.name for x in state_machine.states]
-    async with app.db.begin() as conn:
+    with app.db.begin() as conn:
         current_states = history.select(
             history.c.label_name,
             history.c.state_machine_name,
@@ -61,7 +61,7 @@ async def _validate_no_labels_in_nonexistent_states(state_machine, app):
             ),
         )
 
-        result = await conn.scalar(labels_in_invalid_states)
-        count = await result.fetchone()
+        result = conn.scalar(labels_in_invalid_states)
+        count = result.fetchone()
         if count != 0:
             raise ValueError(f"{count} nodes in states that no longer exist")

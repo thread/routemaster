@@ -41,7 +41,6 @@ setup(
         'sanic',
         'psycopg2',
         'sqlalchemy',
-        'sqlalchemy_aio',
     ),
 
     setup_requires=(

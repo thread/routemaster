@@ -11,11 +11,11 @@ server = Sanic('routemaster')
 
 
 @server.route('/', methods=['GET'])
-async def status(request):
+def status(request):
     """Status check endpoint."""
     try:
-        async with server.config.app.db.begin() as conn:
-            await conn.execute('select 1')
+        with server.config.app.db.begin() as conn:
+            conn.execute('select 1')
             return json_response({'status': 'ok'})
     except Exception:
         return json_response({'status': 'Could not connect to database'})
@@ -25,7 +25,7 @@ async def status(request):
     '/state-machines/<state_machine_name:string>/labels',
     methods=['GET'],
 )
-async def get_labels(request, state_machine_name):
+def get_labels(request, state_machine_name):
     """List the labels in a state machine."""
     pass
 
@@ -34,7 +34,7 @@ async def get_labels(request, state_machine_name):
     '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
     methods=['GET'],
 )
-async def get_label(request, state_machine_name, label_name):
+def get_label(request, state_machine_name, label_name):
     """
     Get a label within a given state machine.
 
@@ -48,7 +48,7 @@ async def get_label(request, state_machine_name, label_name):
     label = Label(label_name, state_machine_name)
 
     try:
-        context = await state_machine.get_label_context(app, label)
+        context = state_machine.get_label_context(app, label)
     except UnknownLabel:
         raise NotFound(
             f"Label {label.name} in state machine '{label.state_machine}' "
@@ -61,7 +61,7 @@ async def get_label(request, state_machine_name, label_name):
     '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
     methods=['POST'],
 )
-async def create_label(request, state_machine_name, label_name):
+def create_label(request, state_machine_name, label_name):
     """
     Create a label with a given context, and start it in the state machine.
 
@@ -88,7 +88,7 @@ async def create_label(request, state_machine_name, label_name):
     '/state-machines/<state_machine_name:string>/labels/<label_name:string>/update', # noqa
     methods=['POST'],
 )
-async def update_label(request, state_machine_name, label_name):
+def update_label(request, state_machine_name, label_name):
     """
     Update a label in a state machine.
 
@@ -123,7 +123,7 @@ async def update_label(request, state_machine_name, label_name):
     '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
     methods=['DELETE'],
 )
-async def delete_label(request, state_machine_name, label_name):
+def delete_label(request, state_machine_name, label_name):
     """
     Delete a label in a state machine.
 

@@ -97,9 +97,9 @@ def create_label(app_factory):
     """Create a label in the database."""
     app = app_factory()
 
-    async def _create(name: str, state_machine: str, context: Dict[str, Any]):
-        async with app.db.begin() as conn:
-            await conn.execute(labels.insert().values(
+    def _create(name: str, state_machine: str, context: Dict[str, Any]):
+        with app.db.begin() as conn:
+            conn.execute(labels.insert().values(
                 name=name,
                 state_machine=state_machine,
                 context=context,
