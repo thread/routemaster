@@ -3,6 +3,7 @@
 import datetime
 from typing import Any, Dict, List, Union, Mapping, Iterable, NamedTuple
 
+from routemaster.utils import get_path
 from routemaster.exit_conditions import ExitConditionProgram
 
 
@@ -56,11 +57,6 @@ class ContextNextStates(NamedTuple):
 
     def next_state_for_label(self, label_context: Any) -> str:
         """Returns next state based on context value at `self.path`."""
-        def get_path(path, d):
-            component = path.pop()
-            if path:
-                return get_path(path, d[component])
-            return d[component]
         val = get_path(self.path.split('.'), label_context)
         for destination in self.destinations:
             if destination.value == val:

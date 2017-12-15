@@ -1,4 +1,5 @@
 """Shared utilities."""
+from typing import Any, Dict, Sequence
 
 
 def dict_merge(d1, d2):
@@ -33,3 +34,11 @@ def is_list_prefix(l1, l2):
             return False
 
     return True
+
+
+def get_path(path: Sequence[str], d: Dict[str, Any]) -> Any:
+    """Get the path from the dict."""
+    component, rest = path[0], path[1:]
+    if rest:
+        return get_path(rest, d.get(component, {}))
+    return d.get(component)
