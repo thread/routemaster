@@ -40,7 +40,9 @@ TEST_STATE_MACHINES = {
                     ContextTrigger(context_path='should_progress'),
                 ],
                 next_states=ConstantNextState(state='end'),
-                exit_condition=ExitConditionProgram('should_progress = true'),
+                exit_condition=ExitConditionProgram(
+                    'context.should_progress = true',
+                ),
             ),
             Gate(
                 name='end',
