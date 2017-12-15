@@ -19,15 +19,24 @@ DEPENDENCIES = (
     ('cli', 'server'),
     ('cli', 'app'),
 
+    ('exit_conditions', 'utils'),
+
     ('config', 'exit_conditions'),
+    ('config', 'utils'),
     ('db', 'config'),
+
+    ('validation', 'app'),
     ('validation', 'config'),
 
     ('app', 'db'),
     ('app', 'config'),
 
-    ('server', 'db'),
-    ('server', 'utils'),
+    ('server', 'state_machine'),
+
+    ('state_machine', 'app'),
+    ('state_machine', 'db'),
+    ('state_machine', 'utils'),
+    ('state_machine', 'config'),
 )
 
 EXCLUDED_MODULES = (

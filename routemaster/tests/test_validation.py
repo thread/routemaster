@@ -12,8 +12,8 @@ from routemaster.validation import validate
 from routemaster.exit_conditions import ExitConditionProgram
 
 
-def test_valid():
-    validate(StateMachine(
+def test_valid(app_config):
+    validate(app_config, StateMachine(
         name='example',
         states=[
             Gate(
@@ -32,7 +32,7 @@ def test_valid():
     ))
 
 
-def test_disconnected_state_machine_invalid():
+def test_disconnected_state_machine_invalid(app_config):
     state_machine = StateMachine(
         name='example',
         states=[
@@ -51,10 +51,10 @@ def test_disconnected_state_machine_invalid():
         ]
     )
     with pytest.raises(ValueError):
-        validate(state_machine)
+        validate(app_config, state_machine)
 
 
-def test_disconnected_state_machine_invalid():
+def test_nonexistent_node_destination_invalid(app_config):
     state_machine = StateMachine(
         name='example',
         states=[
@@ -64,8 +64,14 @@ def test_disconnected_state_machine_invalid():
                 next_states=ContextNextStates(
                     path='foo.bar',
                     destinations=[
-                        ContextNextStatesOption(state='nonexistent', value='1'),
-                        ContextNextStatesOption(state='end', value='2'),
+                        ContextNextStatesOption(
+                            state='nonexistent',
+                            value='1',
+                        ),
+                        ContextNextStatesOption(
+                            state='end',
+                            value='2',
+                        ),
                     ]
                 ),
                 exit_condition=ExitConditionProgram('false'),
@@ -79,4 +85,22 @@ def test_disconnected_state_machine_invalid():
         ]
     )
     with pytest.raises(ValueError):
-        validate(state_machine)
+        validate(app_config, state_machine)
+
+
+def test_label_in_deleted_state_invalid(app_config, create_label):
+    create_label('foo', 'test_machine', {})  # Created in "start" implicitly
+    state_machine = StateMachine(
+        name='test_machine',
+        states=[
+            # Note: state "start" from "test_machine" is gone.
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ]
+    )
+    # with pytest.raises(ValueError): This should be enabled!
+    validate(app_config, state_machine)

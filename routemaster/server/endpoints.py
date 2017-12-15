@@ -1,43 +1,38 @@
 """Core API endpoints for routemaster service."""
 
-from sanic import Sanic
-from sqlalchemy import and_
-from sanic.response import json as json_response
-from sqlalchemy.sql import select
-from sanic.exceptions import NotFound
+from flask import Flask, abort, jsonify, request
 
-from routemaster.db import labels
-from routemaster.utils import dict_merge
+from routemaster import state_machine
+from routemaster.state_machine import Label, UnknownLabel, UnknownStateMachine
 
-server = Sanic('routemaster')
+server = Flask('routemaster')
 
 
 @server.route('/', methods=['GET'])
-async def status(request):
+def status():
     """Status check endpoint."""
-    async with server.config.app.db.begin() as conn:
-        num_labels = await conn.scalar(labels.count())
-        num_state_machines = len(server.config.app.config.state_machines)
-        return json_response({
-            'labels': num_labels,
-            'state_machines': num_state_machines,
-        })
+    try:
+        with server.config.app.db.begin() as conn:
+            conn.execute('select 1')
+            return jsonify({'status': 'ok'})
+    except Exception:
+        return jsonify({'status': 'Could not connect to database'})
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels',
+    '/state-machines/<state_machine_name>/labels',
     methods=['GET'],
 )
-async def get_labels(request, state_machine_name):
+def get_labels(state_machine_name):
     """List the labels in a state machine."""
     pass
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
+    '/state-machines/<state_machine_name>/labels/<label_name>',
     methods=['GET'],
 )
-async def get_label(request, state_machine_name, label_name):
+def get_label(state_machine_name, label_name):
     """
     Get a label within a given state machine.
 
@@ -48,29 +43,24 @@ async def get_label(request, state_machine_name, label_name):
     Successful return codes return the full context for the label.
     """
     app = server.config.app
+    label = Label(label_name, state_machine_name)
 
-    async with app.db.begin() as conn:
-        result = await conn.execute(
-            select([labels.c.context]).where(and_(
-                labels.c.name == label_name,
-                labels.c.state_machine == state_machine_name,
-            )),
+    try:
+        context = state_machine.get_label_context(app, label)
+    except UnknownLabel:
+        abort(
+            404,
+            f"Label {label.name} in state machine '{label.state_machine}' "
+            f"does not exist.",
         )
-        context = await result.fetchone()
-        if not context:
-            raise NotFound(
-                f"Label {label_name} in state machine '{state_machine_name}' "
-                f"does not exist."
-            )
-
-        return json_response(context[labels.c.context], status=200)
+    return jsonify(context)
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
+    '/state-machines/<state_machine_name>/labels/<label_name>',
     methods=['POST'],
 )
-async def create_label(request, state_machine_name, label_name):
+def create_label(state_machine_name, label_name):
     """
     Create a label with a given context, and start it in the state machine.
 
@@ -83,27 +73,22 @@ async def create_label(request, state_machine_name, label_name):
     Successful return codes return the full created context for the label.
     """
     app = server.config.app
+    label = Label(label_name, state_machine_name)
+    data = request.get_json()
 
     try:
-        state_machine = app.config.state_machines[state_machine_name]
-    except KeyError as k:
+        context = state_machine.create_label(app, label, data)
+        return jsonify(context), 201
+    except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
-        raise NotFound(msg) from k
-
-    async with app.db.begin() as conn:
-        await conn.execute(labels.insert().values(
-            name=label_name,
-            state_machine=state_machine.name,
-            context=request.json,
-        ))
-        return json_response(request.json, status=201)
+        raise abort(404, msg)
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label_name:string>/update', # noqa
+    '/state-machines/<state_machine_name>/labels/<label_name>/update', # noqa
     methods=['POST'],
 )
-async def update_label(request, state_machine_name, label_name):
+def update_label(state_machine_name, label_name):
     """
     Update a label in a state machine.
 
@@ -118,38 +103,28 @@ async def update_label(request, state_machine_name, label_name):
     Successful return codes return the full new context for a label.
     """
     app = server.config.app
+    label = Label(label_name, state_machine_name)
 
-    context_field = labels.c.context
-    label_filter = and_(
-        labels.c.name == label_name,
-        labels.c.state_machine == state_machine_name,
-    )
-
-    async with app.db.begin() as conn:
-        result = await conn.execute(
-            select([context_field]).where(label_filter),
+    try:
+        new_context = state_machine.update_context_for_label(
+            app,
+            label,
+            request.get_json(),
         )
-        existing_context = await result.fetchone()
-        if not existing_context:
-            raise NotFound(
-                f"Label {label_name} in state machine '{state_machine_name}' "
-                f"does not exist."
-            )
-
-        new_context = dict_merge(existing_context[context_field], request.json)
-
-        await conn.execute(labels.update().where(label_filter).values(
-            context=new_context,
-        ))
-
-        return json_response(new_context, status=200)
+        return jsonify(new_context)
+    except (UnknownLabel, UnknownStateMachine):
+        raise abort(
+            404,
+            f"Label {label_name} in state machine '{state_machine_name}' "
+            f"does not exist.",
+        )
 
 
 @server.route(
-    '/state-machines/<state_machine_name:string>/labels/<label_name:string>',
+    '/state-machines/<state_machine_name>/labels/<label_name>',
     methods=['DELETE'],
 )
-async def delete_label(request, state_machine_name, label_name):
+def delete_label(state_machine_name, label_name):
     """
     Delete a label in a state machine.
 

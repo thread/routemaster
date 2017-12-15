@@ -1,10 +1,13 @@
+"""Global test setup and fixtures."""
+
 import os
 from typing import Any, Dict
 
 import pytest
 from sqlalchemy import create_engine
 
-from routemaster.db import labels, metadata
+from routemaster import state_machine
+from routemaster.db import metadata
 from routemaster.app import App
 from routemaster.config import (
     Gate,
@@ -16,11 +19,12 @@ from routemaster.config import (
     ConstantNextState,
 )
 from routemaster.server import server
+from routemaster.state_machine import Label
 from routemaster.exit_conditions import ExitConditionProgram
 
 TEST_DATABASE_CONFIG = DatabaseConfig(
     host=os.environ.get('PG_HOST', 'localhost'),
-    port=os.environ.get('PG_PORT', 5432),
+    port=int(os.environ.get('PG_PORT', 5432)),
     name=os.environ.get('PG_DB', 'routemaster_test'),
     username=os.environ.get('PG_USER', ''),
     password=os.environ.get('PG_PASS', ''),
@@ -36,7 +40,9 @@ TEST_STATE_MACHINES = {
                     ContextTrigger(context_path='should_progress'),
                 ],
                 next_states=ConstantNextState(state='end'),
-                exit_condition=ExitConditionProgram('should_progress = true'),
+                exit_condition=ExitConditionProgram(
+                    'context.should_progress = true',
+                ),
             ),
             Gate(
                 name='end',
@@ -52,25 +58,19 @@ TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
 
 @pytest.fixture()
-def app_client(test_client):
-    """Create a test client for the server running under an app config."""
-    def _create_client(app=None):
-        if app is None:
-            app = app_factory()()
-        server.config.app = app
-        return test_client(server)
-    return _create_client
+def app(**kwargs):
+    """Create the Flask app for testing."""
+    server.config.app = app_config(**kwargs)
+    return server
 
 
 @pytest.fixture()
-def app_factory() -> Config:
-    """Create an app, prefilled with test defaults."""
-    def _create(**kwargs):
-        return App(Config(
-            state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
-            database=kwargs.get('database', TEST_DATABASE_CONFIG)
-        ))
-    return _create
+def app_config(**kwargs):
+    """Create an `App` config object for testing."""
+    return App(Config(
+        state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
+        database=kwargs.get('database', TEST_DATABASE_CONFIG)
+    ))
 
 
 @pytest.yield_fixture(autouse=True, scope='session')
@@ -91,16 +91,14 @@ def database_clear():
 
 
 @pytest.fixture()
-def create_label(app_factory):
+def create_label(app_config):
     """Create a label in the database."""
-    app = app_factory()
 
-    async def _create(name: str, state_machine: str, context: Dict[str, Any]):
-        async with app.db.begin() as conn:
-            await conn.execute(labels.insert().values(
-                name=name,
-                state_machine=state_machine,
-                context=context,
-            ))
+    def _create(name: str, state_machine_name: str, context: Dict[str, Any]):
+        return state_machine.create_label(
+            app_config,
+            Label(name, state_machine_name),
+            context,
+        )
 
     return _create
