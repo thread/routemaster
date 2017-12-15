@@ -23,6 +23,7 @@ Context = Dict[str, Any]
 
 
 def get_label_context(app: App, label: Label):
+    """Returns the context associated with a label."""
     with app.db.begin() as conn:
         result = conn.execute(
             select([labels.c.context]).where(and_(
@@ -37,6 +38,7 @@ def get_label_context(app: App, label: Label):
 
 
 def create_label(app: App, label: Label, context: Context):
+    """Creates a label and starts it in a state machine."""
     try:
         state_machine = app.config.state_machines[label.state_machine]
     except KeyError as k:
@@ -56,6 +58,11 @@ def _start_state_machine(label: Label):
 
 
 def update_context_for_label(app: App, label: Label, context: Context):
+    """
+    Updates the context for a label.
+
+    Moves the label through the state machine as appropriate.
+    """
     context_field = labels.c.context
     label_filter = and_(
         labels.c.name == label.name,
