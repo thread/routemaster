@@ -17,7 +17,9 @@ from routemaster.config import (
     DatabaseConfig,
     ConstantNextState,
 )
+from routemaster import state_machine
 from routemaster.server import server
+from routemaster.state_machine import Label
 from routemaster.exit_conditions import ExitConditionProgram
 
 TEST_DATABASE_CONFIG = DatabaseConfig(
@@ -90,12 +92,11 @@ def database_clear():
 def create_label(app_config):
     """Create a label in the database."""
 
-    def _create(name: str, state_machine: str, context: Dict[str, Any]):
-        with app_config.db.begin() as conn:
-            conn.execute(labels.insert().values(
-                name=name,
-                state_machine=state_machine,
-                context=context,
-            ))
+    def _create(name: str, state_machine_name: str, context: Dict[str, Any]):
+        return state_machine.create_label(
+            app_config,
+            Label(name, state_machine_name),
+            context,
+        )
 
     return _create
