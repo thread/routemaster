@@ -42,6 +42,7 @@ setup(
         'psycopg2',
         'sqlalchemy',
         'python-dateutil',
+        'alembic >=0.9.6',
     ),
 
     setup_requires=(
