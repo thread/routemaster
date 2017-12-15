@@ -1,7 +1,7 @@
 """Loading and validation of config files."""
 
 import datetime
-from typing import Any, Union, Mapping, Iterable, NamedTuple
+from typing import Any, List, Union, Mapping, Iterable, NamedTuple
 
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -105,7 +105,7 @@ State = Union[Action, Gate]
 class StateMachine(NamedTuple):
     """A state machine."""
     name: str
-    states: Iterable[State]
+    states: List[State]
 
 
 class DatabaseConfig(NamedTuple):
