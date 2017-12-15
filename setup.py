@@ -41,6 +41,7 @@ setup(
         'flask',
         'psycopg2',
         'sqlalchemy',
+        'python-dateutil',
     ),
 
     setup_requires=(
