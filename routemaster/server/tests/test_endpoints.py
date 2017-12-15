@@ -1,6 +1,6 @@
 import json
 
-from routemaster.db import labels
+from routemaster.db import labels, history
 
 
 def test_root(client, create_label):
@@ -10,11 +10,11 @@ def test_root(client, create_label):
 
 def test_create_label(client, app_config):
     label_name = 'foo'
-    state_machine_name = list(app_config.config.state_machines.keys())[0]
+    state_machine = list(app_config.config.state_machines.values())[0]
     label_context = {'bar': 'baz'}
 
     response = client.post(
-        f'/state-machines/{state_machine_name}/labels/{label_name}',
+        f'/state-machines/{state_machine.name}/labels/{label_name}',
         data=json.dumps(label_context),
         content_type='application/json',
     )
@@ -24,11 +24,15 @@ def test_create_label(client, app_config):
 
     with app_config.db.begin() as conn:
         assert conn.scalar(labels.count()) == 1
-        result = conn.execute(labels.select())
-        label = result.fetchone()
+        label = conn.execute(labels.select()).fetchone()
         assert label.name == label_name
-        assert label.state_machine == state_machine_name
+        assert label.state_machine == state_machine.name
         assert label.context == label_context
+
+        history_entry = conn.execute(history.select()).fetchone()
+        assert history_entry.label_name == label_name
+        assert history_entry.old_state is None
+        assert history_entry.new_state == state_machine.states[0].name
 
 
 def test_create_label_404_for_not_found_state_machine(client):

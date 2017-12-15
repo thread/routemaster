@@ -33,6 +33,7 @@ DEPENDENCIES = (
     ('state_machine', 'app'),
     ('state_machine', 'db'),
     ('state_machine', 'utils'),
+    ('state_machine', 'config'),
 )
 
 EXCLUDED_MODULES = (
