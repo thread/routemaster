@@ -38,7 +38,7 @@ setup(
         'click',
         'pyyaml',
         'jsonschema >=2.6',
-        'sanic',
+        'flask',
         'psycopg2',
         'sqlalchemy',
     ),

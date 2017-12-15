@@ -1,6 +1,8 @@
 """Global test setup and fixtures."""
 
 import os
+import json
+import functools
 from typing import Any, Dict
 
 import pytest
@@ -54,25 +56,19 @@ TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
 
 @pytest.fixture()
-def app_client(test_client):
-    """Create a test client for the server running under an app config."""
-    def _create_client(app=None):
-        if app is None:
-            app = app_factory()()
-        server.config.app = app
-        return test_client(server)
-    return _create_client
+def app(**kwargs):
+    """Create the Flask app for testing."""
+    server.config.app = app_config(**kwargs)
+    return server
 
 
 @pytest.fixture()
-def app_factory():
-    """Create an app, prefilled with test defaults."""
-    def _create(**kwargs):
-        return App(Config(
-            state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
-            database=kwargs.get('database', TEST_DATABASE_CONFIG)
-        ))
-    return _create
+def app_config(**kwargs):
+    """Create an `App` config object for testing."""
+    return App(Config(
+        state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
+        database=kwargs.get('database', TEST_DATABASE_CONFIG)
+    ))
 
 
 @pytest.yield_fixture(autouse=True, scope='session')
@@ -93,12 +89,11 @@ def database_clear():
 
 
 @pytest.fixture()
-def create_label(app_factory):
+def create_label(app_config):
     """Create a label in the database."""
-    app = app_factory()
 
     def _create(name: str, state_machine: str, context: Dict[str, Any]):
-        with app.db.begin() as conn:
+        with app_config.db.begin() as conn:
             conn.execute(labels.insert().values(
                 name=name,
                 state_machine=state_machine,

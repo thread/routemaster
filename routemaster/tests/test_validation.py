@@ -12,8 +12,8 @@ from routemaster.validation import validate
 from routemaster.exit_conditions import ExitConditionProgram
 
 
-def test_valid(app_factory):
-    validate(app_factory(), StateMachine(
+def test_valid(app_config):
+    validate(app_config, StateMachine(
         name='example',
         states=[
             Gate(
@@ -32,7 +32,7 @@ def test_valid(app_factory):
     ))
 
 
-def test_disconnected_state_machine_invalid(app_factory):
+def test_disconnected_state_machine_invalid(app_config):
     state_machine = StateMachine(
         name='example',
         states=[
@@ -51,10 +51,10 @@ def test_disconnected_state_machine_invalid(app_factory):
         ]
     )
     with pytest.raises(ValueError):
-        validate(app_factory(), state_machine)
+        validate(app_config, state_machine)
 
 
-def test_nonexistent_node_destination_invalid(app_factory):
+def test_nonexistent_node_destination_invalid(app_config):
     state_machine = StateMachine(
         name='example',
         states=[
@@ -85,10 +85,10 @@ def test_nonexistent_node_destination_invalid(app_factory):
         ]
     )
     with pytest.raises(ValueError):
-        validate(app_factory(), state_machine)
+        validate(app_config, state_machine)
 
 
-def test_label_in_deleted_state_invalid(app_factory, create_label):
+def test_label_in_deleted_state_invalid(app_config, create_label):
     # TODO
     create_label('foo', 'state_machine', {})
     state_machine = StateMachine(
@@ -121,4 +121,4 @@ def test_label_in_deleted_state_invalid(app_factory, create_label):
         ]
     )
     with pytest.raises(ValueError):
-        validate(app_factory(), state_machine)
+        validate(app_config, state_machine)

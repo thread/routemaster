@@ -63,14 +63,13 @@ def update_context_for_label(app: App, label: Label, context: Context):
     )
 
     with app.db.begin() as conn:
-        result = conn.execute(
+        existing_context = conn.scalar(
             select([context_field]).where(label_filter),
         )
-        existing_context = result.fetchone()
-        if not existing_context:
+        if existing_context is None:
             raise UnknownLabel(label)
 
-        new_context = dict_merge(existing_context[context_field], context)
+        new_context = dict_merge(existing_context, context)
 
         conn.execute(labels.update().where(label_filter).values(
             context=new_context,

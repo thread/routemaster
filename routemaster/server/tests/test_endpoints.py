@@ -3,31 +3,26 @@ import json
 from routemaster.db import labels
 
 
-def test_root(app_client, create_label):
-    client = app_client()
+def test_root(client, create_label):
     response = client.get('/')
-    data = response.json()
-    assert data == {'status': 'ok'}
+    assert response.json == {'status': 'ok'}
 
 
-def test_create_label(app_client, app_factory):
-    app = app_factory()
-
+def test_create_label(client, app_config):
     label_name = 'foo'
-    state_machine_name = list(app.config.state_machines.keys())[0]
+    state_machine_name = list(app_config.config.state_machines.keys())[0]
     label_context = {'bar': 'baz'}
 
-    client = app_client(app)
     response = client.post(
         f'/state-machines/{state_machine_name}/labels/{label_name}',
         data=json.dumps(label_context),
+        content_type='application/json',
     )
 
-    assert response.status == 201
-    response_json = response.json()
-    assert response_json == {'bar': 'baz'}
+    assert response.status_code == 201
+    assert response.json == {'bar': 'baz'}
 
-    with app.db.begin() as conn:
+    with app_config.db.begin() as conn:
         assert conn.scalar(labels.count()) == 1
         result = conn.execute(labels.select())
         label = result.fetchone()
@@ -36,67 +31,64 @@ def test_create_label(app_client, app_factory):
         assert label.context == label_context
 
 
-def test_create_label_404_for_not_found_state_machine(app_client):
-    client = app_client()
+def test_create_label_404_for_not_found_state_machine(client):
     response = client.post(
         '/state-machines/nonexistent_machine/labels/foo',
         data=json.dumps({'bar': 'baz'}),
+        content_type='application/json',
     )
-    assert response.status == 404
+    assert response.status_code == 404
 
 
-def test_create_label_400_for_invalid_body(app_client):
-    client = app_client()
+def test_create_label_400_for_invalid_body(client):
     response = client.post(
         '/state-machines/test_machine/labels/foo',
         data='not valid json',
+        content_type='application/json',
     )
-    assert response.status == 400
+    assert response.status_code == 400
 
 
-def test_update_label(app_client, app_factory, create_label):
-    app = app_factory()
+def test_update_label(client, app_config, create_label):
     create_label('foo', 'test_machine', {})
 
     label_context = {'bar': 'baz'}
-    client = app_client()
     response = client.post(
         '/state-machines/test_machine/labels/foo/update',
         data=json.dumps(label_context),
+        content_type='application/json',
     )
-    assert response.status == 200
-    response_json = response.json()
-    assert response_json == label_context
 
-    with app.db.begin() as conn:
+    assert response.status_code == 200
+    assert response.json == label_context
+
+    with app_config.db.begin() as conn:
         result = conn.execute(labels.select())
         label = result.fetchone()
         assert label.context == label_context
 
 
-def test_update_label_404_for_not_found_label(app_client):
-    client = app_client()
+def test_update_label_404_for_not_found_label(client):
     response = client.post(
         '/state-machines/test_machine/labels/foo/update',
-        data={'foo': 'bar'},
+        data=json.dumps({'foo': 'bar'}),
+        content_type='application/json',
     )
-    assert response.status == 404
+    assert response.status_code == 404
 
 
-def test_update_label_400_for_invalid_body(app_client, create_label):
+def test_update_label_400_for_invalid_body(client, create_label):
     create_label('foo', 'test_machine', {})
-    client = app_client()
     response = client.post(
         '/state-machines/test_machine/labels/foo/update',
         data='not valid json',
+        content_type='application/json',
     )
-    assert response.status == 400
+    assert response.status_code == 400
 
 
-def test_get_label(app_client, create_label):
+def test_get_label(client, create_label):
     create_label('foo', 'test_machine', {'bar': 'baz'})
-    client = app_client()
     response = client.get('/state-machines/test_machine/labels/foo')
-    assert response.status == 200
-    response_json = response.json()
-    assert response_json == {'bar': 'baz'}
+    assert response.status_code == 200
+    assert response.json == {'bar': 'baz'}
