@@ -3,6 +3,7 @@ pytest
 pytest-cov
 pytest-sanic
 pytest-sugar
+pytest-faulthandler
 fakeredis
 networkx
 mypy
