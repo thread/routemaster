@@ -112,7 +112,7 @@ def update_label(state_machine_name, label_name):
             request.get_json(),
         )
         return jsonify(new_context)
-    except UnknownLabel:
+    except (UnknownLabel, UnknownStateMachine):
         raise abort(
             404,
             f"Label {label_name} in state machine '{state_machine_name}' "
