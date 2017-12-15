@@ -1,13 +1,11 @@
 """Core API endpoints for routemaster service."""
 
 from sanic import Sanic
-from sqlalchemy import and_
 from sanic.response import json as json_response
-from sqlalchemy.sql import select
 from sanic.exceptions import NotFound
 
-from routemaster.db import labels
-from routemaster.utils import dict_merge
+from routemaster import state_machine
+from routemaster.state_machine import Label, UnknownLabel, UnknownStateMachine
 
 server = Sanic('routemaster')
 
@@ -15,13 +13,12 @@ server = Sanic('routemaster')
 @server.route('/', methods=['GET'])
 async def status(request):
     """Status check endpoint."""
-    async with server.config.app.db.begin() as conn:
-        num_labels = await conn.scalar(labels.count())
-        num_state_machines = len(server.config.app.config.state_machines)
-        return json_response({
-            'labels': num_labels,
-            'state_machines': num_state_machines,
-        })
+    try:
+        async with server.config.app.db.begin() as conn:
+            await conn.execute('select 1')
+            return json_response({'status': 'ok'})
+    except Exception:
+        return json_response({'status': 'Could not connect to database'})
 
 
 @server.route(
@@ -48,22 +45,16 @@ async def get_label(request, state_machine_name, label_name):
     Successful return codes return the full context for the label.
     """
     app = server.config.app
+    label = Label(label_name, state_machine_name)
 
-    async with app.db.begin() as conn:
-        result = await conn.execute(
-            select([labels.c.context]).where(and_(
-                labels.c.name == label_name,
-                labels.c.state_machine == state_machine_name,
-            )),
+    try:
+        context = await state_machine.get_label_context(app, label)
+    except UnknownLabel:
+        raise NotFound(
+            f"Label {label.name} in state machine '{label.state_machine}' "
+            f"does not exist."
         )
-        context = await result.fetchone()
-        if not context:
-            raise NotFound(
-                f"Label {label_name} in state machine '{state_machine_name}' "
-                f"does not exist."
-            )
-
-        return json_response(context[labels.c.context], status=200)
+    return json_response(context)
 
 
 @server.route(
@@ -83,20 +74,14 @@ async def create_label(request, state_machine_name, label_name):
     Successful return codes return the full created context for the label.
     """
     app = server.config.app
+    label = Label(label_name, state_machine_name)
 
     try:
-        state_machine = app.config.state_machines[state_machine_name]
-    except KeyError as k:
+        context = state_machine.create_label(app, label, request.json)
+        return json_response(context, status=201)
+    except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
-        raise NotFound(msg) from k
-
-    async with app.db.begin() as conn:
-        await conn.execute(labels.insert().values(
-            name=label_name,
-            state_machine=state_machine.name,
-            context=request.json,
-        ))
-        return json_response(request.json, status=201)
+        raise NotFound(msg)
 
 
 @server.route(
@@ -118,31 +103,20 @@ async def update_label(request, state_machine_name, label_name):
     Successful return codes return the full new context for a label.
     """
     app = server.config.app
+    label = Label(label_name, state_machine)
 
-    context_field = labels.c.context
-    label_filter = and_(
-        labels.c.name == label_name,
-        labels.c.state_machine == state_machine_name,
-    )
-
-    async with app.db.begin() as conn:
-        result = await conn.execute(
-            select([context_field]).where(label_filter),
+    try:
+        new_context = state_machine.update_context_for_label(
+            app,
+            label,
+            request.json,
         )
-        existing_context = await result.fetchone()
-        if not existing_context:
-            raise NotFound(
-                f"Label {label_name} in state machine '{state_machine_name}' "
-                f"does not exist."
-            )
-
-        new_context = dict_merge(existing_context[context_field], request.json)
-
-        await conn.execute(labels.update().where(label_filter).values(
-            context=new_context,
-        ))
-
         return json_response(new_context, status=200)
+    except UnknownLabel:
+        raise NotFound(
+            f"Label {label_name} in state machine '{state_machine_name}' "
+            f"does not exist."
+        )
 
 
 @server.route(

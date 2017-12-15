@@ -1,17 +1,13 @@
 import json
 
-from routemaster.db import labels, history
+from routemaster.db import labels
 
 
 async def test_root(app_client, create_label):
-    await create_label('foo', 'test_machine', {})
     client = await app_client()
     response = await client.get('/')
     data = await response.json()
-    assert data == {
-        'state_machines': 1,
-        'labels': 1,
-    }
+    assert data == {'status': 'ok'}
 
 
 async def test_create_label(app_client, app_factory):
