@@ -19,7 +19,10 @@ DEPENDENCIES = (
     ('cli', 'server'),
     ('cli', 'app'),
 
+    ('exit_conditions', 'utils'),
+
     ('config', 'exit_conditions'),
+    ('config', 'utils'),
     ('db', 'config'),
 
     ('validation', 'app'),
