@@ -1,4 +1,6 @@
 import textwrap
+import datetime
+import dateutil.tz
 
 import pytest
 
@@ -14,9 +16,9 @@ PROGRAMS = [
     ("true and true and 3 = 3", True, ()),
     ("false or false or 3 > 5", False, ()),
     ("not true", False, ()),
-    ("3h has passed", True, ()),
+    ("3h has passed since old_time", True, ('old_time',)),
     ("not 4 >= 6", True, ()),
-    ("3h has not passed", False, ()),
+    ("3h has not passed since old_time", False, ('old_time',)),
     ("foo is defined", True, ('foo',)),
     ("bar is defined", False, ('bar',)),
     ("null is not defined", True, ()),
@@ -25,18 +27,19 @@ PROGRAMS = [
 ]
 
 
+NOW = datetime.datetime(2017, 1, 1, 12, 0, 0, tzinfo=dateutil.tz.tzutc())
 VARIABLES = {
-    "foo": 4,
-    "objects": (2, 4),
+    'foo': 4,
+    'objects': (2, 4),
+    'old_time': NOW - datetime.timedelta(hours=4),
 }
 
-TIME_ELAPSED = 11200
 
 
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
 def test_evaluate(program, expected, variables):
     program = ExitConditionProgram(program)
-    assert program.run(VARIABLES, TIME_ELAPSED) == expected
+    assert program.run(VARIABLES, NOW) == expected
 
 
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
@@ -130,7 +133,7 @@ ERRORS = [
 @pytest.mark.parametrize("program, error", ERRORS)
 def test_errors(program, error):
     with pytest.raises(ValueError) as compile_error:
-        ExitConditionProgram(program).run(VARIABLES, TIME_ELAPSED)
+        ExitConditionProgram(program).run(VARIABLES, NOW)
 
     message = str(compile_error.value)
 

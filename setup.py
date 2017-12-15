@@ -41,6 +41,7 @@ setup(
         'flask',
         'psycopg2',
         'sqlalchemy',
+        'python-dateutil',
         'alembic >=0.9.6',
     ),
 
