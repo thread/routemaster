@@ -1,5 +1,7 @@
 import json
 
+from sqlalchemy import and_, select
+
 from routemaster.db import labels, history
 
 
@@ -106,3 +108,25 @@ def test_get_label(client, create_label):
     response = client.get('/state-machines/test_machine/labels/foo')
     assert response.status_code == 200
     assert response.json == {'bar': 'baz'}
+
+
+def test_update_label_moves_label(client, create_label, app_config):
+    create_label('foo', 'test_machine', {})
+    response = client.post(
+        '/state-machines/test_machine/labels/foo/update',
+        data=json.dumps({'should_progress': True}),
+        content_type='application/json',
+    )
+    assert response.status_code == 200
+    assert response.json == {'should_progress': True}
+
+    with app_config.db.begin() as conn:
+        latest_state = conn.scalar(
+            select([history.c.new_state]).where(and_(
+                history.c.label_name == 'foo',
+                history.c.label_state_machine == 'test_machine',
+            )).order_by(
+                history.c.created.desc(),
+            ).limit(1)
+        )
+        assert latest_state == 'end'
