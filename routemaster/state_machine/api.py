@@ -37,7 +37,6 @@ def get_label_context(app: App, label: Label):
 
 
 def create_label(app: App, label: Label, context: Context):
-    import pdb; pdb.set_trace()
     try:
         state_machine = app.config.state_machines[label.state_machine]
     except KeyError as k:
