@@ -1,7 +1,7 @@
 """Loading and validation of config files."""
 
 import datetime
-from typing import Any, List, Union, Mapping, Iterable, NamedTuple
+from typing import Any, Dict, List, Union, Mapping, Iterable, NamedTuple
 
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -14,6 +14,17 @@ class TimeTrigger(NamedTuple):
 class ContextTrigger(NamedTuple):
     """Context update based trigger for exit condition evaluation."""
     context_path: str
+
+    def should_trigger_for_update(self, update: Dict[str, Any]) -> bool:
+        """Returns whether this trigger should fire for a given update."""
+        def applies(path, d):
+            component = path.pop()
+            if component in d:
+                if path:
+                    return applies(path, d[component])
+                return True
+            return False
+        return applies(self.context_path.split('.'), update)
 
 
 Trigger = Union[TimeTrigger, ContextTrigger]
@@ -45,7 +56,12 @@ class ContextNextStates(NamedTuple):
 
     def next_state_for_label(self, label_context: Any) -> str:
         """Returns next state based on context value at `self.path`."""
-        val = label_context.get_path(self.path)
+        def get_path(path, d):
+            component = path.pop()
+            if path:
+                return get_path(path, d[component])
+            return d[component]
+        val = get_path(self.path.split('.'), label_context)
         for destination in self.destinations:
             if destination.value == val:
                 return destination.state
@@ -85,6 +101,11 @@ class Gate(NamedTuple):
     exit_condition: ExitConditionProgram
     triggers: Iterable[Trigger]
 
+    @property
+    def context_triggers(self) -> List[ContextTrigger]:
+        """Return a list of the context triggers for this state."""
+        return [x for x in self.triggers if isinstance(x, ContextTrigger)]
+
 
 class Action(NamedTuple):
     """
@@ -106,6 +127,10 @@ class StateMachine(NamedTuple):
     """A state machine."""
     name: str
     states: List[State]
+
+    def get_state(self, state_name: str) -> State:
+        """Get the state object for a given state name."""
+        return [x for x in self.states if x.name == state_name][0]
 
 
 class DatabaseConfig(NamedTuple):
