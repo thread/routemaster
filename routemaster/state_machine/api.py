@@ -132,7 +132,8 @@ def _move_label_for_context_change(
     ):
         return
 
-    elapsed = (datetime.datetime.utcnow() - history.created).total_seconds
+    now = datetime.datetime.utcnow()
+    elapsed = (now - history_entry.created).total_seconds
 
     exit_condition_variables = {'context': context}
     can_exit = current_state.exit_condition.run(
