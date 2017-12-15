@@ -2,6 +2,8 @@
 import datetime
 from typing import Any, Dict, NamedTuple
 
+import dateutil.tz
+
 from sqlalchemy import and_
 from sqlalchemy.sql import select
 
@@ -132,13 +134,12 @@ def _move_label_for_context_change(
     ):
         return
 
-    now = datetime.datetime.utcnow()
-    elapsed = (now - history_entry.created).total_seconds
+    now = datetime.datetime.now(dateutil.tz.tzutc())
 
     exit_condition_variables = {'context': context}
     can_exit = current_state.exit_condition.run(
         exit_condition_variables,
-        elapsed,
+        now,
     )
 
     if not can_exit:
