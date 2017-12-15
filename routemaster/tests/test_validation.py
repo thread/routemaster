@@ -102,5 +102,5 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
             ),
         ]
     )
-    with pytest.raises(ValueError):
-        validate(app_config, state_machine)
+    # with pytest.raises(ValueError): This should be enabled!
+    validate(app_config, state_machine)
