@@ -89,29 +89,11 @@ def test_nonexistent_node_destination_invalid(app_config):
 
 
 def test_label_in_deleted_state_invalid(app_config, create_label):
-    # TODO
-    create_label('foo', 'state_machine', {})
+    create_label('foo', 'test_machine', {})  # Created in "start" implicitly
     state_machine = StateMachine(
-        name='example',
+        name='test_machine',
         states=[
-            Gate(
-                name='start',
-                triggers=[],
-                next_states=ContextNextStates(
-                    path='foo.bar',
-                    destinations=[
-                        ContextNextStatesOption(
-                            state='nonexistent',
-                            value='1',
-                        ),
-                        ContextNextStatesOption(
-                            state='end',
-                            value='2',
-                        ),
-                    ]
-                ),
-                exit_condition=ExitConditionProgram('false'),
-            ),
+            # Note: state "start" from "test_machine" is gone.
             Gate(
                 name='end',
                 triggers=[],
