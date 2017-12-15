@@ -1,8 +1,6 @@
 """Global test setup and fixtures."""
 
 import os
-import json
-import functools
 from typing import Any, Dict
 
 import pytest
