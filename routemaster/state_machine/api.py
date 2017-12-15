@@ -4,6 +4,7 @@ from typing import Any, Dict, NamedTuple
 
 from sqlalchemy import and_
 from sqlalchemy.sql import select
+from sqlalchemy.exc import IntegrityError
 
 from routemaster.db import labels, history
 from routemaster.app import App
@@ -11,6 +12,7 @@ from routemaster.utils import dict_merge
 from routemaster.config import State, Action, StateMachine
 from routemaster.state_machine.exceptions import (
     UnknownLabel,
+    LabelAlreadyExists,
     UnknownStateMachine,
 )
 
@@ -46,11 +48,15 @@ def create_label(app: App, label: Label, context: Context):
         raise UnknownStateMachine(label.state_machine)
 
     with app.db.begin() as conn:
-        conn.execute(labels.insert().values(
-            name=label.name,
-            state_machine=state_machine.name,
-            context=context,
-        ))
+        try:
+            conn.execute(labels.insert().values(
+                name=label.name,
+                state_machine=state_machine.name,
+                context=context,
+            ))
+        except IntegrityError:
+            raise LabelAlreadyExists(label)
+
         _start_state_machine(state_machine, label, conn)
         return context
 

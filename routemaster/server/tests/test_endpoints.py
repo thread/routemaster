@@ -53,6 +53,16 @@ def test_create_label_400_for_invalid_body(client):
     assert response.status_code == 400
 
 
+def test_create_label_400_for_already_existing_label(client, create_label):
+    create_label('foo', 'test_machine', {})
+    response = client.post(
+        '/state-machines/test_machine/labels/foo',
+        data=json.dumps({}),
+        content_type='application/json',
+    )
+    assert response.status_code == 400
+
+
 def test_update_label(client, app_config, create_label):
     create_label('foo', 'test_machine', {})
 

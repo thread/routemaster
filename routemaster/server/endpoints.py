@@ -3,7 +3,12 @@
 from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
-from routemaster.state_machine import Label, UnknownLabel, UnknownStateMachine
+from routemaster.state_machine import (
+    Label,
+    UnknownLabel,
+    LabelAlreadyExists,
+    UnknownStateMachine,
+)
 
 server = Flask('routemaster')
 
@@ -82,6 +87,9 @@ def create_label(state_machine_name, label_name):
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         raise abort(404, msg)
+    except LabelAlreadyExists:
+        msg = f"Label {label_name} already exists in '{state_machine_name}'"
+        raise abort(400, msg)
 
 
 @server.route(

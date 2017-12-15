@@ -8,6 +8,7 @@ from routemaster.state_machine.api import (
 )
 from routemaster.state_machine.exceptions import (
     UnknownLabel,
+    LabelAlreadyExists,
     UnknownStateMachine,
 )
 
@@ -16,6 +17,7 @@ __all__ = (
     'create_label',
     'UnknownLabel',
     'get_label_context',
+    'LabelAlreadyExists',
     'UnknownStateMachine',
     'update_context_for_label',
 )
