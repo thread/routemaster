@@ -6,7 +6,8 @@ from typing import Any, Dict
 import pytest
 from sqlalchemy import create_engine
 
-from routemaster.db import labels, metadata
+from routemaster import state_machine
+from routemaster.db import metadata
 from routemaster.app import App
 from routemaster.config import (
     Gate,
@@ -17,7 +18,6 @@ from routemaster.config import (
     DatabaseConfig,
     ConstantNextState,
 )
-from routemaster import state_machine
 from routemaster.server import server
 from routemaster.state_machine import Label
 from routemaster.exit_conditions import ExitConditionProgram

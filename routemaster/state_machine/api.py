@@ -3,7 +3,7 @@ import datetime
 from typing import Any, Dict, NamedTuple
 
 from sqlalchemy import and_
-from sqlalchemy.sql import select, func
+from sqlalchemy.sql import select
 
 from routemaster.db import labels, history
 from routemaster.app import App
