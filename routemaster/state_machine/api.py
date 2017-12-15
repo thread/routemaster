@@ -4,8 +4,8 @@ from typing import Any, Dict, NamedTuple
 
 import dateutil.tz
 from sqlalchemy import and_
-from sqlalchemy.sql import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql import select
 
 from routemaster.db import labels, history
 from routemaster.app import App
