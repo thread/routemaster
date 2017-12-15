@@ -3,7 +3,6 @@ import datetime
 from typing import Any, Dict, NamedTuple
 
 import dateutil.tz
-
 from sqlalchemy import and_
 from sqlalchemy.sql import select
 
