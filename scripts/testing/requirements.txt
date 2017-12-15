@@ -1,8 +1,9 @@
 tox
 pytest
 pytest-cov
-pytest-sanic
 pytest-sugar
+pytest-flask
+pytest-faulthandler
 fakeredis
 networkx
 mypy

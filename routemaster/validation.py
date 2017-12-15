@@ -1,13 +1,17 @@
 """Validation of state machines."""
 import networkx
+from sqlalchemy import and_, func
 
+from routemaster.db import labels, history
+from routemaster.app import App
 from routemaster.config import StateMachine
 
 
-def validate(state_machine: StateMachine):
+def validate(app: App, state_machine: StateMachine):
     """Validate that a given state machine is internally consistent."""
     _validate_route_start_to_end(state_machine)
     _validate_all_states_exist(state_machine)
+    # _validate_no_labels_in_nonexistent_states(state_machine, app)
 
 
 def _build_graph(state_machine: StateMachine) -> networkx.Graph:
@@ -31,3 +35,33 @@ def _validate_all_states_exist(state_machine):
         for destination_name in state.next_states.all_destinations():
             if destination_name not in state_names:
                 raise ValueError(f"{destination_name} does not exist")
+
+
+def _validate_no_labels_in_nonexistent_states(state_machine, app):
+    states = [x.name for x in state_machine.states]
+    with app.db.begin() as conn:
+        current_states = history.select(
+            history.c.label_name,
+            history.c.state_machine_name,
+            history.c.new_state,
+            func.max(history.c.created),
+        ).group_by(
+            history.label_name,
+            history.label_state_machine,
+        )
+
+        labels_in_invalid_states = current_states.select(
+            history.new_state,
+        ).join(
+            labels,
+            and_(
+                labels.c.name == history.c.label_name,
+                labels.c.state_machine == history.c.label_state_machine,
+                ~history.c.new_state.in_(states),
+            ),
+        )
+
+        result = conn.scalar(labels_in_invalid_states)
+        count = result.fetchone()
+        if count != 0:
+            raise ValueError(f"{count} nodes in states that no longer exist")

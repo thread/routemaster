@@ -1,4 +1,6 @@
 """Database model definition."""
+import datetime
+
 from sqlalchemy import (
     Table,
     Column,
@@ -38,7 +40,7 @@ history = Table(
         ['labels.name', 'labels.state_machine'],
     ),
 
-    Column('created', DateTime),
+    Column('created', DateTime, default=datetime.datetime.utcnow),
 
     # `forced = True` represents a manual transition that may not be in
     # accordance with the state machine logic.

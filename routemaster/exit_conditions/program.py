@@ -2,6 +2,7 @@
 
 import typing
 
+from routemaster.utils import get_path
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.analysis import find_accessed_keys
 from routemaster.exit_conditions.peephole import peephole_optimise
@@ -18,7 +19,7 @@ class _ProgramContext(object):
         self.time_elapsed = time_elapsed
 
     def lookup(self, key):
-        return self.variables.get('.'.join(key))
+        return get_path(key, self.variables)
 
     def property_handler(self, property_name, value, **kwargs):
         if property_name == ('passed',):
