@@ -6,6 +6,8 @@ State machines as a service.
 
 (The _master_ of _routes_ through a state machine.)
 
+Routemaster targets Python 3.6 and above.
+
 ### Development setup
 
 You'll need to create a database for developing against and for running tests
