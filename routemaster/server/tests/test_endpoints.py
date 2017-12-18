@@ -110,6 +110,17 @@ def test_get_label(client, create_label):
     assert response.json == {'bar': 'baz'}
 
 
+def test_get_label_404_for_not_found_label(client, create_label):
+    response = client.get('/state-machines/test_machine/labels/foo')
+    assert response.status_code == 404
+
+
+def test_get_label_404_for_not_found_state_machine(client, create_label):
+    create_label('foo', 'test_machine', {'bar': 'baz'})
+    response = client.get('/state-machines/nonexistent_machine/labels/foo')
+    assert response.status_code == 404
+
+
 def test_list_labels_404_for_not_found_state_machine(client, create_label):
     response = client.get('/state-machines/nonexistent_machine/labels')
     assert response.status_code == 404
