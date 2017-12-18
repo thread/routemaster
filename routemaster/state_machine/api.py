@@ -47,7 +47,7 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
             yield Label(row[labels.c.name], state_machine.name)
 
 
-def get_label_context(app: App, label: Label):
+def get_label_context(app: App, label: Label) -> Context:
     """Returns the context associated with a label."""
     with app.db.begin() as conn:
         context = conn.scalar(
@@ -61,7 +61,7 @@ def get_label_context(app: App, label: Label):
         return context
 
 
-def create_label(app: App, label: Label, context: Context):
+def create_label(app: App, label: Label, context: Context) -> Context:
     """Creates a label and starts it in a state machine."""
     try:
         state_machine = app.config.state_machines[label.state_machine]
@@ -82,7 +82,11 @@ def create_label(app: App, label: Label, context: Context):
         return context
 
 
-def _start_state_machine(state_machine: StateMachine, label: Label, conn):
+def _start_state_machine(
+    state_machine: StateMachine,
+    label: Label,
+    conn,
+) -> None:
     conn.execute(history.insert().values(
         label_name=label.name,
         label_state_machine=label.state_machine,
@@ -91,7 +95,11 @@ def _start_state_machine(state_machine: StateMachine, label: Label, conn):
     ))
 
 
-def update_context_for_label(app: App, label: Label, update: Context):
+def update_context_for_label(
+    app: App,
+    label: Label,
+    update: Context,
+) -> Context:
     """
     Updates the context for a label.
 
@@ -138,7 +146,7 @@ def _move_label_for_context_change(
     update: Context,
     context: Context,
     conn,
-):
+) -> None:
     history_entry = conn.execute(
         select([history]).where(and_(
             history.c.label_name == label.name,
