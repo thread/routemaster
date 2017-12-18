@@ -109,7 +109,7 @@ def create_label(state_machine_name, label_name):
         raise abort(404, msg)
     except LabelAlreadyExists:
         msg = f"Label {label_name} already exists in '{state_machine_name}'"
-        raise abort(400, msg)
+        raise abort(409, msg)
 
 
 @server.route(
