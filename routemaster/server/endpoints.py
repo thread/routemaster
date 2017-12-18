@@ -160,7 +160,19 @@ def delete_label(state_machine_name, label_name):
     Deleted labels cannot be updated and will not move state.
 
     Returns:
-    - 204 No content: if the label is successfully deleted.
-    - 404 Not Found: if the state machine or label does not exist.
+    - 204 No content: if the label is successfully deleted (or did not exist).
+    - 404 Not Found: if the state machine.
     """
-    pass
+    app = server.config.app
+    label = Label(label_name, state_machine_name)
+
+    try:
+        state_machine.delete_label(
+            app,
+            label,
+        )
+    except UnknownStateMachine:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        raise abort(404, msg)
+
+    return '', 204

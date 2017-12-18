@@ -157,3 +157,54 @@ def test_update_label_moves_label(client, create_label, app_config):
             ).limit(1)
         )
         assert latest_state == 'end'
+
+
+def test_delete_existing_label(client, app_config, create_label):
+    label_name = 'foo'
+    state_machine = list(app_config.config.state_machines.values())[0]
+
+    create_label(label_name, state_machine.name, {'bar': 'baz'})
+
+    response = client.delete(
+        f'/state-machines/{state_machine.name}/labels/{label_name}',
+        content_type='application/json',
+    )
+
+    assert response.status_code == 204
+
+    with app_config.db.begin() as conn:
+        assert conn.scalar(labels.count()) == 1
+        label = conn.execute(labels.select()).fetchone()
+        assert label.name == label_name
+        assert label.state_machine == state_machine.name
+        assert label.context == {}
+
+        history_entry = conn.execute(
+            history.select().order_by(history.c.created.desc()),
+        ).fetchone()
+        assert history_entry.label_name == label_name
+        assert history_entry.old_state == state_machine.states[0].name
+        assert history_entry.new_state is None
+
+
+def test_delete_non_existent_label(client, app_config):
+    # When deleting a non-existent label, we do nothing.
+
+    response = client.delete(
+        f'/state-machines/test_machine/labels/foo',
+        content_type='application/json',
+    )
+
+    assert response.status_code == 204
+
+    with app_config.db.begin() as conn:
+        assert conn.scalar(labels.count()) == 0
+        assert conn.scalar(history.count()) == 0
+
+
+def test_delete_label_404_for_not_found_state_machine(client):
+    response = client.delete(
+        '/state-machines/nonexistent_machine/labels/foo',
+        content_type='application/json',
+    )
+    assert response.status_code == 404

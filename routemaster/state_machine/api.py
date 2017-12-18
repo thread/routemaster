@@ -203,3 +203,57 @@ def _choose_destination(
 ) -> State:
     next_state_name = current_state.next_states.next_state_for_label(context)
     return state_machine.get_state(next_state_name)
+
+
+def delete_label(app: App, label: Label) -> None:
+    """
+    Deletes the context for a label and marks the label as deleted.
+
+    The history for the label is not changed (in order to allow post-hoc
+    analysis of the path the label took through the state machine).
+    """
+    try:
+        app.config.state_machines[label.state_machine]
+    except KeyError as k:
+        raise UnknownStateMachine(label.state_machine)
+
+    context_field = labels.c.context
+    label_filter = and_(
+        labels.c.name == label.name,
+        labels.c.state_machine == label.state_machine,
+    )
+
+    with app.db.begin() as conn:
+        existing_context = conn.scalar(
+            select([context_field]).where(label_filter),
+        )
+        if existing_context is None:
+            return
+
+        conn.execute(labels.update().where(label_filter).values(
+            context={},
+            deleted=True,
+        ))
+
+        _exit_state_machine(label, conn)
+
+
+def _exit_state_machine(
+    label: Label,
+    conn,
+) -> None:
+    current_state_name = conn.scalar(
+        select([history.c.new_state]).where(and_(
+            history.c.label_name == label.name,
+            history.c.label_state_machine == label.state_machine,
+        )).order_by(
+            history.c.created.desc(),
+        ).limit(1)
+    )
+
+    conn.execute(history.insert().values(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+        old_state=current_state_name,
+        new_state=None,
+    ))
