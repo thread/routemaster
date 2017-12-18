@@ -1,6 +1,6 @@
 """The core of the state machine logic."""
 import datetime
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, Iterable, NamedTuple
 
 import dateutil.tz
 from sqlalchemy import and_
@@ -25,6 +25,26 @@ class Label(NamedTuple):
 
 
 Context = Dict[str, Any]
+
+
+def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
+    """
+    Returns a sorted iterable of labels associated with a state machine.
+
+    Labels are returned ordered alphabetically by name.
+    """
+    with app.db.begin() as conn:
+        label_names = conn.execute(
+            select([
+                labels.c.name,
+            ]).where(
+                labels.c.state_machine == state_machine.name,
+            ).order_by(
+                labels.c.name,
+            ),
+        )
+        for row in label_names:
+            yield Label(row[labels.c.name], state_machine.name)
 
 
 def get_label_context(app: App, label: Label):

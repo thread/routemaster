@@ -29,8 +29,28 @@ def status():
     methods=['GET'],
 )
 def get_labels(state_machine_name):
-    """List the labels in a state machine."""
-    pass
+    """
+    List the labels in a state machine.
+
+    Returns:
+    - 200 Ok: if the state machine exists.
+    - 404 Not Found: if the state machine does not exist.
+
+    Successful return codes return a list of dictionaries containing at least
+    the name of each label.
+    """
+    app = server.config.app
+
+    try:
+        state_machine_instance = app.config.state_machines[state_machine_name]
+    except KeyError as k:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        raise abort(404, msg)
+
+    labels = state_machine.list_labels(app, state_machine_instance)
+    return jsonify(
+        labels=[{'name': x.name} for x in labels],
+    )
 
 
 @server.route(
