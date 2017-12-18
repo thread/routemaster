@@ -63,7 +63,7 @@ def run_migrations_online():
 
     """
     database_config = get_database_config()
-    engine = initialise_db(database_config, asyncio=False)
+    engine = initialise_db(database_config)
 
     with engine.connect() as connection:
         context.configure(
