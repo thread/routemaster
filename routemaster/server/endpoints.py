@@ -140,11 +140,14 @@ def update_label(state_machine_name, label_name):
             request.get_json(),
         )
         return jsonify(new_context)
-    except (UnknownLabel, UnknownStateMachine):
+    except UnknownStateMachine:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        raise abort(404, msg)
+    except UnknownLabel:
         raise abort(
             404,
-            f"Label {label_name} in state machine '{state_machine_name}' "
-            f"does not exist.",
+            f"Label {label_name} does not exist in state machine "
+            f"'{state_machine_name}'.",
         )
 
 
