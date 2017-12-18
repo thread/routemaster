@@ -27,6 +27,10 @@ class Label(NamedTuple):
 Context = Dict[str, Any]
 
 
+def _utcnow():
+    return datetime.datetime.now(dateutil.tz.tzutc())
+
+
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
     """
     Returns a sorted iterable of labels associated with a state machine.
@@ -167,12 +171,10 @@ def _move_label_for_context_change(
     ):
         return
 
-    now = datetime.datetime.now(dateutil.tz.tzutc())
-
     exit_condition_variables = {'context': context}
     can_exit = current_state.exit_condition.run(
         exit_condition_variables,
-        now,
+        _utcnow(),
     )
 
     if not can_exit:
