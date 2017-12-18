@@ -111,7 +111,7 @@ def test_get_label(client, create_label):
 
 
 def test_list_labels_404_for_not_found_state_machine(client, create_label):
-    response = client.get('/state-machines/missing_machine/labels')
+    response = client.get('/state-machines/nonexistent_machine/labels')
     assert response.status_code == 404
 
 
