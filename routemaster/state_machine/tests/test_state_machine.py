@@ -1,10 +1,8 @@
-import pytest
-
 from sqlalchemy import and_, select
 
 from routemaster import state_machine
 from routemaster.db import history
-from routemaster.state_machine import Label, UnknownLabel, UnknownStateMachine
+from routemaster.state_machine import Label
 
 
 def current_state(app_config, label):
