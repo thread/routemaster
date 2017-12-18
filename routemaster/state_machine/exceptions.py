@@ -3,6 +3,12 @@
 
 class UnknownLabel(ValueError):
     """Represents a label unknown in the given state machine."""
+    deleted = False
+
+
+class DeletedLabel(UnknownLabel):
+    """Represents a label deleted in the given state machine."""
+    deleted = True
 
 
 class UnknownStateMachine(ValueError):

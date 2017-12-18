@@ -72,9 +72,9 @@ def get_label(state_machine_name, label_name):
 
     try:
         context = state_machine.get_label_context(app, label)
-    except UnknownLabel:
-        abort(
-            404,
+    except UnknownLabel as e:
+        raise abort(
+            410 if e.deleted else 404,
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
@@ -143,9 +143,9 @@ def update_label(state_machine_name, label_name):
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         raise abort(404, msg)
-    except UnknownLabel:
+    except UnknownLabel as e:
         raise abort(
-            404,
+            410 if e.deleted else 404,
             f"Label {label_name} does not exist in state machine "
             f"'{state_machine_name}'.",
         )

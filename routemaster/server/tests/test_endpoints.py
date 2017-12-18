@@ -208,3 +208,53 @@ def test_delete_label_404_for_not_found_state_machine(client):
         content_type='application/json',
     )
     assert response.status_code == 404
+
+
+def test_list_labels_excludes_deleted_labels(
+    client,
+    create_label,
+    create_deleted_label,
+    app_config,
+):
+    create_deleted_label('foo', 'test_machine')
+    create_label('quox', 'test_machine', {'spam': 'ham'})
+
+    response = client.get('/state-machines/test_machine/labels')
+    assert response.status_code == 200
+    assert response.json == {'labels': [{'name': 'quox'}]}
+
+
+def test_get_label_410_for_deleted_label(
+    client,
+    create_deleted_label,
+    app_config,
+):
+    create_deleted_label('foo', 'test_machine')
+
+    response = client.get('/state-machines/test_machine/labels/foo')
+    assert response.status_code == 410
+
+
+def test_create_label_409_for_deleted_label(client, create_label):
+    create_label('foo', 'test_machine', {})
+    response = client.post(
+        '/state-machines/test_machine/labels/foo',
+        data=json.dumps({}),
+        content_type='application/json',
+    )
+    assert response.status_code == 409
+
+
+def test_update_label_410_for_deleted_label(
+    client,
+    create_deleted_label,
+    app_config,
+):
+    create_deleted_label('foo', 'test_machine')
+
+    response = client.post(
+        '/state-machines/test_machine/labels/foo/update',
+        data=json.dumps({'foo': 'bar'}),
+        content_type='application/json',
+    )
+    assert response.status_code == 410
