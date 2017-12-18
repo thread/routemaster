@@ -6,6 +6,11 @@ State machines as a service.
 
 (The _master_ of _routes_ through a state machine.)
 
+### Development setup
+
+You'll need to create a database for developing against and for running tests
+against. This can be done by running the `./create_databases.sh` script.
+
 ### Testing, Linting and Typechecking
 
 Testing and linting are done by `tox`, which manages its own virtual
