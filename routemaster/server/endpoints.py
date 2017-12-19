@@ -166,7 +166,7 @@ def delete_label(state_machine_name, label_name):
 
     Returns:
     - 204 No content: if the label is successfully deleted (or did not exist).
-    - 404 Not Found: if the state machine.
+    - 404 Not Found: if the state machine does not exist.
     """
     app = server.config.app
     label = Label(label_name, state_machine_name)
