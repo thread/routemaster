@@ -4,16 +4,16 @@ import datetime
 from typing import Iterable
 
 import dateutil.tz
-from sqlalchemy import and_, not_, insert, select
+from sqlalchemy import and_, not_, select
 
 from routemaster.db import states, state_machines
 from routemaster.app import App
-from routemaster.config import State, StateMachine
+from routemaster.config import StateMachine
 
 
 def record_state_machines(
-    app : App,
-    machines : Iterable[StateMachine],
+    app: App,
+    machines: Iterable[StateMachine],
 ) -> None:
     """
     Record the new state as being one set of state machines.
