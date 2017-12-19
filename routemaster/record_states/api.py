@@ -3,11 +3,11 @@
 from typing import Iterable
 
 from sqlalchemy import func, select
-from routemaster.record_states.utils import resync_states_on_state_machine
 
 from routemaster.db import states, state_machines
 from routemaster.app import App
 from routemaster.config import StateMachine
+from routemaster.record_states.utils import resync_states_on_state_machine
 
 
 def record_state_machines(
