@@ -1,11 +1,14 @@
 """Utility methods for state resyncing."""
 
+from typing import Set
+
 from sqlalchemy import and_, func, not_, select
 
 from routemaster.db import states
+from routemaster.config import StateMachine
 
 
-def resync_states_on_state_machine(conn, machine):
+def resync_states_on_state_machine(conn, machine: StateMachine) -> bool:
     """
     Resync all states for the given state machine.
 
@@ -39,11 +42,15 @@ def resync_states_on_state_machine(conn, machine):
     if created_states:
         create_or_undeprecate_states(conn, machine, created_states)
 
-    any_changes = deleted_states or created_states
+    any_changes = bool(deleted_states or created_states)
     return any_changes
 
 
-def create_or_undeprecate_states(conn, machine, created_states):
+def create_or_undeprecate_states(
+    conn,
+    machine: StateMachine,
+    created_states: Set[str],
+) -> None:
     """Create some new states, or mark them as undeprecated."""
     # If any of these are old states which have been reanimated, we
     # just set the deprecated flag back to False and flag them
@@ -82,7 +89,11 @@ def create_or_undeprecate_states(conn, machine, created_states):
         ), newly_inserted_rows)
 
 
-def deprecate_states(conn, machine, deleted_states):
+def deprecate_states(
+    conn,
+    machine: StateMachine,
+    deleted_states: Set[str],
+) -> None:
     """Mark states as deprecated."""
     conn.execute(
         states.update().where(
