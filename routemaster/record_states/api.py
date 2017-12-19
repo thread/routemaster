@@ -4,7 +4,7 @@ import datetime
 from typing import Iterable
 
 import dateutil.tz
-from sqlalchemy import and_, not_, select
+from sqlalchemy import and_, not_, select, func
 
 from routemaster.db import states, state_machines
 from routemaster.app import App
@@ -28,8 +28,6 @@ def record_state_machines(
     }
 
     with app.db.begin() as conn:
-        now = datetime.datetime.now(dateutil.tz.tzutc())
-
         old_machine_names = set(
             x.name
             for x in conn.execute(
@@ -50,11 +48,10 @@ def record_state_machines(
 
         if insertions:
             conn.execute(
-                state_machines.insert(),
+                state_machines.insert().values(updated=func.now()),
                 [
                     {
                         'name': new_machine,
-                        'updated': now,
                     }
                     for new_machine in insertions
                 ]
@@ -109,7 +106,7 @@ def record_state_machines(
                         ),
                     ).values(
                         deprecated=True,
-                        updated=now,
+                        updated=func.now(),
                     )
                 )
 
@@ -128,7 +125,7 @@ def record_state_machines(
                             ),
                         ).values(
                             deprecated=False,
-                            updated=now,
+                            updated=func.now(),
                         ).returning(
                             states.c.name,
                         ),
@@ -137,9 +134,7 @@ def record_state_machines(
 
                 newly_inserted_rows = [
                     {
-                        'state_machine': machine.name,
                         'name': state.name,
-                        'updated': now,
                     }
                     for state in machine.states
                     if state.name in created_states and
@@ -147,7 +142,10 @@ def record_state_machines(
                 ]
 
                 if newly_inserted_rows:
-                    conn.execute(states.insert(), newly_inserted_rows)
+                    conn.execute(states.insert().values(
+                        state_machine=machine.name,
+                        updated=func.now(),
+                    ), newly_inserted_rows)
 
             if deleted_states or created_states:
                 updated_state_machine_names.add(machine.name)
@@ -159,6 +157,6 @@ def record_state_machines(
                 state_machines.update().where(
                     state_machines.c.name.in_(updated_state_machine_names),
                 ).values(
-                    updated=now,
+                    updated=func.now(),
                 )
             )
