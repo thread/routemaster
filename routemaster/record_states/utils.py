@@ -2,7 +2,7 @@
 
 from typing import Set, Tuple, Iterable
 
-from sqlalchemy import or_, and_, func, not_, select, tuple_
+from sqlalchemy import and_, func, not_, select, tuple_
 
 from routemaster.db import edges, states, state_machines
 from routemaster.config import StateMachine
