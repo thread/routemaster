@@ -64,6 +64,7 @@ def get_label(state_machine_name, label_name):
     Returns:
     - 200 Ok: if the label is exists.
     - 404 Not Found: if the state machine or label does not exist.
+    - 410 Gone: if the label once existed but has since been deleted.
 
     Successful return codes return the full context for the label.
     """
@@ -127,6 +128,7 @@ def update_label(state_machine_name, label_name):
     - 200 Ok: if the label is successfully updated.
     - 400 Bad Request: if the request body is not a valid context.
     - 404 Not Found: if the state machine or label does not exist.
+    - 410 Gone: if the label once existed but has since been deleted.
 
     Successful return codes return the full new context for a label.
     """
