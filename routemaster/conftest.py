@@ -56,13 +56,25 @@ TEST_STATE_MACHINES = {
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
+
 class TestApp(App):
+    """
+    Mocked App subclass which overloads the `db` property.
+
+    This has two implications:
+
+    1. We use a shared engine in all the tests rather than connecting many
+       times (a speed improvement),
+    2. We can set a flag on access to `.db` so that we needn't bother with
+       resetting the database if nothing has actually been changed.
+    """
     def __init__(self, config):
         self.config = config
         self.database_used = False
 
     @property
     def db(self):
+        """Get the shared DB and set the used flag."""
         self.database_used = True
         return TEST_ENGINE
 
