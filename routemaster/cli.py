@@ -5,6 +5,7 @@ import click
 from routemaster.app import App
 from routemaster.config import load_config
 from routemaster.server import server
+from routemaster.record_states import record_state_machines
 
 
 @click.group()
@@ -48,5 +49,6 @@ def validate(ctx):
 @click.pass_context
 def serve(ctx, host, port):
     """Entrypoint for serving the Routemaster HTTP service."""
+    record_state_machines(ctx, ctx.obj.config.state_machines.values())
     server.config.app = ctx.obj
     server.run(host=host, port=port)
