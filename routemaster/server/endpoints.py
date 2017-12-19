@@ -172,10 +172,7 @@ def delete_label(state_machine_name, label_name):
     label = Label(label_name, state_machine_name)
 
     try:
-        state_machine.delete_label(
-            app,
-            label,
-        )
+        state_machine.delete_label(app, label)
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
