@@ -3,8 +3,8 @@
 import typing
 import datetime
 
-from routemaster.utils import get_path
 from routemaster.exit_conditions.parser import parse
+from routemaster.exit_conditions.context import Context
 from routemaster.exit_conditions.analysis import find_accessed_keys
 from routemaster.exit_conditions.peephole import peephole_optimise
 from routemaster.exit_conditions.evaluator import evaluate
@@ -15,17 +15,17 @@ from routemaster.exit_conditions.error_display import (
 
 
 class _ProgramContext(object):
-    def __init__(self, *, variables, now):
+    def __init__(self, *, context, now):
         if now.tzinfo is None:
             raise ValueError(
                 "Cannot evaluate exit conditions with naive datetimes",
             )
 
-        self.variables = variables
+        self.context = context
         self.now = now
 
     def lookup(self, key):
-        return get_path(key, self.variables)
+        return self.context.get_path(key)
 
     def property_handler(self, property_name, value, **kwargs):
         if property_name == ('passed',):
@@ -68,19 +68,19 @@ class ExitConditionProgram(object):
 
     def run(
         self,
-        variables: typing.Mapping[str, typing.Any],
+        context: Context,
         now: datetime.datetime,
     ) -> bool:
         """Evaluate this program with a given context."""
-        context = _ProgramContext(
-            variables=variables,
+        program_context = _ProgramContext(
+            context=context,
             now=now,
         )
 
         return evaluate(
             self._instructions,
-            context.lookup,
-            context.property_handler,
+            program_context.lookup,
+            program_context.property_handler,
         )
 
     def __eq__(self, other_program: typing.Any) -> bool:

@@ -23,7 +23,7 @@ labels = Table(
     metadata,
     Column('name', String, primary_key=True),
     Column('state_machine', String, primary_key=True),
-    Column('context', JSONB),
+    Column('metadata', JSONB),
 )
 
 

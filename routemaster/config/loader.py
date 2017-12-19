@@ -19,8 +19,8 @@ from routemaster.config.model import (
     TimeTrigger,
     NoNextStates,
     StateMachine,
-    ContextTrigger,
     DatabaseConfig,
+    MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
@@ -176,14 +176,14 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
 RE_PATH = re.compile(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$')
 
 
-def _load_context_trigger(path: Path, yaml_trigger: Yaml) -> ContextTrigger:
-    context_path = yaml_trigger['context']
-    if not RE_PATH.match(context_path):
+def _load_context_trigger(path: Path, yaml_trigger: Yaml) -> MetadataTrigger:
+    metadata_path = yaml_trigger['context']
+    if not RE_PATH.match(metadata_path):
         raise ConfigError(
-            f"Context trigger '{context_path}' at path {'.'.join(path)} is "
+            f"Context trigger '{metadata_path}' at path {'.'.join(path)} is "
             f"not a valid dotted path.",
         )
-    return ContextTrigger(context_path=context_path)
+    return MetadataTrigger(metadata_path=metadata_path)
 
 
 def _load_next_states(

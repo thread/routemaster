@@ -12,7 +12,7 @@ from routemaster.config import (
     TimeTrigger,
     NoNextStates,
     StateMachine,
-    ContextTrigger,
+    MetadataTrigger,
     DatabaseConfig,
     ConstantNextState,
     ContextNextStates,
@@ -72,7 +72,7 @@ def test_realistic_config():
                         name='start',
                         triggers=[
                             TimeTrigger(time=datetime.time(18, 30)),
-                            ContextTrigger(context_path='foo.bar'),
+                            MetadataTrigger(metadata_path='foo.bar'),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),

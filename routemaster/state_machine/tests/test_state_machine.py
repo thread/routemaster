@@ -25,13 +25,13 @@ def test_state_machine_simple(app_config):
         label,
         {},
     )
-    state_machine.update_context_for_label(
+    state_machine.update_metadata_for_label(
         app_config,
         label,
         {'foo': 'bar'},
     )
 
-    assert state_machine.get_label_context(app_config, label) == {'foo': 'bar'}
+    assert state_machine.get_label_metadata(app_config, label) == {'foo': 'bar'}
 
 
 def test_state_machine_progresses_on_update(app_config):
@@ -45,7 +45,7 @@ def test_state_machine_progresses_on_update(app_config):
 
     assert current_state(app_config, label) == 'start'
 
-    state_machine.update_context_for_label(
+    state_machine.update_metadata_for_label(
         app_config,
         label,
         {'should_progress': True},
