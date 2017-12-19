@@ -75,79 +75,8 @@ def record_state_machines(
         for machine_name in resync_machines:
             machine = machines_by_name[machine_name]
 
-            old_states = set(
-                x.name
-                for x in conn.execute(
-                    select((
-                        states.c.name,
-                    )).where(
-                        and_(
-                            states.c.state_machine == machine.name,
-                            not_(states.c.deprecated),
-                        ),
-                    )
-                )
-            )
-
-            new_states = set(
-                x.name
-                for x in machine.states
-            )
-
-            deleted_states = old_states - new_states
-            created_states = new_states - old_states
-
-            if deleted_states:
-                conn.execute(
-                    states.update().where(
-                        and_(
-                            states.c.state_machine == machine.name,
-                            states.c.name.in_(list(deleted_states)),
-                        ),
-                    ).values(
-                        deprecated=True,
-                        updated=func.now(),
-                    )
-                )
-
-            if created_states:
-                # If any of these are old states which have been reanimated, we
-                # just set the deprecated flag back to False and flag them
-                # updated.
-                undeprecated_names = [
-                    x.name
-                    for x in conn.execute(
-                        states.update().where(
-                            and_(
-                                states.c.state_machine == machine.name,
-                                states.c.name.in_(list(created_states)),
-                                states.c.deprecated,
-                            ),
-                        ).values(
-                            deprecated=False,
-                            updated=func.now(),
-                        ).returning(
-                            states.c.name,
-                        ),
-                    )
-                ]
-
-                newly_inserted_rows = [
-                    {
-                        'name': state.name,
-                    }
-                    for state in machine.states
-                    if state.name in created_states and
-                    state.name not in undeprecated_names
-                ]
-
-                if newly_inserted_rows:
-                    conn.execute(states.insert().values(
-                        state_machine=machine.name,
-                        updated=func.now(),
-                    ), newly_inserted_rows)
-
-            if deleted_states or created_states:
+            any_changes = _resync_states_on_state_machine(conn, machine)
+            if any_changes:
                 updated_state_machine_names.add(machine.name)
 
         updated_state_machine_names -= insertions
@@ -160,3 +89,77 @@ def record_state_machines(
                     updated=func.now(),
                 )
             )
+
+
+def _resync_states_on_state_machine(conn, machine):
+    old_states = set(
+        x.name
+        for x in conn.execute(
+            select((
+                states.c.name,
+            )).where(
+                and_(
+                    states.c.state_machine == machine.name,
+                    not_(states.c.deprecated),
+                ),
+            )
+        )
+    )
+    new_states = set(
+        x.name
+        for x in machine.states
+    )
+
+    deleted_states = old_states - new_states
+    created_states = new_states - old_states
+
+    if deleted_states:
+        conn.execute(
+            states.update().where(
+                and_(
+                    states.c.state_machine == machine.name,
+                    states.c.name.in_(list(deleted_states)),
+                ),
+            ).values(
+                deprecated=True,
+                updated=func.now(),
+            )
+        )
+    if created_states:
+        # If any of these are old states which have been reanimated, we
+        # just set the deprecated flag back to False and flag them
+        # updated.
+        undeprecated_names = [
+            x.name
+            for x in conn.execute(
+                states.update().where(
+                    and_(
+                        states.c.state_machine == machine.name,
+                        states.c.name.in_(list(created_states)),
+                        states.c.deprecated,
+                    ),
+                ).values(
+                    deprecated=False,
+                    updated=func.now(),
+                ).returning(
+                    states.c.name,
+                ),
+            )
+        ]
+
+        newly_inserted_rows = [
+            {
+                'name': state.name,
+            }
+            for state in machine.states
+            if state.name in created_states and
+               state.name not in undeprecated_names
+        ]
+
+        if newly_inserted_rows:
+            conn.execute(states.insert().values(
+                state_machine=machine.name,
+                updated=func.now(),
+            ), newly_inserted_rows)
+    any_changes = deleted_states or created_states
+    return any_changes
