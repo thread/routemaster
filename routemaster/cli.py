@@ -49,6 +49,9 @@ def validate(ctx):
 @click.pass_context
 def serve(ctx, host, port):
     """Entrypoint for serving the Routemaster HTTP service."""
-    record_state_machines(ctx, ctx.obj.config.state_machines.values())
-    server.config.app = ctx.obj
+    app = ctx.obj
+
+    record_state_machines(app, app.config.state_machines.values())
+
+    server.config.app = app
     server.run(host=host, port=port)
