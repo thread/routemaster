@@ -107,7 +107,7 @@ def create_label(app_config):
 @pytest.fixture()
 def create_deleted_label(client, app_config, create_label):
     """
-    Create a label in the database and then delete it via the HTTP endpoint.
+    Create a label in the database and then delete it.
     """
 
     def _create_and_delete(name: str, state_machine_name: str) -> None:
