@@ -45,7 +45,7 @@ def get_labels(state_machine_name):
         state_machine_instance = app.config.state_machines[state_machine_name]
     except KeyError as k:
         msg = f"State machine '{state_machine_name}' does not exist"
-        raise abort(404, msg)
+        abort(404, msg)
 
     labels = state_machine.list_labels(app, state_machine_instance)
     return jsonify(
@@ -106,10 +106,10 @@ def create_label(state_machine_name, label_name):
         return jsonify(context), 201
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
-        raise abort(404, msg)
+        abort(404, msg)
     except LabelAlreadyExists:
         msg = f"Label {label_name} already exists in '{state_machine_name}'"
-        raise abort(400, msg)
+        abort(400, msg)
 
 
 @server.route(
@@ -141,7 +141,7 @@ def update_label(state_machine_name, label_name):
         )
         return jsonify(new_context)
     except (UnknownLabel, UnknownStateMachine):
-        raise abort(
+        abort(
             404,
             f"Label {label_name} in state machine '{state_machine_name}' "
             f"does not exist.",
