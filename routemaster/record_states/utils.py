@@ -1,6 +1,6 @@
 """Utility methods for state resyncing."""
 
-from sqlalchemy import select, and_, not_, func
+from sqlalchemy import and_, func, not_, select
 
 from routemaster.db import states
 

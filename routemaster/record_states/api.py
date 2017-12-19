@@ -2,9 +2,9 @@
 
 from typing import Iterable
 
-from sqlalchemy import select, func
-
+from sqlalchemy import func, select
 from record_states.utils import _resync_states_on_state_machine
+
 from routemaster.db import states, state_machines
 from routemaster.app import App
 from routemaster.config import StateMachine
@@ -88,5 +88,3 @@ def record_state_machines(
                     updated=func.now(),
                 )
             )
-
-
