@@ -39,6 +39,11 @@ def resync_state_machine_names(
 
     if deletions:
         conn.execute(
+            edges.delete().where(
+                edges.c.state_machine.in_(list(deletions)),
+            ),
+        )
+        conn.execute(
             states.delete().where(
                 states.c.state_machine.in_(list(deletions)),
             ),
