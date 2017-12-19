@@ -1,10 +1,10 @@
 """Utility methods for state resyncing."""
 
-from typing import Set, Iterable
+from typing import Set, Iterable, Tuple
 
-from sqlalchemy import and_, func, not_, select
+from sqlalchemy import and_, or_, func, not_, select, tuple_
 
-from routemaster.db import states, state_machines
+from routemaster.db import states, state_machines, edges
 from routemaster.config import StateMachine
 
 
@@ -86,8 +86,102 @@ def resync_states_on_state_machine(conn, machine: StateMachine) -> bool:
     if created_states:
         create_or_undeprecate_states(conn, machine, created_states)
 
-    any_changes = bool(deleted_states or created_states)
+    all_links = set(
+        (x.name, y)
+        for x in machine.states
+        for y in x.next_states.all_destinations()
+    )
+
+    changed_links = resync_links(
+        conn,
+        machine,
+        all_links,
+    )
+
+    any_changes = bool(changed_links or deleted_states or created_states)
     return any_changes
+
+
+def resync_links(
+    conn,
+    machine: StateMachine,
+    links: Set[Tuple[str, str]],
+) -> bool:
+    """Synchronise the links table for this machine."""
+    anything_done = False
+
+    # Deprecate all links not in this set, which are not already deprecated
+    result = conn.execute(
+        edges.update().where(
+            and_(
+                edges.c.state_machine == machine.name,
+                not_(
+                    tuple_(
+                        edges.c.from_state,
+                        edges.c.to_state,
+                    ).in_(list(links)),
+                ),
+                not_(edges.c.deprecated),
+            ),
+        ).values(
+            deprecated=True,
+            updated=func.now(),
+        ),
+    )
+    if result.rowcount > 0:
+        anything_done = True
+
+    previous_data = {
+        (x.from_state, x.to_state): x.deprecated
+        for x in conn.execute(
+            select((
+                edges.c.from_state,
+                edges.c.to_state,
+                edges.c.deprecated,
+            )).where(
+                edges.c.state_machine == machine.name,
+            )
+        )
+    }
+    new_inserts = links - set(previous_data)
+    undeprecations = links & set(
+        link
+        for link, deprecated in previous_data.items()
+        if deprecated
+    )
+
+    if new_inserts:
+        conn.execute(
+            edges.insert().values(
+                state_machine=machine.name,
+                deprecated=False,
+                updated=func.now(),
+            ),
+            [
+                {
+                    'from_state': from_state,
+                    'to_state': to_state,
+                }
+                for from_state, to_state in new_inserts
+            ],
+        )
+        anything_done = True
+
+    if undeprecations:
+        conn.execute(
+            edges.update().values(
+                deprecated=False,
+                updated=func.now(),
+            ).where(
+                tuple_(
+                    edges.c.from_state,
+                    edges.c.to_state,
+                ).in_(list(undeprecations)),
+            ),
+        )
+        anything_done = True
+
+    return anything_done
 
 
 def create_or_undeprecate_states(
