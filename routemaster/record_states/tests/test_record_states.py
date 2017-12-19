@@ -111,3 +111,63 @@ def test_deprecate_state_in_state_machine(app_config):
             'state_old': True,
             'state_new': False,
         }
+
+
+def test_undeprecate_state_in_state_machine(app_config):
+    record_state_machines(app_config, [
+        StateMachine(
+            name='machine',
+            states=[
+                Gate(
+                    name='state_old',
+                    exit_condition=ExitConditionProgram('false'),
+                    next_states=NoNextStates(),
+                    triggers=[],
+                ),
+            ],
+        )
+    ])
+
+    record_state_machines(app_config, [
+        StateMachine(
+            name='machine',
+            states=[
+                Gate(
+                    name='state_new',
+                    exit_condition=ExitConditionProgram('false'),
+                    next_states=NoNextStates(),
+                    triggers=[],
+                ),
+            ],
+        )
+    ])
+
+    record_state_machines(app_config, [
+        StateMachine(
+            name='machine',
+            states=[
+                Gate(
+                    name='state_old',
+                    exit_condition=ExitConditionProgram('false'),
+                    next_states=NoNextStates(),
+                    triggers=[],
+                ),
+            ],
+        )
+    ])
+
+    with app_config.db.begin() as conn:
+        state_deprecations = {
+            x.name: x.deprecated
+            for x in conn.execute(
+                select((
+                    states.c.name,
+                    states.c.deprecated,
+                )),
+            )
+        }
+
+        assert state_deprecations == {
+            'state_old': False,
+            'state_new': True,
+        }

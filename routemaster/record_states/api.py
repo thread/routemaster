@@ -109,24 +109,45 @@ def record_state_machines(
                         ),
                     ).values(
                         deprecated=True,
+                        updated=now,
                     )
                 )
 
             if created_states:
-                # TODO: Handle the case where dead states are brought back to
-                # life.
-                conn.execute(
-                    states.insert(),
-                    [
-                        {
-                            'state_machine': machine.name,
-                            'name': state.name,
-                            'updated': now,
-                        }
-                        for state in machine.states
-                        if state.name in created_states
-                    ]
-                )
+                # If any of these are old states which have been reanimated, we
+                # just set the deprecated flag back to False and flag them
+                # updated.
+                undeprecated_names = [
+                    x.name
+                    for x in conn.execute(
+                        states.update().where(
+                            and_(
+                                states.c.state_machine == machine.name,
+                                states.c.name.in_(list(created_states)),
+                                states.c.deprecated,
+                            ),
+                        ).values(
+                            deprecated=False,
+                            updated=now,
+                        ).returning(
+                            states.c.name,
+                        ),
+                    )
+                ]
+
+                newly_inserted_rows = [
+                    {
+                        'state_machine': machine.name,
+                        'name': state.name,
+                        'updated': now,
+                    }
+                    for state in machine.states
+                    if state.name in created_states
+                    and state.name not in undeprecated_names
+                ]
+
+                if newly_inserted_rows:
+                    conn.execute(states.insert(), newly_inserted_rows)
 
             if deleted_states or created_states:
                 updated_state_machine_names.add(machine.name)
