@@ -24,6 +24,7 @@ labels = Table(
     Column('name', String, primary_key=True),
     Column('state_machine', String, primary_key=True),
     Column('context', JSONB),
+    Column('deleted', Boolean, default=False, nullable=False),
 )
 
 

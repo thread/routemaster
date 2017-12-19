@@ -102,3 +102,31 @@ def create_label(app_config):
         )
 
     return _create
+
+
+@pytest.fixture()
+def delete_label(app_config):
+    """
+    Mark a label in the database as deleted.
+    """
+
+    def _delete(name: str, state_machine_name: str) -> None:
+        state_machine.delete_label(
+            app_config,
+            Label(name, state_machine_name),
+        )
+
+    return _delete
+
+
+@pytest.fixture()
+def create_deleted_label(create_label, delete_label):
+    """
+    Create a label in the database and then delete it.
+    """
+
+    def _create_and_delete(name: str, state_machine_name: str) -> None:
+        create_label(name, state_machine_name, {})
+        delete_label(name, state_machine_name)
+
+    return _create_and_delete

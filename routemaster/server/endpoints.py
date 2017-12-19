@@ -64,6 +64,7 @@ def get_label(state_machine_name, label_name):
     Returns:
     - 200 Ok: if the label is exists.
     - 404 Not Found: if the state machine or label does not exist.
+    - 410 Gone: if the label once existed but has since been deleted.
 
     Successful return codes return the full context for the label.
     """
@@ -72,9 +73,9 @@ def get_label(state_machine_name, label_name):
 
     try:
         context = state_machine.get_label_context(app, label)
-    except UnknownLabel:
+    except UnknownLabel as e:
         abort(
-            404,
+            410 if e.deleted else 404,
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
@@ -109,7 +110,7 @@ def create_label(state_machine_name, label_name):
         abort(404, msg)
     except LabelAlreadyExists:
         msg = f"Label {label_name} already exists in '{state_machine_name}'"
-        abort(400, msg)
+        abort(409, msg)
 
 
 @server.route(
@@ -127,6 +128,7 @@ def update_label(state_machine_name, label_name):
     - 200 Ok: if the label is successfully updated.
     - 400 Bad Request: if the request body is not a valid context.
     - 404 Not Found: if the state machine or label does not exist.
+    - 410 Gone: if the label once existed but has since been deleted.
 
     Successful return codes return the full new context for a label.
     """
@@ -140,11 +142,14 @@ def update_label(state_machine_name, label_name):
             request.get_json(),
         )
         return jsonify(new_context)
-    except (UnknownLabel, UnknownStateMachine):
+    except UnknownStateMachine:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+    except UnknownLabel as e:
         abort(
-            404,
-            f"Label {label_name} in state machine '{state_machine_name}' "
-            f"does not exist.",
+            410 if e.deleted else 404,
+            f"Label {label_name} does not exist in state machine "
+            f"'{state_machine_name}'.",
         )
 
 
@@ -160,7 +165,16 @@ def delete_label(state_machine_name, label_name):
     Deleted labels cannot be updated and will not move state.
 
     Returns:
-    - 204 No content: if the label is successfully deleted.
-    - 404 Not Found: if the state machine or label does not exist.
+    - 204 No content: if the label is successfully deleted (or did not exist).
+    - 404 Not Found: if the state machine does not exist.
     """
-    pass
+    app = server.config.app
+    label = Label(label_name, state_machine_name)
+
+    try:
+        state_machine.delete_label(app, label)
+    except UnknownStateMachine:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+
+    return '', 204
