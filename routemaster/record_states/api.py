@@ -142,8 +142,8 @@ def record_state_machines(
                         'updated': now,
                     }
                     for state in machine.states
-                    if state.name in created_states
-                    and state.name not in undeprecated_names
+                    if state.name in created_states and
+                    state.name not in undeprecated_names
                 ]
 
                 if newly_inserted_rows:
