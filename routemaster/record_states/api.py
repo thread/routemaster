@@ -4,10 +4,13 @@ from typing import Iterable
 
 from sqlalchemy import func, select
 
-from routemaster.db import states, state_machines
+from routemaster.db import state_machines
 from routemaster.app import App
 from routemaster.config import StateMachine
-from routemaster.record_states.utils import resync_states_on_state_machine
+from routemaster.record_states.utils import (
+    resync_state_machine_names,
+    resync_states_on_state_machine,
+)
 
 
 def record_state_machines(
@@ -36,39 +39,12 @@ def record_state_machines(
             ).fetchall()
         )
 
-        new_machine_names = set(
-            x.name
-            for x in machines
+        resync_machines = resync_state_machine_names(
+            conn,
+            old_machine_names,
+            machines,
         )
 
-        insertions = new_machine_names - old_machine_names
-        deletions = old_machine_names - new_machine_names
-        updates = new_machine_names & old_machine_names
-
-        if insertions:
-            conn.execute(
-                state_machines.insert().values(updated=func.now()),
-                [
-                    {
-                        'name': new_machine,
-                    }
-                    for new_machine in insertions
-                ]
-            )
-
-        if deletions:
-            conn.execute(
-                states.delete().where(
-                    states.c.state_machine.in_(list(deletions)),
-                ),
-            )
-            conn.execute(
-                state_machines.delete().where(
-                    state_machines.c.name.in_(list(deletions)),
-                ),
-            )
-
-        resync_machines = updates | insertions
         updated_state_machine_names = set()
 
         for machine_name in resync_machines:
@@ -78,7 +54,7 @@ def record_state_machines(
             if any_changes:
                 updated_state_machine_names.add(machine.name)
 
-        updated_state_machine_names -= insertions
+        updated_state_machine_names &= old_machine_names
 
         if updated_state_machine_names:
             conn.execute(

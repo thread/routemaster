@@ -1,11 +1,58 @@
 """Utility methods for state resyncing."""
 
-from typing import Set
+from typing import Set, Iterable
 
 from sqlalchemy import and_, func, not_, select
 
-from routemaster.db import states
+from routemaster.db import states, state_machines
 from routemaster.config import StateMachine
+
+
+def resync_state_machine_names(
+    conn,
+    old_machine_names: Set[str],
+    machines: Iterable[StateMachine],
+) -> Set[str]:
+    """
+    Resync the state machines by name.
+
+    Return a collection of the name of the machines which were either updated
+    or created.
+    """
+
+    new_machine_names = set(
+        x.name
+        for x in machines
+    )
+
+    insertions = new_machine_names - old_machine_names
+    deletions = old_machine_names - new_machine_names
+    updates = new_machine_names & old_machine_names
+
+    if insertions:
+        conn.execute(
+            state_machines.insert().values(updated=func.now()),
+            [
+                {
+                    'name': new_machine,
+                }
+                for new_machine in insertions
+            ]
+        )
+
+    if deletions:
+        conn.execute(
+            states.delete().where(
+                states.c.state_machine.in_(list(deletions)),
+            ),
+        )
+        conn.execute(
+            state_machines.delete().where(
+                state_machines.c.name.in_(list(deletions)),
+            ),
+        )
+
+    return updates | insertions
 
 
 def resync_states_on_state_machine(conn, machine: StateMachine) -> bool:
