@@ -99,7 +99,7 @@ class Gate(NamedTuple):
 
     @property
     def metadata_triggers(self) -> List[MetadataTrigger]:
-        """Return a list of the context triggers for this state."""
+        """Return a list of the metadata triggers for this state."""
         return [x for x in self.triggers if isinstance(x, MetadataTrigger)]
 
 

@@ -15,7 +15,7 @@ state_machines:
         exit_condition: >
           foo.bar is defined
         next:
-          type: metadata
+          type: context
           path: foo.bar
           destinations:
             - state: stage3
