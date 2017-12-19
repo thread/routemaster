@@ -18,6 +18,7 @@ DEPENDENCIES = (
     ('cli', 'config'),
     ('cli', 'server'),
     ('cli', 'app'),
+    ('cli', 'record_states'),
 
     ('exit_conditions', 'utils'),
 
