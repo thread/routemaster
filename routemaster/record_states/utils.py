@@ -20,10 +20,7 @@ def resync_state_machine_names(
     or created.
     """
 
-    new_machine_names = set(
-        x.name
-        for x in machines
-    )
+    new_machine_names = set(x.name for x in machines)
 
     insertions = new_machine_names - old_machine_names
     deletions = old_machine_names - new_machine_names
