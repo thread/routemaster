@@ -11,7 +11,9 @@ Routemaster targets Python 3.6 and above.
 ### Development setup
 
 You'll need to create a database for developing against and for running tests
-against. This can be done by running the `./create_databases.sh` script.
+against. This can be done by running the `scripts/database/create_databases.sh`
+script. Full details of how the database, models & migrations are handled can be
+found in the [migrations docs](docs/migrations.md).
 
 ### Testing, Linting and Typechecking
 
