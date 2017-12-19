@@ -7,9 +7,9 @@ from typing import Iterable
 
 from routemaster.app import App
 from routemaster.config import StateMachine, State
-from routemaster.db import state_machines
+from routemaster.db import state_machines, states
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, and_, not_
 
 def record_state_machines(
     app : App,
@@ -22,6 +22,10 @@ def record_state_machines(
     configurations.
     """
     machines = list(machines)
+    machines_by_name = {
+        x.name: x
+        for x in machines
+    }
 
     with app.db.begin() as conn:
         now = datetime.datetime.now(dateutil.tz.tzutc())
@@ -62,7 +66,82 @@ def record_state_machines(
 
         if deletions:
             conn.execute(
-                state_machines.delete().where(
-                    state_machines.c.name.in_(list(deletions))
+                states.delete().where(
+                    states.c.state_machine.in_(list(deletions)),
                 ),
+            )
+            conn.execute(
+                state_machines.delete().where(
+                    state_machines.c.name.in_(list(deletions)),
+                ),
+            )
+
+        resync_machines = updates | insertions
+        updated_state_machine_names = set()
+
+        for machine_name in resync_machines:
+            machine = machines_by_name[machine_name]
+
+            old_states = set(
+                x.name
+                for x in conn.execute(
+                    select((
+                        states.c.name,
+                    )).where(
+                        and_(
+                            states.c.state_machine == machine.name,
+                            not_(states.c.deprecated),
+                        ),
+                    )
+                )
+            )
+
+            new_states = set(
+                x.name
+                for x in machine.states
+            )
+
+            deleted_states = old_states - new_states
+            created_states = new_states - old_states
+
+            if deleted_states:
+                conn.execute(
+                    states.update().where(
+                        and_(
+                            states.c.state_machine == machine,
+                            states.c.name.in_(list(deleted_states)),
+                        ),
+                    ).values(
+                        deprecated=True,
+                    )
+                )
+
+            if created_states:
+                # TODO: Handle the case where dead states are brought back to
+                # life.
+                conn.execute(
+                    states.insert(),
+                    [
+                        {
+                            'state_machine': machine.name,
+                            'name': state.name,
+                            'updated': now,
+                        }
+                        for state in machine.states
+                        if state.name in created_states
+                    ]
+                )
+
+            if deleted_states or created_states:
+                updated_state_machine_names.add(machine.name)
+
+        updated_state_machine_names -= insertions
+
+        if updated_state_machine_names:
+            conn.execute(
+                state_machines.update().where(
+                    state_machines.c.name.in_(updated_state_machine_names),
+                ).values(
+                    updated=now,
+                )
             )

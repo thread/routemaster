@@ -1,5 +1,5 @@
 from routemaster.record_states import record_state_machines
-from routemaster.db import state_machines
+from routemaster.db import state_machines, states
 from routemaster.config import StateMachine, Gate, NoNextStates
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -34,6 +34,9 @@ def test_record_single_trivial_machine(app_config):
 
         machine_definition = conn.execute(state_machines.select()).fetchone()
         assert machine_definition.name == 'machine'
+
+        num_states = conn.scalar(states.count())
+        assert num_states == 1
 
 
 def test_delete_single_trivial_machine(app_config):
