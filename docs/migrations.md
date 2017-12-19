@@ -9,6 +9,9 @@ Routemaster uses [`alembic`][alembic] for its migrations.
 3. Edit `alembic.ini` to point at the config file you are using.
 4. Run `alembic upgrade head`
 
+Note: if you already have a local PostgreSQL database server configured, then
+you may be able to just run the `scripts/database/create_databases.sh` script.
+
 ## I need to apply migrations to bring myself up to date
 
 The equivalent of the Django: `manage.py migrate`
