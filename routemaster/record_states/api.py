@@ -3,7 +3,7 @@
 from typing import Iterable
 
 from sqlalchemy import func, select
-from record_states.utils import _resync_states_on_state_machine
+from routemaster.record_states.utils import resync_states_on_state_machine
 
 from routemaster.db import states, state_machines
 from routemaster.app import App
@@ -74,7 +74,7 @@ def record_state_machines(
         for machine_name in resync_machines:
             machine = machines_by_name[machine_name]
 
-            any_changes = _resync_states_on_state_machine(conn, machine)
+            any_changes = resync_states_on_state_machine(conn, machine)
             if any_changes:
                 updated_state_machine_names.add(machine.name)
 
