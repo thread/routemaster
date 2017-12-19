@@ -104,7 +104,7 @@ def record_state_machines(
                 conn.execute(
                     states.update().where(
                         and_(
-                            states.c.state_machine == machine,
+                            states.c.state_machine == machine.name,
                             states.c.name.in_(list(deleted_states)),
                         ),
                     ).values(
