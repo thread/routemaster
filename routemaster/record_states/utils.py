@@ -29,13 +29,13 @@ def resync_states_on_state_machine(conn, machine):
         deprecate_states(conn, machine, deleted_states)
 
     if created_states:
-        create_or_undeprecate_states(conn, created_states, machine)
+        create_or_undeprecate_states(conn, machine, created_states)
 
     any_changes = deleted_states or created_states
     return any_changes
 
 
-def create_or_undeprecate_states(conn, created_states, machine):
+def create_or_undeprecate_states(conn, machine, created_states):
     # If any of these are old states which have been reanimated, we
     # just set the deprecated flag back to False and flag them
     # updated.
