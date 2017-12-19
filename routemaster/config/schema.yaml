@@ -43,11 +43,11 @@ properties:
                       anyOf:
                         - type: object
                           properties:
-                            context: &dotted_path_definition
+                            metadata: &dotted_path_definition
                               type: string
                               pattern: '^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$'
                           required:
-                            - context
+                            - metadata
                           additionalProperties: false
                         - type: object
                           properties:
@@ -75,7 +75,7 @@ properties:
                       - type: object
                         properties:
                           type:
-                            const: 'context'
+                            const: 'metadata'
                           path: *dotted_path_definition
                           destinations:
                             type: array
