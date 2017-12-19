@@ -1,15 +1,15 @@
 """Public API for state recording subsystem."""
 
 import datetime
-import dateutil.tz
-
 from typing import Iterable
 
-from routemaster.app import App
-from routemaster.config import StateMachine, State
-from routemaster.db import state_machines, states
+import dateutil.tz
+from sqlalchemy import and_, not_, insert, select
 
-from sqlalchemy import select, insert, and_, not_
+from routemaster.db import states, state_machines
+from routemaster.app import App
+from routemaster.config import State, StateMachine
+
 
 def record_state_machines(
     app : App,

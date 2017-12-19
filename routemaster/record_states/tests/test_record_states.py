@@ -1,9 +1,9 @@
-from routemaster.record_states import record_state_machines
-from routemaster.db import state_machines, states
-from routemaster.config import StateMachine, Gate, NoNextStates
-from routemaster.exit_conditions import ExitConditionProgram
-
 from sqlalchemy import select
+
+from routemaster.db import states, state_machines
+from routemaster.config import Gate, NoNextStates, StateMachine
+from routemaster.record_states import record_state_machines
+from routemaster.exit_conditions import ExitConditionProgram
 
 
 def test_record_no_states_has_no_effect(app_config):
