@@ -56,6 +56,16 @@ TEST_STATE_MACHINES = {
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
+class TestApp(App):
+    def __init__(self, config):
+        self.config = config
+        self.database_used = False
+
+    @property
+    def db(self):
+        self.database_used = True
+        return TEST_ENGINE
+
 
 @pytest.fixture()
 def app(**kwargs):
@@ -67,7 +77,7 @@ def app(**kwargs):
 @pytest.fixture()
 def app_config(**kwargs):
     """Create an `App` config object for testing."""
-    return App(Config(
+    return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG)
     ))
@@ -82,12 +92,13 @@ def database_creation():
 
 
 @pytest.yield_fixture(autouse=True)
-def database_clear():
+def database_clear(app_config):
     """Truncate all tables after each test."""
     yield
-    with TEST_ENGINE.begin() as conn:
-        for table in metadata.tables:
-            conn.execute(f'truncate table {table} cascade')
+    if app_config.database_used:
+        with app_config.db.begin() as conn:
+            for table in metadata.tables:
+                conn.execute(f'truncate table {table} cascade')
 
 
 @pytest.fixture()
