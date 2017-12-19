@@ -1,10 +1,10 @@
 """Utility methods for state resyncing."""
 
-from typing import Set, Iterable, Tuple
+from typing import Set, Tuple, Iterable
 
-from sqlalchemy import and_, or_, func, not_, select, tuple_
+from sqlalchemy import or_, and_, func, not_, select, tuple_
 
-from routemaster.db import states, state_machines, edges
+from routemaster.db import edges, states, state_machines
 from routemaster.config import StateMachine
 
 
