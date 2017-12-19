@@ -48,10 +48,6 @@ def record_state_machines(
         deletions = old_machine_names - new_machine_names
         updates = new_machine_names & old_machine_names
 
-        print("INSERT", insertions)
-        print("DELETE", deletions)
-        print("UPDATE", updates)
-
         if insertions:
             conn.execute(
                 state_machines.insert(),
