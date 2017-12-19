@@ -24,10 +24,7 @@ def record_state_machines(
     configurations.
     """
     machines = list(machines)
-    machines_by_name = {
-        x.name: x
-        for x in machines
-    }
+    machines_by_name = {x.name: x for x in machines}
 
     with app.db.begin() as conn:
         old_machine_names = set(
