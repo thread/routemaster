@@ -179,8 +179,8 @@ def _move_label_for_context_change(
         return
 
     if not any(
-        t.should_trigger_for_update(update)
-        for t in current_state.context_triggers
+        trigger.should_trigger_for_update(update)
+        for trigger in current_state.context_triggers
     ):
         return
 
