@@ -5,9 +5,24 @@ from sqlalchemy import and_, select
 from routemaster.db import labels, history
 
 
-def test_root(client, create_label):
+def test_root(client):
     response = client.get('/')
-    assert response.json == {'status': 'ok'}
+    assert response.json == {
+        'status': 'ok',
+        'state-machines': '/state-machines',
+    }
+
+
+def test_enumerate_state_machines(client, app_config):
+    response = client.get('/state-machines')
+    assert response.status_code == 200
+    assert response.json == {'state-machines': [
+        {
+            'name': state_machine.name,
+            'labels': f'/state-machines/{state_machine.name}/labels',
+        }
+        for state_machine in app_config.config.state_machines.values()
+    ]}
 
 
 def test_create_label(client, app_config):
@@ -69,8 +84,8 @@ def test_update_label(client, app_config, create_label):
     create_label('foo', 'test_machine', {})
 
     label_context = {'bar': 'baz'}
-    response = client.post(
-        '/state-machines/test_machine/labels/foo/update',
+    response = client.patch(
+        '/state-machines/test_machine/labels/foo',
         data=json.dumps(label_context),
         content_type='application/json',
     )
@@ -85,8 +100,8 @@ def test_update_label(client, app_config, create_label):
 
 
 def test_update_label_404_for_not_found_label(client):
-    response = client.post(
-        '/state-machines/test_machine/labels/foo/update',
+    response = client.patch(
+        '/state-machines/test_machine/labels/foo',
         data=json.dumps({'foo': 'bar'}),
         content_type='application/json',
     )
@@ -95,8 +110,8 @@ def test_update_label_404_for_not_found_label(client):
 
 def test_update_label_400_for_invalid_body(client, create_label):
     create_label('foo', 'test_machine', {})
-    response = client.post(
-        '/state-machines/test_machine/labels/foo/update',
+    response = client.patch(
+        '/state-machines/test_machine/labels/foo',
         data='not valid json',
         content_type='application/json',
     )
@@ -129,14 +144,23 @@ def test_list_labels_404_for_not_found_state_machine(client, create_label):
 def test_list_labels_when_none(client, create_label):
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
-    assert response.json == {'labels': []}
+    assert response.json['labels'] == []
+
+
+def test_list_labels_includes_link_to_create_labels(client, create_label):
+    response = client.get('/state-machines/test_machine/labels')
+    assert response.status_code == 200
+    assert (
+        response.json['create'] ==
+        '/state-machines/test_machine/labels/:name'
+    )
 
 
 def test_list_labels_when_one(client, create_label):
     create_label('foo', 'test_machine', {'bar': 'baz'})
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
-    assert response.json == {'labels': [{'name': 'foo'}]}
+    assert response.json['labels'] == [{'name': 'foo'}]
 
 
 def test_list_labels_when_many(client, create_label):
@@ -145,13 +169,13 @@ def test_list_labels_when_many(client, create_label):
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
     # Always returned in alphabetical order
-    assert response.json == {'labels': [{'name': 'foo'}, {'name': 'quox'}]}
+    assert response.json['labels'] == [{'name': 'foo'}, {'name': 'quox'}]
 
 
 def test_update_label_moves_label(client, create_label, app_config):
     create_label('foo', 'test_machine', {})
-    response = client.post(
-        '/state-machines/test_machine/labels/foo/update',
+    response = client.patch(
+        '/state-machines/test_machine/labels/foo',
         data=json.dumps({'should_progress': True}),
         content_type='application/json',
     )
@@ -232,7 +256,7 @@ def test_list_labels_excludes_deleted_labels(
 
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
-    assert response.json == {'labels': [{'name': 'quox'}]}
+    assert response.json['labels'] == [{'name': 'quox'}]
 
 
 def test_get_label_410_for_deleted_label(
@@ -263,8 +287,8 @@ def test_update_label_410_for_deleted_label(
 ):
     create_deleted_label('foo', 'test_machine')
 
-    response = client.post(
-        '/state-machines/test_machine/labels/foo/update',
+    response = client.patch(
+        '/state-machines/test_machine/labels/foo',
         data=json.dumps({'foo': 'bar'}),
         content_type='application/json',
     )

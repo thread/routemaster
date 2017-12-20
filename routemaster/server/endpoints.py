@@ -19,9 +19,26 @@ def status():
     try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
-            return jsonify({'status': 'ok'})
+            return jsonify({
+                'status': 'ok',
+                'state-machines': '/state-machines',
+            })
     except Exception:
         return jsonify({'status': 'Could not connect to database'})
+
+
+@server.route('/state-machines', methods=['GET'])
+def get_state_machines():
+    """Status check endpoint."""
+    return jsonify({
+        'state-machines': [
+            {
+                'name': x.name,
+                'labels': f'/state-machines/{x.name}/labels',
+            }
+            for x in server.config.app.config.state_machines.values()
+        ],
+    })
 
 
 @server.route(
@@ -48,9 +65,10 @@ def get_labels(state_machine_name):
         abort(404, msg)
 
     labels = state_machine.list_labels(app, state_machine_instance)
-    return jsonify(
-        labels=[{'name': x.name} for x in labels],
-    )
+    return jsonify({
+        'labels': [{'name': x.name} for x in labels],
+        'create': f'/state-machines/{state_machine_name}/labels/:name',
+    })
 
 
 @server.route(
@@ -114,8 +132,8 @@ def create_label(state_machine_name, label_name):
 
 
 @server.route(
-    '/state-machines/<state_machine_name>/labels/<label_name>/update', # noqa
-    methods=['POST'],
+    '/state-machines/<state_machine_name>/labels/<label_name>', # noqa
+    methods=['PATCH'],
 )
 def update_label(state_machine_name, label_name):
     """
