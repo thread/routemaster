@@ -128,9 +128,12 @@ def create_label(state_machine_name, label_name):
     except KeyError:
         abort(400, "No context given")
 
+    initial_state_name = \
+        app.config.state_machines[state_machine_name].states[0].name
+
     try:
         context = state_machine.create_label(app, label, initial_context)
-        return jsonify(context=context), 201
+        return jsonify(context=context, state=initial_state_name), 201
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
@@ -172,7 +175,8 @@ def update_label(state_machine_name, label_name):
             label,
             patched_context,
         )
-        return jsonify(context=new_context)
+        state = state_machine.get_label_state(app, label)
+        return jsonify(context=new_context, state=state.name)
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
