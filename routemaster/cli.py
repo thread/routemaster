@@ -1,7 +1,7 @@
 """CLI handling for `routemaster`."""
 import yaml
 import click
-import waitress
+import gunicorn.app.base
 
 from routemaster.app import App
 from routemaster.config import load_config
@@ -33,22 +33,39 @@ def validate(ctx):
 
 @main.command()
 @click.option(
-    '-h',
-    '--host',
-    help="Host for service.",
+    '-b',
+    '--bind',
+    help="Bind address and port.",
     type=str,
-    default='::',
+    default='[::]:2017',
 )
 @click.option(
-    '-p',
-    '--port',
-    help="Port for service.",
-    type=int,
-    default=2017,
+    '--debug/--no-debug',
+    help="Enable debugging mode.",
+    default=False,
 )
 @click.pass_context
-def serve(ctx, host, port):
+def serve(ctx, bind, debug):
     """Entrypoint for serving the Routemaster HTTP service."""
     server.config.app = ctx.obj
 
-    waitress.serve(server, host=host, port=port, ident='routemaster')
+    class HackyWSGIApplication(gunicorn.app.base.BaseApplication):
+        def __init__(self, app, *, bind, debug):
+            self.application = app
+            self.bind = bind
+            self.debug = debug
+            super().__init__()
+
+        def load_config(self):
+            self.cfg.set('bind', self.bind)
+            self.cfg.set('workers', 1)
+
+            if self.debug:
+                self.cfg.set('reload', True)
+                self.cfg.set('accesslog', '-')
+
+        def load(self):
+            return self.application
+
+    instance = HackyWSGIApplication(server, bind=bind, debug=debug)
+    instance.run()
