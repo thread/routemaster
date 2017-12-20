@@ -100,3 +100,23 @@ states = Table(
 
     Column('updated', DateTime),
 )
+
+
+"""Represents an edge between states in a state machine."""
+edges = Table(
+    'edges',
+    metadata,
+    Column('state_machine', String, primary_key=True, nullable=False),
+    Column('from_state', String, primary_key=True, nullable=False),
+    Column('to_state', String, primary_key=True, nullable=False),
+    Column('deprecated', Boolean, default=False, nullable=False),
+    Column('updated', DateTime, nullable=False),
+    ForeignKeyConstraint(
+        columns=('state_machine', 'from_state'),
+        refcolumns=(states.c.state_machine, states.c.name),
+    ),
+    ForeignKeyConstraint(
+        columns=('state_machine', 'to_state'),
+        refcolumns=(states.c.state_machine, states.c.name),
+    ),
+)

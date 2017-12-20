@@ -5,6 +5,7 @@ import click
 from routemaster.app import App
 from routemaster.config import load_config
 from routemaster.server import server
+from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
 
@@ -47,9 +48,13 @@ def validate(ctx):
 @click.pass_context
 def serve(ctx, bind, debug):
     """Entrypoint for serving the Routemaster HTTP service."""
-    server.config.app = ctx.obj
+    app = ctx.obj
+
+    server.config.app = app
     if debug:
         server.config['DEBUG'] = True
+
+    record_state_machines(app, app.config.state_machines.values())
 
     instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
     instance.run()

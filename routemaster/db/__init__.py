@@ -1,6 +1,7 @@
 """Public Database interface."""
 
 from routemaster.db.model import (
+    edges,
     labels,
     states,
     history,
@@ -10,6 +11,7 @@ from routemaster.db.model import (
 from routemaster.db.initialisation import initialise_db
 
 __all__ = (
+    'edges',
     'labels',
     'states',
     'history',

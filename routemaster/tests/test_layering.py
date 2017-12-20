@@ -19,6 +19,7 @@ DEPENDENCIES = (
     ('cli', 'server'),
     ('cli', 'app'),
     ('cli', 'gunicorn_application'),
+    ('cli', 'record_states'),
 
     ('exit_conditions', 'utils'),
 
@@ -38,6 +39,9 @@ DEPENDENCIES = (
     ('state_machine', 'db'),
     ('state_machine', 'utils'),
     ('state_machine', 'config'),
+
+    ('record_states', 'app'),
+    ('record_states', 'config'),
 )
 
 EXCLUDED_MODULES = (
