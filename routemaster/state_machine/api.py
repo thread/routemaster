@@ -193,12 +193,7 @@ def _move_label_for_context_change(
     if not can_exit:
         return
 
-    destination = _choose_destination(
-        state_machine,
-        label,
-        current_state,
-        context,
-    )
+    destination = _choose_destination(state_machine, current_state, context)
 
     conn.execute(history.insert().values(
         label_name=label.name,
@@ -210,7 +205,6 @@ def _move_label_for_context_change(
 
 def _choose_destination(
     state_machine: StateMachine,
-    label: Label,
     current_state: State,
     context: Context,
 ) -> State:
