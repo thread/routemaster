@@ -29,6 +29,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label):
 
     run_webhook.assert_called_once_with(
         'about:blank',
+        'application/json',
         b'{"context": {"bar": "bazz"}, "label": "foo"}',
     )
 
@@ -71,6 +72,7 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label):
 
     run_webhook.assert_called_once_with(
         'about:blank',
+        'application/json',
         b'{"context": {"bar": "bazz"}, "label": "foo"}',
     )
 

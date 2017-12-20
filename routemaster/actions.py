@@ -20,7 +20,7 @@ class WebhookResult(enum.Enum):
     FAIL = 'fail'
 
 
-WebhookRunner = Callable[[str, bytes], WebhookResult]
+WebhookRunner = Callable[[str, str, bytes], WebhookResult]
 
 
 def run_action(
@@ -65,7 +65,11 @@ def run_action(
                 'context': context,
                 'label': label_name,
             }, sort_keys=True).encode('utf-8')
-            result = run_webhook(action.webhook, webhook_argument)
+            result = run_webhook(
+                action.webhook,
+                'application/json',
+                webhook_argument,
+            )
 
             if result == WebhookResult.SUCCESS:
                 next_state = choose_next_state(state_machine, action, context)
