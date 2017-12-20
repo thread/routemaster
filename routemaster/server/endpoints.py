@@ -97,7 +97,7 @@ def get_label(state_machine_name, label_name):
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
-    return jsonify(context)
+    return jsonify(context=context)
 
 
 @server.route(
@@ -121,8 +121,13 @@ def create_label(state_machine_name, label_name):
     data = request.get_json()
 
     try:
-        context = state_machine.create_label(app, label, data)
-        return jsonify(context), 201
+        initial_context = data['context']
+    except KeyError:
+        abort(400, "No context given")
+
+    try:
+        context = state_machine.create_label(app, label, initial_context)
+        return jsonify(context=context), 201
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
@@ -154,12 +159,17 @@ def update_label(state_machine_name, label_name):
     label = Label(label_name, state_machine_name)
 
     try:
+        patched_context = request.get_json()['context']
+    except KeyError:
+        abort(400, "No new context")
+
+    try:
         new_context = state_machine.update_context_for_label(
             app,
             label,
-            request.get_json(),
+            patched_context,
         )
-        return jsonify(new_context)
+        return jsonify(context=new_context)
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)

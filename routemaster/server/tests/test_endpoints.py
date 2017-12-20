@@ -32,12 +32,12 @@ def test_create_label(client, app_config):
 
     response = client.post(
         f'/state-machines/{state_machine.name}/labels/{label_name}',
-        data=json.dumps(label_context),
+        data=json.dumps({'context': label_context}),
         content_type='application/json',
     )
 
     assert response.status_code == 201
-    assert response.json == {'bar': 'baz'}
+    assert response.json['context'] == {'bar': 'baz'}
 
     with app_config.db.begin() as conn:
         assert conn.scalar(labels.count()) == 1
@@ -100,7 +100,7 @@ def test_update_label(client, app_config, create_label):
     )
 
     assert response.status_code == 200
-    assert response.json == label_context
+    assert response.json['context'] == label_context
 
     with app_config.db.begin() as conn:
         result = conn.execute(labels.select())
