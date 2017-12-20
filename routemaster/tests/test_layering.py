@@ -18,6 +18,7 @@ DEPENDENCIES = (
     ('cli', 'config'),
     ('cli', 'server'),
     ('cli', 'app'),
+    ('cli', 'gunicorn_application'),
 
     ('exit_conditions', 'utils'),
 
