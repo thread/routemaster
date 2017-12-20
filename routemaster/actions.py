@@ -20,11 +20,14 @@ class WebhookResult(enum.Enum):
     FAIL = 'fail'
 
 
+WebhookRunner = Callable[[str, bytes], WebhookResult]
+
+
 def run_action(
     app: App,
     state_machine: StateMachine,
     action: Action,
-    run_webhook: Callable[[str, bytes], WebhookResult],
+    run_webhook: WebhookRunner,
 ) -> None:
     """Run `action` for all outstanding users."""
     with app.db.begin() as conn:
