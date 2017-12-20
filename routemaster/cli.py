@@ -1,6 +1,7 @@
 """CLI handling for `routemaster`."""
 import yaml
 import click
+import waitress
 
 from routemaster.app import App
 from routemaster.config import load_config
@@ -49,4 +50,5 @@ def validate(ctx):
 def serve(ctx, host, port):
     """Entrypoint for serving the Routemaster HTTP service."""
     server.config.app = ctx.obj
-    server.run(host=host, port=port)
+
+    waitress.serve(server, host=host, port=port, ident='routemaster')

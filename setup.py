@@ -43,6 +43,7 @@ setup(
         'sqlalchemy',
         'python-dateutil',
         'alembic >=0.9.6',
+        'waitress >=1.1',
     ),
 
     setup_requires=(
