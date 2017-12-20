@@ -114,8 +114,8 @@ def create_label(state_machine_name, label_name):
 
 
 @server.route(
-    '/state-machines/<state_machine_name>/labels/<label_name>/update', # noqa
-    methods=['POST'],
+    '/state-machines/<state_machine_name>/labels/<label_name>', # noqa
+    methods=['PATCH'],
 )
 def update_label(state_machine_name, label_name):
     """
