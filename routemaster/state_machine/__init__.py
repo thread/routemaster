@@ -6,6 +6,7 @@ from routemaster.state_machine.api import (
     create_label,
     delete_label,
     get_label_state,
+    choose_next_state,
     get_label_context,
     update_context_for_label,
 )
@@ -23,6 +24,7 @@ __all__ = (
     'UnknownLabel',
     'get_label_context',
     'get_label_state',
+    'choose_next_state',
     'LabelAlreadyExists',
     'UnknownStateMachine',
     'update_context_for_label',

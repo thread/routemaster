@@ -42,6 +42,9 @@ DEPENDENCIES = (
 
     ('record_states', 'app'),
     ('record_states', 'config'),
+
+    ('actions', 'app'),
+    ('actions', 'config'),
 )
 
 EXCLUDED_MODULES = (
