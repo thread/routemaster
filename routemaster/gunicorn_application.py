@@ -22,7 +22,7 @@ WSGICallable = Callable[
 ]
 
 
-class HackyWSGIApplication(gunicorn.app.base.BaseApplication):
+class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
     """gunicorn application for routemaster."""
 
     def __init__(self, app: WSGICallable, *, bind: str, debug: bool) -> None:

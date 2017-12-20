@@ -5,7 +5,7 @@ import click
 from routemaster.app import App
 from routemaster.config import load_config
 from routemaster.server import server
-from routemaster.gunicorn_application import HackyWSGIApplication
+from routemaster.gunicorn_application import GunicornWSGIApplication
 
 
 @click.group()
@@ -49,5 +49,5 @@ def serve(ctx, bind, debug):
     """Entrypoint for serving the Routemaster HTTP service."""
     server.config.app = ctx.obj
 
-    instance = HackyWSGIApplication(server, bind=bind, debug=debug)
+    instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
     instance.run()
