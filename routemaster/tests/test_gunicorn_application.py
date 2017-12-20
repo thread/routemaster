@@ -1,5 +1,4 @@
 import pytest
-
 import werkzeug.test
 import werkzeug.testapp
 import werkzeug.wrappers

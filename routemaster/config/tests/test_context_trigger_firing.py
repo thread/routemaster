@@ -2,7 +2,6 @@ import pytest
 
 from routemaster.config import ContextTrigger
 
-
 TEST_CASES = [
     ('foo', {}, False),
     ('foo', {'foo': True}, True),

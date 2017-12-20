@@ -1,8 +1,8 @@
-import textwrap
 import datetime
-import dateutil.tz
+import textwrap
 
 import pytest
+import dateutil.tz
 
 from routemaster.exit_conditions import ExitConditionProgram
 
