@@ -206,7 +206,7 @@ def _move_label_for_context_change(
     ):
         return
 
-    exit_condition_variables = {'context': context}
+    exit_condition_variables = {**context}
     can_exit = current_state.exit_condition.run(
         exit_condition_variables,
         _utcnow(),
