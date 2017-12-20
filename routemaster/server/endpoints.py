@@ -65,9 +65,9 @@ def get_labels(state_machine_name):
         abort(404, msg)
 
     labels = state_machine.list_labels(app, state_machine_instance)
-    return jsonify(
-        labels=[{'name': x.name} for x in labels],
-    )
+    return jsonify({
+        'labels': [{'name': x.name} for x in labels],
+    })
 
 
 @server.route(
