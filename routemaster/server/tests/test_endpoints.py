@@ -144,14 +144,14 @@ def test_list_labels_404_for_not_found_state_machine(client, create_label):
 def test_list_labels_when_none(client, create_label):
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
-    assert response.json == {'labels': []}
+    assert response.json['labels'] == []
 
 
 def test_list_labels_when_one(client, create_label):
     create_label('foo', 'test_machine', {'bar': 'baz'})
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
-    assert response.json == {'labels': [{'name': 'foo'}]}
+    assert response.json['labels'] == [{'name': 'foo'}]
 
 
 def test_list_labels_when_many(client, create_label):
@@ -160,7 +160,7 @@ def test_list_labels_when_many(client, create_label):
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
     # Always returned in alphabetical order
-    assert response.json == {'labels': [{'name': 'foo'}, {'name': 'quox'}]}
+    assert response.json['labels'] == [{'name': 'foo'}, {'name': 'quox'}]
 
 
 def test_update_label_moves_label(client, create_label, app_config):
@@ -247,7 +247,7 @@ def test_list_labels_excludes_deleted_labels(
 
     response = client.get('/state-machines/test_machine/labels')
     assert response.status_code == 200
-    assert response.json == {'labels': [{'name': 'quox'}]}
+    assert response.json['labels'] == [{'name': 'quox'}]
 
 
 def test_get_label_410_for_deleted_label(
