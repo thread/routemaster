@@ -19,7 +19,10 @@ def status():
     try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
-            return jsonify({'status': 'ok'})
+            return jsonify({
+                'status': 'ok',
+                'state-machines': '/state-machines',
+            })
     except Exception:
         return jsonify({'status': 'Could not connect to database'})
 
