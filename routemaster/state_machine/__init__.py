@@ -5,8 +5,8 @@ from routemaster.state_machine.api import (
     list_labels,
     create_label,
     delete_label,
-    get_label_context,
     get_label_state,
+    get_label_context,
     update_context_for_label,
 )
 from routemaster.state_machine.exceptions import (
