@@ -61,7 +61,7 @@ def run_action(
             webhook_argument = json.dumps({
                 'context': context,
                 'label': label_name,
-            }).encode('utf-8')
+            }, sort_keys=True).encode('utf-8')
             result = run_webhook(action.webhook, webhook_argument)
 
             if result == WebhookResult.SUCCESS:
