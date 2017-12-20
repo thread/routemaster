@@ -41,7 +41,7 @@ TEST_STATE_MACHINES = {
                 ],
                 next_states=ConstantNextState(state='end'),
                 exit_condition=ExitConditionProgram(
-                    'context.should_progress = true',
+                    'should_progress = true',
                 ),
             ),
             Gate(
