@@ -6,6 +6,7 @@ from routemaster.state_machine.api import (
     create_label,
     delete_label,
     get_label_context,
+    get_label_state,
     update_context_for_label,
 )
 from routemaster.state_machine.exceptions import (
@@ -21,6 +22,7 @@ __all__ = (
     'delete_label',
     'UnknownLabel',
     'get_label_context',
+    'get_label_state',
     'LabelAlreadyExists',
     'UnknownStateMachine',
     'update_context_for_label',

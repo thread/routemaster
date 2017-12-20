@@ -53,6 +53,28 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
             yield Label(row[labels.c.name], state_machine.name)
 
 
+def get_label_state(app: App, label: Label) -> State:
+    """Finds the current state of a label."""
+    with app.db.begin() as conn:
+        history_entry = conn.execute(
+            select([history]).where(and_(
+                history.c.label_name == label.name,
+                history.c.label_state_machine == label.state_machine,
+            )).order_by(
+                history.c.created.desc(),
+            ).limit(1)
+        ).fetchone()
+
+    if history_entry is None:
+        raise UnknownLabel(label)
+
+    current_state = app.config.state_machines[label.state_machine].get_state(
+        history_entry.new_state,
+    )
+
+    return current_state
+
+
 def get_label_context(app: App, label: Label) -> Context:
     """Returns the context associated with a label."""
     with app.db.begin() as conn:

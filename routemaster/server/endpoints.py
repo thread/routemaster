@@ -97,7 +97,10 @@ def get_label(state_machine_name, label_name):
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
-    return jsonify(context=context)
+
+    state = state_machine.get_label_state(app, label)
+
+    return jsonify(context=context, state=state.name)
 
 
 @server.route(

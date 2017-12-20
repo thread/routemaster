@@ -134,6 +134,13 @@ def test_get_label(client, create_label):
     assert response.json['context'] == {'bar': 'baz'}
 
 
+def test_get_label_has_state(client, create_label):
+    create_label('foo', 'test_machine', {'bar': 'baz'})
+    response = client.get('/state-machines/test_machine/labels/foo')
+    assert response.status_code == 200
+    assert response.json['state'] == 'start'
+
+
 def test_get_label_404_for_not_found_label(client, create_label):
     response = client.get('/state-machines/test_machine/labels/foo')
     assert response.status_code == 404
