@@ -48,6 +48,8 @@ def validate(ctx):
 def serve(ctx, bind, debug):
     """Entrypoint for serving the Routemaster HTTP service."""
     server.config.app = ctx.obj
+    if debug:
+        server.config['DEBUG'] = True
 
     instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
     instance.run()

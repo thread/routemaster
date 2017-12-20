@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, Callable, Iterable
 
+import werkzeug.debug
 import gunicorn.app.base
 
 StartResponse = Callable[
@@ -51,4 +52,9 @@ class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
 
         Luckily little loading is needed since this is available inline.
         """
+        if self.debug:
+            return werkzeug.debug.DebuggedApplication(
+                self.application,
+                evalex=False,
+            )
         return self.application
