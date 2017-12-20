@@ -128,8 +128,12 @@ def create_label(state_machine_name, label_name):
     except KeyError:
         abort(400, "No context given")
 
-    initial_state_name = \
-        app.config.state_machines[state_machine_name].states[0].name
+    try:
+        initial_state_name = \
+            app.config.state_machines[state_machine_name].states[0].name
+    except LookupError:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
 
     try:
         context = state_machine.create_label(app, label, initial_context)
