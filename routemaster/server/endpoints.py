@@ -24,6 +24,20 @@ def status():
         return jsonify({'status': 'Could not connect to database'})
 
 
+@server.route('/state-machines', methods=['GET'])
+def get_state_machines():
+    """Status check endpoint."""
+    return jsonify({
+        'state-machines': [
+            {
+                'name': x.name,
+                'labels': f'/state-machines/{x.name}/labels',
+            }
+            for x in server.config.app.config.state_machines.values()
+        ],
+    })
+
+
 @server.route(
     '/state-machines/<state_machine_name>/labels',
     methods=['GET'],

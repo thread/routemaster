@@ -5,9 +5,20 @@ from sqlalchemy import and_, select
 from routemaster.db import labels, history
 
 
-def test_root(client, create_label):
     response = client.get('/')
     assert response.json == {'status': 'ok'}
+
+
+def test_enumerate_state_machines(client, app_config):
+    response = client.get('/state-machines')
+    assert response.status_code == 200
+    assert response.json == {'state-machines': [
+        {
+            'name': state_machine.name,
+            'labels': f'/state-machines/{state_machine.name}/labels',
+        }
+        for state_machine in app_config.config.state_machines.values()
+    ]}
 
 
 def test_create_label(client, app_config):
