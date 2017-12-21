@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+import requests
 import httpretty
 from sqlalchemy import select
 
@@ -141,12 +142,26 @@ def test_requests_webhook_runner_handles_other_failure_modes_as_retry(status):
     httpretty.register_uri(
         httpretty.POST,
         'http://example.com/',
-        status=404,
+        status=status,
     )
     runner = RequestsWebhookRunner()
     result = runner('http://example.com', 'application/json', b'{}')
     assert result == WebhookResult.RETRY
 
+
+@httpretty.activate
+def test_requests_webhook_runner_handles_timeout_as_retry():
+    def raise_retry():
+        raise requests.ReadTimeout()
+    httpretty.register_uri(
+        httpretty.POST,
+        'http://example.com/',
+        status=410,
+        body=raise_retry,
+    )
+    runner = RequestsWebhookRunner()
+    result = runner('http://example.com', 'application/json', b'{}')
+    assert result == WebhookResult.RETRY
 
 @httpretty.activate
 def test_requests_webhook_runner_passes_post_data_through():
