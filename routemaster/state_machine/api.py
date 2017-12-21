@@ -9,6 +9,7 @@ from sqlalchemy.sql import select
 
 from routemaster.db import labels, history
 from routemaster.app import App
+from routemaster.feeds import feeds_for_state_machine
 from routemaster.utils import dict_merge
 from routemaster.config import State, Action, StateMachine
 from routemaster.exit_conditions import Context
@@ -207,7 +208,13 @@ def _move_label_for_metadata_change(
     ):
         return
 
-    exit_condition_context = Context(metadata, _utcnow())
+    feeds = feeds_for_state_machine(state_machine)
+    exit_condition_context = Context(
+        metadata,
+        _utcnow(),
+        feeds,
+        current_state.exit_condition.accessed_variables(),
+    )
     can_exit = current_state.exit_condition.run(exit_condition_context)
 
     if not can_exit:
