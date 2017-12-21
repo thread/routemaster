@@ -10,20 +10,20 @@ PROGRAMS = [
     ("true", True, ()),
     ("false", False, ()),
     ("3 < 6", True, ()),
-    ("foo = 5", False, ('foo',)),
+    ("metadata.foo = 5", False, ('metadata.foo',)),
     ("true and false", False, ()),
     ("false or true", True, ()),
     ("true and true and 3 = 3", True, ()),
     ("false or false or 3 > 5", False, ()),
     ("not true", False, ()),
-    ("3h has passed since old_time", True, ('old_time',)),
+    ("3h has passed since metadata.old_time", True, ('metadata.old_time',)),
     ("not 4 >= 6", True, ()),
-    ("3h has not passed since old_time", False, ('old_time',)),
-    ("foo is defined", True, ('foo',)),
-    ("bar is defined", False, ('bar',)),
+    ("3h has not passed since metadata.old_time", False, ('metadata.old_time',)),
+    ("metadata.foo is defined", True, ('metadata.foo',)),
+    ("metadata.bar is defined", False, ('metadata.bar',)),
     ("null is not defined", True, ()),
-    ("(1 < 2) and (2 < foo)", True, ('foo',)),
-    ("3 is not in objects", True, ('objects',)),
+    ("(1 < 2) and (2 < metadata.foo)", True, ('metadata.foo',)),
+    ("3 is not in metadata.objects", True, ('metadata.objects',)),
 ]
 
 
@@ -82,7 +82,7 @@ ERRORS = [
         """,
     ),
     (
-        "a is ftaghn",
+        "metadata.foo is ftaghn",
         """
         Unknown property ftaghn
         """,
