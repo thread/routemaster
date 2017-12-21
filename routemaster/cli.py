@@ -3,6 +3,7 @@ import yaml
 import click
 
 from routemaster.app import App
+from routemaster.cron import CronThread
 from routemaster.config import load_config
 from routemaster.server import server
 from routemaster.record_states import record_state_machines
@@ -55,6 +56,9 @@ def serve(ctx, bind, debug):
         server.config['DEBUG'] = True
 
     record_state_machines(app, app.config.state_machines.values())
+
+    cron_thread = CronThread(app)
+    cron_thread.start()
 
     instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
     instance.run()
