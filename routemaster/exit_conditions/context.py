@@ -32,6 +32,7 @@ class Context(object):
             )
 
     def property_handler(self, property_name, value, **kwargs):
+        """Handle a property in execution."""
         if property_name == ('passed',):
             epoch = kwargs['since']
             return (self.now - epoch).total_seconds() >= value

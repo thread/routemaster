@@ -1,7 +1,6 @@
 """Top-level utility for exit condition programs."""
 
 import typing
-import datetime
 
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.context import Context
