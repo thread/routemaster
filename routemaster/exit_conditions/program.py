@@ -14,32 +14,6 @@ from routemaster.exit_conditions.error_display import (
 )
 
 
-class _ProgramContext(object):
-    def __init__(self, *, context, now):
-        if now.tzinfo is None:
-            raise ValueError(
-                "Cannot evaluate exit conditions with naive datetimes",
-            )
-
-        self.context = context
-        self.now = now
-
-    def lookup(self, key):
-        return self.context.get_path(key)
-
-    def property_handler(self, property_name, value, **kwargs):
-        if property_name == ('passed',):
-            epoch = kwargs['since']
-            return (self.now - epoch).total_seconds() >= value
-        if property_name == ('defined',):
-            return value is not None
-        if property_name == () and 'in' in kwargs:
-            return value in kwargs['in']
-        raise ValueError("Unknown property {name}".format(
-            name='.'.join(property_name)),
-        )
-
-
 class ExitConditionProgram(object):
     """Compiled exit condition program."""
 
@@ -66,21 +40,12 @@ class ExitConditionProgram(object):
         for accessed_key in find_accessed_keys(self._instructions):
             yield '.'.join(accessed_key)
 
-    def run(
-        self,
-        context: Context,
-        now: datetime.datetime,
-    ) -> bool:
+    def run(self, context: Context) -> bool:
         """Evaluate this program with a given context."""
-        program_context = _ProgramContext(
-            context=context,
-            now=now,
-        )
-
         return evaluate(
             self._instructions,
-            program_context.lookup,
-            program_context.property_handler,
+            context.lookup,
+            context.property_handler,
         )
 
     def __eq__(self, other_program: typing.Any) -> bool:

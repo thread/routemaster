@@ -39,7 +39,7 @@ VARIABLES = {
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
 def test_evaluate(program, expected, variables):
     program = ExitConditionProgram(program)
-    assert program.run(Context(VARIABLES), NOW) == expected
+    assert program.run(Context(VARIABLES, NOW)) == expected
 
 
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
@@ -133,7 +133,7 @@ ERRORS = [
 @pytest.mark.parametrize("program, error", ERRORS)
 def test_errors(program, error):
     with pytest.raises(ValueError) as compile_error:
-        ExitConditionProgram(program).run(Context(VARIABLES), NOW)
+        ExitConditionProgram(program).run(Context(VARIABLES, NOW))
 
     message = str(compile_error.value)
 

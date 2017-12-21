@@ -207,11 +207,8 @@ def _move_label_for_metadata_change(
     ):
         return
 
-    exit_condition_context = Context(metadata)
-    can_exit = current_state.exit_condition.run(
-        exit_condition_context,
-        _utcnow(),
-    )
+    exit_condition_context = Context(metadata, _utcnow())
+    can_exit = current_state.exit_condition.run(exit_condition_context)
 
     if not can_exit:
         return
