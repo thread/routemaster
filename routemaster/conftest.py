@@ -57,6 +57,28 @@ TEST_STATE_MACHINES = {
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
 
 
+class TestApp(App):
+    """
+    Mocked App subclass which overloads the `db` property.
+
+    This has two implications:
+
+    1. We use a shared engine in all the tests rather than connecting many
+       times (a speed improvement),
+    2. We can set a flag on access to `.db` so that we needn't bother with
+       resetting the database if nothing has actually been changed.
+    """
+    def __init__(self, config):
+        self.config = config
+        self.database_used = False
+
+    @property
+    def db(self):
+        """Get the shared DB and set the used flag."""
+        self.database_used = True
+        return TEST_ENGINE
+
+
 @pytest.fixture()
 def app(**kwargs):
     """Create the Flask app for testing."""
@@ -67,7 +89,7 @@ def app(**kwargs):
 @pytest.fixture()
 def app_config(**kwargs):
     """Create an `App` config object for testing."""
-    return App(Config(
+    return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG)
     ))
@@ -82,12 +104,13 @@ def database_creation():
 
 
 @pytest.yield_fixture(autouse=True)
-def database_clear():
+def database_clear(app_config):
     """Truncate all tables after each test."""
     yield
-    with TEST_ENGINE.begin() as conn:
-        for table in metadata.tables:
-            conn.execute(f'truncate table {table} cascade')
+    if app_config.database_used:
+        with app_config.db.begin() as conn:
+            for table in metadata.tables:
+                conn.execute(f'truncate table {table} cascade')
 
 
 @pytest.fixture()
@@ -102,3 +125,31 @@ def create_label(app_config):
         )
 
     return _create
+
+
+@pytest.fixture()
+def delete_label(app_config):
+    """
+    Mark a label in the database as deleted.
+    """
+
+    def _delete(name: str, state_machine_name: str) -> None:
+        state_machine.delete_label(
+            app_config,
+            Label(name, state_machine_name),
+        )
+
+    return _delete
+
+
+@pytest.fixture()
+def create_deleted_label(create_label, delete_label):
+    """
+    Create a label in the database and then delete it.
+    """
+
+    def _create_and_delete(name: str, state_machine_name: str) -> None:
+        create_label(name, state_machine_name, {})
+        delete_label(name, state_machine_name)
+
+    return _create_and_delete

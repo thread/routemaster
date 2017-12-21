@@ -18,6 +18,8 @@ DEPENDENCIES = (
     ('cli', 'config'),
     ('cli', 'server'),
     ('cli', 'app'),
+    ('cli', 'gunicorn_application'),
+    ('cli', 'record_states'),
 
     ('exit_conditions', 'utils'),
 
@@ -37,6 +39,9 @@ DEPENDENCIES = (
     ('state_machine', 'db'),
     ('state_machine', 'utils'),
     ('state_machine', 'config'),
+
+    ('record_states', 'app'),
+    ('record_states', 'config'),
 )
 
 EXCLUDED_MODULES = (
@@ -107,6 +112,8 @@ def test_layers():
 
         last_import_source = None
 
+        top_level_import = False
+
         for instruction in dis.get_instructions(code):
             if instruction.opname == 'IMPORT_NAME':
                 import_target = instruction.argval
@@ -126,6 +133,13 @@ def test_layers():
 
                 last_import_source = import_target
             elif instruction.opname == 'IMPORT_FROM':
+                if last_import_source == 'routemaster':
+                    # This is `from routemaster import x`
+                    imports.add((
+                        module_name,
+                        f'routemaster.{instruction.argval}',
+                    ))
+
                 if instruction.argval.startswith('_'):
                     raise AssertionError(
                         "Private-scope import: {importer} imports {symbol} "

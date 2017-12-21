@@ -5,6 +5,8 @@ import click
 from routemaster.app import App
 from routemaster.config import load_config
 from routemaster.server import server
+from routemaster.record_states import record_state_machines
+from routemaster.gunicorn_application import GunicornWSGIApplication
 
 
 @click.group()
@@ -32,21 +34,27 @@ def validate(ctx):
 
 @main.command()
 @click.option(
-    '-h',
-    '--host',
-    help="Host for service.",
+    '-b',
+    '--bind',
+    help="Bind address and port.",
     type=str,
-    default='::',
+    default='[::]:2017',
 )
 @click.option(
-    '-p',
-    '--port',
-    help="Port for service.",
-    type=int,
-    default=2017,
+    '--debug/--no-debug',
+    help="Enable debugging mode.",
+    default=False,
 )
 @click.pass_context
-def serve(ctx, host, port):
+def serve(ctx, bind, debug):
     """Entrypoint for serving the Routemaster HTTP service."""
-    server.config.app = ctx.obj
-    server.run(host=host, port=port)
+    app = ctx.obj
+
+    server.config.app = app
+    if debug:
+        server.config['DEBUG'] = True
+
+    record_state_machines(app, app.config.state_machines.values())
+
+    instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
+    instance.run()

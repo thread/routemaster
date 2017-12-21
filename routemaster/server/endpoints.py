@@ -19,9 +19,26 @@ def status():
     try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
-            return jsonify({'status': 'ok'})
+            return jsonify({
+                'status': 'ok',
+                'state-machines': '/state-machines',
+            })
     except Exception:
         return jsonify({'status': 'Could not connect to database'})
+
+
+@server.route('/state-machines', methods=['GET'])
+def get_state_machines():
+    """Status check endpoint."""
+    return jsonify({
+        'state-machines': [
+            {
+                'name': x.name,
+                'labels': f'/state-machines/{x.name}/labels',
+            }
+            for x in server.config.app.config.state_machines.values()
+        ],
+    })
 
 
 @server.route(
@@ -45,12 +62,13 @@ def get_labels(state_machine_name):
         state_machine_instance = app.config.state_machines[state_machine_name]
     except KeyError as k:
         msg = f"State machine '{state_machine_name}' does not exist"
-        raise abort(404, msg)
+        abort(404, msg)
 
     labels = state_machine.list_labels(app, state_machine_instance)
-    return jsonify(
-        labels=[{'name': x.name} for x in labels],
-    )
+    return jsonify({
+        'labels': [{'name': x.name} for x in labels],
+        'create': f'/state-machines/{state_machine_name}/labels/:name',
+    })
 
 
 @server.route(
@@ -64,6 +82,7 @@ def get_label(state_machine_name, label_name):
     Returns:
     - 200 Ok: if the label is exists.
     - 404 Not Found: if the state machine or label does not exist.
+    - 410 Gone: if the label once existed but has since been deleted.
 
     Successful return codes return the full metadata for the label.
     """
@@ -72,13 +91,15 @@ def get_label(state_machine_name, label_name):
 
     try:
         metadata = state_machine.get_label_metadata(app, label)
-    except UnknownLabel:
+    except UnknownLabel as e:
         abort(
-            404,
+            410 if e.deleted else 404,
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
-    return jsonify(metadata)
+
+    state = state_machine.get_label_state(app, label)
+    return jsonify(context=metadata, state=state.name)
 
 
 @server.route(
@@ -102,19 +123,26 @@ def create_label(state_machine_name, label_name):
     data = request.get_json()
 
     try:
-        metadata = state_machine.create_label(app, label, data)
-        return jsonify(metadata), 201
-    except UnknownStateMachine:
+        initial_context = data['context']
+    except KeyError:
+        abort(400, "No context given")
+
+    try:
+        initial_state_name = \
+            app.config.state_machines[state_machine_name].states[0].name
+        metadata = state_machine.create_label(app, label, initial_context)
+        return jsonify(context=metadata, state=initial_state_name), 201
+    except LookupError:
         msg = f"State machine '{state_machine_name}' does not exist"
-        raise abort(404, msg)
+        abort(404, msg)
     except LabelAlreadyExists:
         msg = f"Label {label_name} already exists in '{state_machine_name}'"
-        raise abort(400, msg)
+        abort(409, msg)
 
 
 @server.route(
-    '/state-machines/<state_machine_name>/labels/<label_name>/update', # noqa
-    methods=['POST'],
+    '/state-machines/<state_machine_name>/labels/<label_name>', # noqa
+    methods=['PATCH'],
 )
 def update_label(state_machine_name, label_name):
     """
@@ -127,6 +155,7 @@ def update_label(state_machine_name, label_name):
     - 200 Ok: if the label is successfully updated.
     - 400 Bad Request: if the request body is not a valid metadata.
     - 404 Not Found: if the state machine or label does not exist.
+    - 410 Gone: if the label once existed but has since been deleted.
 
     Successful return codes return the full new metadata for a label.
     """
@@ -134,17 +163,26 @@ def update_label(state_machine_name, label_name):
     label = Label(label_name, state_machine_name)
 
     try:
+        patch_metadata = request.get_json()['context']
+    except KeyError:
+        abort(400, "No new context")
+
+    try:
         new_metadata = state_machine.update_metadata_for_label(
             app,
             label,
-            request.get_json(),
+            patch_metadata,
         )
-        return jsonify(new_metadata)
-    except (UnknownLabel, UnknownStateMachine):
-        raise abort(
-            404,
-            f"Label {label_name} in state machine '{state_machine_name}' "
-            f"does not exist.",
+        state = state_machine.get_label_state(app, label)
+        return jsonify(context=new_metadata, state=state.name)
+    except UnknownStateMachine:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+    except UnknownLabel as e:
+        abort(
+            410 if e.deleted else 404,
+            f"Label {label_name} does not exist in state machine "
+            f"'{state_machine_name}'.",
         )
 
 
@@ -160,7 +198,16 @@ def delete_label(state_machine_name, label_name):
     Deleted labels cannot be updated and will not move state.
 
     Returns:
-    - 204 No content: if the label is successfully deleted.
-    - 404 Not Found: if the state machine or label does not exist.
+    - 204 No content: if the label is successfully deleted (or did not exist).
+    - 404 Not Found: if the state machine does not exist.
     """
-    pass
+    app = server.config.app
+    label = Label(label_name, state_machine_name)
+
+    try:
+        state_machine.delete_label(app, label)
+    except UnknownStateMachine:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+
+    return '', 204
