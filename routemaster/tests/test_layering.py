@@ -45,6 +45,7 @@ DEPENDENCIES = (
 
     ('actions', 'app'),
     ('actions', 'config'),
+    ('actions', 'state_machine'),
 )
 
 EXCLUDED_MODULES = (
