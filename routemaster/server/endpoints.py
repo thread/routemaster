@@ -99,7 +99,7 @@ def get_label(state_machine_name, label_name):
         )
 
     state = state_machine.get_label_state(app, label)
-    return jsonify(context=metadata, state=state.name)
+    return jsonify(metadata=metadata, state=state.name)
 
 
 @server.route(
@@ -123,15 +123,15 @@ def create_label(state_machine_name, label_name):
     data = request.get_json()
 
     try:
-        initial_context = data['context']
+        initial_metadata = data['metadata']
     except KeyError:
-        abort(400, "No context given")
+        abort(400, "No metadata given")
 
     try:
         initial_state_name = \
             app.config.state_machines[state_machine_name].states[0].name
-        metadata = state_machine.create_label(app, label, initial_context)
-        return jsonify(context=metadata, state=initial_state_name), 201
+        metadata = state_machine.create_label(app, label, initial_metadata)
+        return jsonify(metadata=metadata, state=initial_state_name), 201
     except LookupError:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
@@ -163,9 +163,9 @@ def update_label(state_machine_name, label_name):
     label = Label(label_name, state_machine_name)
 
     try:
-        patch_metadata = request.get_json()['context']
+        patch_metadata = request.get_json()['metadata']
     except KeyError:
-        abort(400, "No new context")
+        abort(400, "No new metadata")
 
     try:
         new_metadata = state_machine.update_metadata_for_label(
@@ -174,7 +174,7 @@ def update_label(state_machine_name, label_name):
             patch_metadata,
         )
         state = state_machine.get_label_state(app, label)
-        return jsonify(context=new_metadata, state=state.name)
+        return jsonify(metadata=new_metadata, state=state.name)
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)

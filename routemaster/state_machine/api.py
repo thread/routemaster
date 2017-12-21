@@ -77,7 +77,7 @@ def get_label_state(app: App, label: Label) -> State:
 
 
 def get_label_metadata(app: App, label: Label) -> Metadata:
-    """Returns the context associated with a label."""
+    """Returns the metadata associated with a label."""
     with app.db.begin() as conn:
         row = conn.execute(
             select([labels.c.metadata, labels.c.deleted]).where(and_(
@@ -89,11 +89,11 @@ def get_label_metadata(app: App, label: Label) -> Metadata:
         if row is None:
             raise UnknownLabel(label)
 
-        context, deleted = row
+        metadata, deleted = row
         if deleted:
             raise DeletedLabel(label)
 
-        return context
+        return metadata
 
 
 def create_label(app: App, label: Label, metadata: Metadata) -> Metadata:
@@ -238,7 +238,7 @@ def _choose_destination(
 
 def delete_label(app: App, label: Label) -> None:
     """
-    Deletes the context for a label and marks the label as deleted.
+    Deletes the metadata for a label and marks the label as deleted.
 
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
@@ -248,17 +248,17 @@ def delete_label(app: App, label: Label) -> None:
     except KeyError as k:
         raise UnknownStateMachine(label.state_machine)
 
-    context_field = labels.c.metadata
+    metadata_field = labels.c.metadata
     label_filter = and_(
         labels.c.name == label.name,
         labels.c.state_machine == label.state_machine,
     )
 
     with app.db.begin() as conn:
-        existing_context = conn.scalar(
-            select([context_field]).where(label_filter),
+        existing_metadata = conn.scalar(
+            select([metadata_field]).where(label_filter),
         )
-        if existing_context is None:
+        if existing_metadata is None:
             return
 
         conn.execute(labels.update().where(label_filter).values(
