@@ -5,6 +5,7 @@ import click
 from routemaster.app import App
 from routemaster.config import load_config
 from routemaster.server import server
+from routemaster.middleware import wrap_application
 from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
@@ -56,5 +57,7 @@ def serve(ctx, bind, debug):
 
     record_state_machines(app, app.config.state_machines.values())
 
-    instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
+    wrapped_server = wrap_application(app, server)
+
+    instance = GunicornWSGIApplication(wrapped_server, bind=bind, debug=debug)
     instance.run()
