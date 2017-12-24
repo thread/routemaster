@@ -103,6 +103,8 @@ history = Table(
 
 
 class Label(Base):
+    """A single label including context."""
+
     __table__ = labels
 
     def __repr__(self):
@@ -112,6 +114,8 @@ class Label(Base):
 
 
 class History(Base):
+    """A single historical state transition of a label."""
+
     __table__ = history
 
     def __repr__(self):
