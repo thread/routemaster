@@ -83,11 +83,19 @@ def test_realistic_config():
                         next_states=ContextNextStates(
                             path='foo.bar',
                             destinations=[
-                                ContextNextStatesOption(state='stage3', value='1'),
-                                ContextNextStatesOption(state='stage3', value='2'),
+                                ContextNextStatesOption(
+                                    state='stage3',
+                                    value='1',
+                                ),
+                                ContextNextStatesOption(
+                                    state='stage3',
+                                    value='2',
+                                ),
                             ]
                         ),
-                        exit_condition=ExitConditionProgram('foo.bar is defined'),
+                        exit_condition=ExitConditionProgram(
+                            'foo.bar is defined',
+                        ),
                     ),
                     Action(
                         name='stage3',
