@@ -52,7 +52,14 @@ DEPENDENCIES = (
 
     ('feeds', 'config'),
 
+<<<<<<< HEAD
     ('webhooks', 'config'),
+=======
+    ('record_states', 'app'),
+    ('record_states', 'config'),
+
+    ('gunicorn_application', 'utils'),
+>>>>>>> Allow the gunicorn layer to depend on utils
 )
 
 EXCLUDED_MODULES = (
