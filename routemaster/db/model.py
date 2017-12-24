@@ -1,5 +1,6 @@
 """Database model definition."""
 import datetime
+from typing import Any
 
 from sqlalchemy import (
     Table,
@@ -17,6 +18,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
 
+Base: Any  # Workaround for https://github.com/python/mypy/issues/2477
 Base = declarative_base(metadata=metadata)
 
 
