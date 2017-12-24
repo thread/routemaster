@@ -1,0 +1,7 @@
+state_machines: []
+
+database:
+  host: localhost
+  port: 5432
+  name: routemaster
+  username: routemaster
