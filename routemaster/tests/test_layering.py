@@ -42,6 +42,8 @@ DEPENDENCIES = (
 
     ('record_states', 'app'),
     ('record_states', 'config'),
+
+    ('gunicorn_application', 'utils'),
 )
 
 EXCLUDED_MODULES = (
