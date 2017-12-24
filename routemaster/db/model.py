@@ -1,6 +1,7 @@
 """Database model definition."""
 import datetime
 import functools
+from typing import Any
 
 import dateutil.tz
 from sqlalchemy import Column as NullableColumn
@@ -16,10 +17,12 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
+
+Base: Any  # Workaround for https://github.com/python/mypy/issues/2477
 Base = declarative_base(metadata=metadata)
 
 Column = functools.partial(NullableColumn, nullable=False)
