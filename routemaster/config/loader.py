@@ -1,5 +1,6 @@
 """Data model for configuration format."""
 
+import os
 import re
 import datetime
 from typing import Any, Dict, List, Optional
@@ -70,11 +71,14 @@ def _schema_validate(config: Yaml) -> None:
 
 def _load_database(yaml: Yaml) -> DatabaseConfig:
     return DatabaseConfig(
-        host=yaml.get('host', 'localhost'),
-        port=yaml.get('port', 5432),
-        name=yaml.get('name', 'routemaster'),
-        username=yaml.get('username', ''),
-        password=yaml.get('password', ''),
+        host=os.environ.get('DB_HOST', yaml.get('host', 'localhost')),
+        port=int(os.environ.get('DB_PORT', yaml.get('port', 5432))),
+        name=os.environ.get('DB_NAME', yaml.get('name', 'routemaster')),
+        username=os.environ.get(
+            'DB_USER',
+            yaml.get('username', 'routemaster'),
+        ),
+        password=os.environ.get('DB_PASS', yaml.get('password', '')),
     )
 
 
