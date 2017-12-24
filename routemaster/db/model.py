@@ -130,6 +130,13 @@ edges = Table(
 # ORM classes
 
 class StateMachine(Base):
+    """
+    Representation of one state machine.
+
+    This is in the database as a mirror of the state machines defined in the
+    config file and is kept up to date largely for the benefit of data
+    warehouses.
+    """
     __table__ = state_machines
 
     def __repr__(self):
@@ -137,6 +144,14 @@ class StateMachine(Base):
 
 
 class State(Base):
+    """
+    Representation of one state in a state machine.
+
+    This is in the database as a mirror of the states defined in the
+    config file and is kept up to date largely for the benefit of data
+    warehouses. It does not contain all needed information to re-produce
+    a state as in the config file.
+    """
     __table__ = states
 
     def __repr__(self):
@@ -152,6 +167,14 @@ class State(Base):
 
 
 class Edge(Base):
+    """
+    Representation of one edge between states.
+
+    This is in the database as a mirror of the edges defined in the
+    config file and is kept up to date largely for the benefit of data
+    warehouses. It does not contain all needed information to re-produce
+    an edge as in the config file.
+    """
     __table__ = edges
 
     def __repr__(self):
@@ -170,6 +193,8 @@ class Edge(Base):
 
 
 class Label(Base):
+    """A single label including context."""
+
     __table__ = labels
 
     def __repr__(self):
@@ -179,6 +204,8 @@ class Label(Base):
 
 
 class History(Base):
+    """A single historical state transition of a label."""
+
     __table__ = history
 
     def __repr__(self):
