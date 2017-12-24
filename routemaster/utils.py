@@ -1,5 +1,5 @@
 """Shared utilities."""
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Callable, Iterable, Sequence
 
 
 def dict_merge(d1, d2):
@@ -42,3 +42,21 @@ def get_path(path: Sequence[str], d: Dict[str, Any]) -> Any:
     if rest:
         return get_path(rest, d.get(component, {}))
     return d.get(component)
+
+
+StartResponse = Callable[
+    [
+        str,
+        Dict[str, str],
+        Any,
+    ],
+    None,
+]
+
+WSGICallable = Callable[
+    [
+        Dict[str, Any],
+        StartResponse,
+    ],
+    Iterable[bytes],
+]
