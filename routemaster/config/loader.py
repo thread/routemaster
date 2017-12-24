@@ -70,9 +70,18 @@ def _schema_validate(config: Yaml) -> None:
 
 
 def _load_database(yaml: Yaml) -> DatabaseConfig:
+    port_string = os.environ.get('DB_PORT', yaml.get('port', 5432))
+
+    try:
+        port = int(port_string)
+    except ValueError:
+        raise ConfigError(
+            f"Could not parse DB_PORT as an integer: '{port_string}'."
+        )
+
     return DatabaseConfig(
         host=os.environ.get('DB_HOST', yaml.get('host', 'localhost')),
-        port=int(os.environ.get('DB_PORT', yaml.get('port', 5432))),
+        port=port,
         name=os.environ.get('DB_NAME', yaml.get('name', 'routemaster')),
         username=os.environ.get(
             'DB_USER',

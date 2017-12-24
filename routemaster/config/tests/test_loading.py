@@ -231,3 +231,9 @@ def test_environment_variables_override_config_file_for_database_config():
         'DB_PASS': 'password',
     }):
         assert load_config(data) == expected
+
+
+def test_raises_for_unparseable_database_port_in_environment_variable():
+    with mock.patch.dict(os.environ, {'DB_PORT': 'not an int'}):
+        with assert_config_error(f"Could not parse DB_PORT as an integer: 'not an int'."):
+            load_config(yaml_data('realistic'))
