@@ -8,6 +8,7 @@ from routemaster.app import App
 from routemaster.cron import CronThread
 from routemaster.config import ConfigError, load_config
 from routemaster.server import server
+from routemaster.middleware import wrap_application
 from routemaster.validation import ValidationError, validate_config
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
@@ -94,8 +95,14 @@ def serve(ctx, bind, debug):  # pragma: no cover
     cron_thread = CronThread(app)
     cron_thread.start()
 
+    wrapped_server = wrap_application(app, server)
+
     try:
-        instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
+        instance = GunicornWSGIApplication(
+            wrapped_server,
+            bind=bind,
+            debug=debug,
+        )
         instance.run()
     finally:
         cron_thread.stop()
