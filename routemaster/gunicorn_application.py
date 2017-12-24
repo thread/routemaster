@@ -1,26 +1,9 @@
 """Top-level gunicorn application for `routemaster serve`."""
 
-from typing import Any, Dict, Callable, Iterable
-
 import werkzeug.debug
 import gunicorn.app.base
 
-StartResponse = Callable[
-    [
-        str,
-        Dict[str, str],
-        Any,
-    ],
-    None,
-]
-
-WSGICallable = Callable[
-    [
-        Dict[str, Any],
-        StartResponse,
-    ],
-    Iterable[bytes],
-]
+from routemaster.utils import WSGICallable
 
 
 class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
