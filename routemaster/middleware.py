@@ -31,6 +31,27 @@ def wrap_application(app: App, wsgi: WSGICallable) -> WSGICallable:
 
 
 @middleware
+def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
+    """Manage an ORM session around each request."""
+    def inner(
+        environ: WSGIEnvironment,
+        start_response: StartResponse,
+    ) -> Iterable[bytes]:
+        def wrapped_start_response(
+            status: str,
+            headers: Dict[str, str],
+            exc_info: None,
+        ) -> None:
+            if exc_info is not None:
+                app.set_rollback()
+            start_response(status, headers, exc_info)
+
+        with app.new_session():
+            yield from wsgi(environ, wrapped_start_response)
+    return inner
+
+
+@middleware
 def logging_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
     """Log requests as they come in."""
     def inner(
