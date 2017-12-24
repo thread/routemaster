@@ -53,9 +53,11 @@ StartResponse = Callable[
     None,
 ]
 
+WSGIEnvironment = Dict[str, Any]
+
 WSGICallable = Callable[
     [
-        Dict[str, Any],
+        WSGIEnvironment,
         StartResponse,
     ],
     Iterable[bytes],
