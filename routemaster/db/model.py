@@ -12,9 +12,12 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
 )
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
+
+Base = declarative_base(metadata=metadata)
 
 
 """The representation of the state of a label."""
@@ -120,3 +123,65 @@ edges = Table(
         refcolumns=(states.c.state_machine, states.c.name),
     ),
 )
+
+
+### ORM classes
+
+class StateMachine(Base):
+    __table__ = state_machines
+
+    def __repr__(self):
+        return f"StateMachine(name={self.name!r})"
+
+
+class State(Base):
+    __table__ = states
+
+    def __repr__(self):
+        if self.deprecated:
+            return (
+                f"State(state_machine={self.state_machine!r}, "
+                f"name={self.name!r}, deprecated=True)"
+            )
+        return (
+            f"State(state_machine={self.state_machine!r}, "
+            f"name={self.name!r})"
+        )
+
+
+class Edge(Base):
+    __table__ = edges
+
+    def __repr__(self):
+        if self.deprecated:
+            return (
+                f"Edge(state_machine={self.state_machine!r}, "
+                f"from_state={self.from_state!r}, "
+                f"to_state={self.to_state!r}, "
+                f"deprecated=True)"
+            )
+        return (
+            f"Edge(state_machine={self.state_machine!r}, "
+            f"from_state={self.from_state!r}, "
+            f"to_state={self.to_state!r})"
+        )
+
+
+class Label(Base):
+    __table__ = labels
+
+    def __repr__(self):
+        return (
+            f"Label(state_machine={self.state_machine!r}, name={self.name!r})"
+        )
+
+
+class History(Base):
+    __table__ = history
+
+    def __repr__(self):
+        return (
+            f"History(id={self.id!r}, "
+            f"label_state_machine={self.label_state_machine!r}, "
+            f"label_name={self.label_name!r})"
+        )
