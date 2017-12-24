@@ -55,7 +55,8 @@ def serve(ctx, bind, debug):
     if debug:
         server.config['DEBUG'] = True
 
-    record_state_machines(app, app.config.state_machines.values())
+    with app.new_session():
+        record_state_machines(app, app.config.state_machines.values())
 
     wrapped_server = wrap_application(app, server)
 
