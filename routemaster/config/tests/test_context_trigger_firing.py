@@ -1,6 +1,6 @@
 import pytest
 
-from routemaster.config import ContextTrigger
+from routemaster.config import MetadataTrigger
 
 TEST_CASES = [
     ('foo', {}, False),
@@ -18,5 +18,5 @@ TEST_CASES = [
 
 @pytest.mark.parametrize('path, update, should_trigger', TEST_CASES)
 def test_context_trigger(path, update, should_trigger):
-    trigger = ContextTrigger(context_path=path)
+    trigger = MetadataTrigger(metadata_path=path)
     assert trigger.should_trigger_for_update(update) == should_trigger

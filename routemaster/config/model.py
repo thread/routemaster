@@ -12,9 +12,9 @@ class TimeTrigger(NamedTuple):
     time: datetime.time
 
 
-class ContextTrigger(NamedTuple):
+class MetadataTrigger(NamedTuple):
     """Context update based trigger for exit condition evaluation."""
-    context_path: str
+    metadata_path: str
 
     def should_trigger_for_update(self, update: Dict[str, Any]) -> bool:
         """Returns whether this trigger should fire for a given update."""
@@ -27,10 +27,10 @@ class ContextTrigger(NamedTuple):
                     return applies(path, d[component])
                 return True
             return False
-        return applies(self.context_path.split('.'), update)
+        return applies(self.metadata_path.split('.'), update)
 
 
-Trigger = Union[TimeTrigger, ContextTrigger]
+Trigger = Union[TimeTrigger, MetadataTrigger]
 
 
 class ConstantNextState(NamedTuple):
@@ -100,9 +100,9 @@ class Gate(NamedTuple):
     triggers: Iterable[Trigger]
 
     @property
-    def context_triggers(self) -> List[ContextTrigger]:
-        """Return a list of the context triggers for this state."""
-        return [x for x in self.triggers if isinstance(x, ContextTrigger)]
+    def metadata_triggers(self) -> List[MetadataTrigger]:
+        """Return a list of the metadata triggers for this state."""
+        return [x for x in self.triggers if isinstance(x, MetadataTrigger)]
 
 
 class Action(NamedTuple):

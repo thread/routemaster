@@ -1,6 +1,6 @@
 state_machines:
   user_lifecycle:
-    context_feeds:
+    feeds:
       - path: jacquard
         feed: http://localhost:1212/<label_id>
 
@@ -39,7 +39,7 @@ state_machines:
 
       - gate: wait_for_first_recs
         triggers:
-          - context: recs.has_first_recommendations
+          - context: metadata.recs.has_first_recommendations
         exit_condition: >
           recs.has_first_recommendations and
           (jacquard.has_redesigned_first_two_drip_emails is defined)

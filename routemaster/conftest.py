@@ -14,8 +14,8 @@ from routemaster.config import (
     Config,
     NoNextStates,
     StateMachine,
-    ContextTrigger,
     DatabaseConfig,
+    MetadataTrigger,
     ConstantNextState,
 )
 from routemaster.server import server
@@ -37,11 +37,11 @@ TEST_STATE_MACHINES = {
             Gate(
                 name='start',
                 triggers=[
-                    ContextTrigger(context_path='should_progress'),
+                    MetadataTrigger(metadata_path='should_progress'),
                 ],
                 next_states=ConstantNextState(state='end'),
                 exit_condition=ExitConditionProgram(
-                    'should_progress = true',
+                    'metadata.should_progress = true',
                 ),
             ),
             Gate(
@@ -117,11 +117,11 @@ def database_clear(app_config):
 def create_label(app_config):
     """Create a label in the database."""
 
-    def _create(name: str, state_machine_name: str, context: Dict[str, Any]):
+    def _create(name: str, state_machine_name: str, metadata: Dict[str, Any]):
         return state_machine.create_label(
             app_config,
             Label(name, state_machine_name),
-            context,
+            metadata,
         )
 
     return _create

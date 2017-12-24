@@ -12,7 +12,7 @@ from routemaster.config import (
     TimeTrigger,
     NoNextStates,
     StateMachine,
-    ContextTrigger,
+    MetadataTrigger,
     DatabaseConfig,
     ConstantNextState,
     ContextNextStates,
@@ -72,7 +72,7 @@ def test_realistic_config():
                         name='start',
                         triggers=[
                             TimeTrigger(time=datetime.time(18, 30)),
-                            ContextTrigger(context_path='foo.bar'),
+                            MetadataTrigger(metadata_path='foo.bar'),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),
@@ -135,7 +135,7 @@ def test_raises_for_time_and_context_trigger():
 
 
 def test_raises_for_neither_time_nor_context_trigger():
-    with assert_config_error("Trigger at path state_machines.example.states.0.triggers.0 must be either a time or a context trigger."):
+    with assert_config_error("Trigger at path state_machines.example.states.0.triggers.0 must be either a time or a metadata trigger."):
         load_config(yaml_data('not_time_or_context_invalid'))
 
 
@@ -145,7 +145,7 @@ def test_raises_for_invalid_time_format_in_trigger():
 
 
 def test_raises_for_invalid_path_format_in_trigger():
-    with assert_config_error("Context trigger 'foo.bar+' at path state_machines.example.states.0.triggers.0 is not a valid dotted path."):
+    with assert_config_error("Metadata trigger 'foo.bar+' at path state_machines.example.states.0.triggers.0 is not a valid dotted path."):
         load_config(yaml_data('path_format_context_trigger_invalid'))
 
 

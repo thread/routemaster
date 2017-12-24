@@ -4,5 +4,5 @@ state_machines:
       - gate: start
         triggers:
           - time: 18:30
-            context: foo.bar
+            metadata: foo.bar
         exit_condition: false

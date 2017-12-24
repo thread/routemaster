@@ -28,23 +28,23 @@ def test_enumerate_state_machines(client, app_config):
 def test_create_label(client, app_config):
     label_name = 'foo'
     state_machine = list(app_config.config.state_machines.values())[0]
-    label_context = {'bar': 'baz'}
+    label_metadata = {'bar': 'baz'}
 
     response = client.post(
         f'/state-machines/{state_machine.name}/labels/{label_name}',
-        data=json.dumps({'context': label_context}),
+        data=json.dumps({'metadata': label_metadata}),
         content_type='application/json',
     )
 
     assert response.status_code == 201
-    assert response.json['context'] == {'bar': 'baz'}
+    assert response.json['metadata'] == {'bar': 'baz'}
 
     with app_config.db.begin() as conn:
         assert conn.scalar(labels.count()) == 1
         label = conn.execute(labels.select()).fetchone()
         assert label.name == label_name
         assert label.state_machine == state_machine.name
-        assert label.context == label_context
+        assert label.metadata == label_metadata
 
         history_entry = conn.execute(history.select()).fetchone()
         assert history_entry.label_name == label_name
@@ -55,7 +55,7 @@ def test_create_label(client, app_config):
 def test_create_label_404_for_not_found_state_machine(client):
     response = client.post(
         '/state-machines/nonexistent_machine/labels/foo',
-        data=json.dumps({'context': {'bar': 'baz'}}),
+        data=json.dumps({'metadata': {'bar': 'baz'}}),
         content_type='application/json',
     )
     assert response.status_code == 404
@@ -70,10 +70,10 @@ def test_create_label_400_for_invalid_body(client):
     assert response.status_code == 400
 
 
-def test_create_label_400_for_missing_context_key(client):
+def test_create_label_400_for_missing_metadata_key(client):
     response = client.post(
         '/state-machines/test_machine/labels/foo',
-        data='{}',
+        data=json.dumps({}),
         content_type='application/json',
     )
     assert response.status_code == 400
@@ -83,7 +83,7 @@ def test_create_label_409_for_already_existing_label(client, create_label):
     create_label('foo', 'test_machine', {})
     response = client.post(
         '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'context': {}}),
+        data=json.dumps({'metadata': {}}),
         content_type='application/json',
     )
     assert response.status_code == 409
@@ -92,26 +92,26 @@ def test_create_label_409_for_already_existing_label(client, create_label):
 def test_update_label(client, app_config, create_label):
     create_label('foo', 'test_machine', {})
 
-    label_context = {'bar': 'baz'}
+    label_metadata = {'bar': 'baz'}
     response = client.patch(
         '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'context': label_context}),
+        data=json.dumps({'metadata': label_metadata}),
         content_type='application/json',
     )
 
     assert response.status_code == 200
-    assert response.json['context'] == label_context
+    assert response.json['metadata'] == label_metadata
 
     with app_config.db.begin() as conn:
         result = conn.execute(labels.select())
         label = result.fetchone()
-        assert label.context == label_context
+        assert label.metadata == label_metadata
 
 
 def test_update_label_404_for_not_found_label(client):
     response = client.patch(
         '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'context': {'foo': 'bar'}}),
+        data=json.dumps({'metadata': {'foo': 'bar'}}),
         content_type='application/json',
     )
     assert response.status_code == 404
@@ -131,7 +131,7 @@ def test_get_label(client, create_label):
     create_label('foo', 'test_machine', {'bar': 'baz'})
     response = client.get('/state-machines/test_machine/labels/foo')
     assert response.status_code == 200
-    assert response.json['context'] == {'bar': 'baz'}
+    assert response.json['metadata'] == {'bar': 'baz'}
 
 
 def test_get_label_has_state(client, create_label):
@@ -192,11 +192,11 @@ def test_update_label_moves_label(client, create_label, app_config):
     create_label('foo', 'test_machine', {})
     response = client.patch(
         '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'context': {'should_progress': True}}),
+        data=json.dumps({'metadata': {'should_progress': True}}),
         content_type='application/json',
     )
     assert response.status_code == 200
-    assert response.json['context'] == {'should_progress': True}
+    assert response.json['metadata'] == {'should_progress': True}
 
     with app_config.db.begin() as conn:
         latest_state = conn.scalar(
@@ -228,7 +228,7 @@ def test_delete_existing_label(client, app_config, create_label):
         label = conn.execute(labels.select()).fetchone()
         assert label.name == label_name
         assert label.state_machine == state_machine.name
-        assert label.context == {}
+        assert label.metadata == {}
 
         history_entry = conn.execute(
             history.select().order_by(history.c.created.desc()),
@@ -290,7 +290,7 @@ def test_create_label_409_for_deleted_label(client, create_label):
     create_label('foo', 'test_machine', {})
     response = client.post(
         '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'context': {}}),
+        data=json.dumps({'metadata': {}}),
         content_type='application/json',
     )
     assert response.status_code == 409
@@ -305,7 +305,7 @@ def test_update_label_410_for_deleted_label(
 
     response = client.patch(
         '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'context': {'foo': 'bar'}}),
+        data=json.dumps({'metadata': {'foo': 'bar'}}),
         content_type='application/json',
     )
     assert response.status_code == 410

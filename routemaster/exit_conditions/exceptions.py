@@ -13,3 +13,10 @@ class ParseError(Exception):
         """
         self.message = message
         self.location = location
+
+
+class UndefinedVariable(Exception):
+    """
+    Error raised when an exit condition program uses an undefined variable.
+    """
+    pass

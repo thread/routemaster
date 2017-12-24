@@ -11,6 +11,7 @@ from routemaster.db import labels, history
 from routemaster.app import App
 from routemaster.utils import dict_merge
 from routemaster.config import State, Action, StateMachine
+from routemaster.exit_conditions import Context
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
@@ -25,7 +26,7 @@ class Label(NamedTuple):
     state_machine: str
 
 
-Context = Dict[str, Any]
+Metadata = Dict[str, Any]
 
 
 def _utcnow():
@@ -75,11 +76,11 @@ def get_label_state(app: App, label: Label) -> State:
     return current_state
 
 
-def get_label_context(app: App, label: Label) -> Context:
-    """Returns the context associated with a label."""
+def get_label_metadata(app: App, label: Label) -> Metadata:
+    """Returns the metadata associated with a label."""
     with app.db.begin() as conn:
         row = conn.execute(
-            select([labels.c.context, labels.c.deleted]).where(and_(
+            select([labels.c.metadata, labels.c.deleted]).where(and_(
                 labels.c.name == label.name,
                 labels.c.state_machine == label.state_machine,
             )),
@@ -88,14 +89,14 @@ def get_label_context(app: App, label: Label) -> Context:
         if row is None:
             raise UnknownLabel(label)
 
-        context, deleted = row
+        metadata, deleted = row
         if deleted:
             raise DeletedLabel(label)
 
-        return context
+        return metadata
 
 
-def create_label(app: App, label: Label, context: Context) -> Context:
+def create_label(app: App, label: Label, metadata: Metadata) -> Metadata:
     """Creates a label and starts it in a state machine."""
     try:
         state_machine = app.config.state_machines[label.state_machine]
@@ -107,13 +108,13 @@ def create_label(app: App, label: Label, context: Context) -> Context:
             conn.execute(labels.insert().values(
                 name=label.name,
                 state_machine=state_machine.name,
-                context=context,
+                metadata=metadata,
             ))
         except IntegrityError:
             raise LabelAlreadyExists(label)
 
         _start_state_machine(state_machine, label, conn)
-        return context
+        return metadata
 
 
 def _start_state_machine(
@@ -129,13 +130,13 @@ def _start_state_machine(
     ))
 
 
-def update_context_for_label(
+def update_metadata_for_label(
     app: App,
     label: Label,
-    update: Context,
-) -> Context:
+    update: Metadata,
+) -> Metadata:
     """
-    Updates the context for a label.
+    Updates the metadata for a label.
 
     Moves the label through the state machine as appropriate.
     """
@@ -144,7 +145,7 @@ def update_context_for_label(
     except KeyError as k:
         raise UnknownStateMachine(label.state_machine)
 
-    context_field = labels.c.context
+    metadata_field = labels.c.metadata
     deleted_field = labels.c.deleted
     label_filter = and_(
         labels.c.name == label.name,
@@ -153,37 +154,37 @@ def update_context_for_label(
 
     with app.db.begin() as conn:
         row = conn.execute(
-            select([context_field, deleted_field]).where(label_filter),
+            select([metadata_field, deleted_field]).where(label_filter),
         ).fetchone()
         if row is None:
             raise UnknownLabel(label)
 
-        existing_context, deleted = row
+        existing_metadata, deleted = row
         if deleted:
             raise DeletedLabel(label)
 
-        new_context = dict_merge(existing_context, update)
+        new_metadata = dict_merge(existing_metadata, update)
 
         conn.execute(labels.update().where(label_filter).values(
-            context=new_context,
+            metadata=new_metadata,
         ))
 
-        _move_label_for_context_change(
+        _move_label_for_metadata_change(
             state_machine,
             label,
             update,
-            new_context,
+            new_metadata,
             conn,
         )
 
-        return new_context
+        return new_metadata
 
 
-def _move_label_for_context_change(
+def _move_label_for_metadata_change(
     state_machine: StateMachine,
     label: Label,
-    update: Context,
-    context: Context,
+    update: Metadata,
+    metadata: Metadata,
     conn,
 ) -> None:
     history_entry = conn.execute(
@@ -202,20 +203,21 @@ def _move_label_for_context_change(
 
     if not any(
         trigger.should_trigger_for_update(update)
-        for trigger in current_state.context_triggers
+        for trigger in current_state.metadata_triggers
     ):
         return
 
-    exit_condition_variables = {**context}
-    can_exit = current_state.exit_condition.run(
-        exit_condition_variables,
-        _utcnow(),
-    )
+    exit_condition_context = Context(metadata, _utcnow())
+    can_exit = current_state.exit_condition.run(exit_condition_context)
 
     if not can_exit:
         return
 
-    destination = _choose_destination(state_machine, current_state, context)
+    destination = _choose_destination(
+        state_machine,
+        current_state,
+        metadata,
+    )
 
     conn.execute(history.insert().values(
         label_name=label.name,
@@ -228,15 +230,15 @@ def _move_label_for_context_change(
 def _choose_destination(
     state_machine: StateMachine,
     current_state: State,
-    context: Context,
+    metadata: Metadata,
 ) -> State:
-    next_state_name = current_state.next_states.next_state_for_label(context)
+    next_state_name = current_state.next_states.next_state_for_label(metadata)
     return state_machine.get_state(next_state_name)
 
 
 def delete_label(app: App, label: Label) -> None:
     """
-    Deletes the context for a label and marks the label as deleted.
+    Deletes the metadata for a label and marks the label as deleted.
 
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
@@ -246,21 +248,21 @@ def delete_label(app: App, label: Label) -> None:
     except KeyError as k:
         raise UnknownStateMachine(label.state_machine)
 
-    context_field = labels.c.context
+    metadata_field = labels.c.metadata
     label_filter = and_(
         labels.c.name == label.name,
         labels.c.state_machine == label.state_machine,
     )
 
     with app.db.begin() as conn:
-        existing_context = conn.scalar(
-            select([context_field]).where(label_filter),
+        existing_metadata = conn.scalar(
+            select([metadata_field]).where(label_filter),
         )
-        if existing_context is None:
+        if existing_metadata is None:
             return
 
         conn.execute(labels.update().where(label_filter).values(
-            context={},
+            metadata={},
             deleted=True,
         ))
 

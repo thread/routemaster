@@ -19,8 +19,8 @@ from routemaster.config.model import (
     TimeTrigger,
     NoNextStates,
     StateMachine,
-    ContextTrigger,
     DatabaseConfig,
+    MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
@@ -143,20 +143,20 @@ def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
 
 
 def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
-    if 'time' in yaml_trigger and 'context' in yaml_trigger:
+    if 'time' in yaml_trigger and 'metadata' in yaml_trigger:
         raise ConfigError(
             f"Trigger at path {'.'.join(path)} cannot be both a time and a "
-            f"context trigger."
+            f"metadata trigger."
         )
 
     if 'time' in yaml_trigger:
         return _load_time_trigger(path, yaml_trigger)
-    elif 'context' in yaml_trigger:
-        return _load_context_trigger(path, yaml_trigger)
+    elif 'metadata' in yaml_trigger:
+        return _load_metadata_trigger(path, yaml_trigger)
     else:
         raise ConfigError(
             f"Trigger at path {'.'.join(path)} must be either a time or a "
-            f"context trigger.",
+            f"metadata trigger.",
         )
 
 
@@ -176,14 +176,14 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
 RE_PATH = re.compile(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$')
 
 
-def _load_context_trigger(path: Path, yaml_trigger: Yaml) -> ContextTrigger:
-    context_path = yaml_trigger['context']
-    if not RE_PATH.match(context_path):
+def _load_metadata_trigger(path: Path, yaml_trigger: Yaml) -> MetadataTrigger:
+    metadata_path = yaml_trigger['metadata']
+    if not RE_PATH.match(metadata_path):
         raise ConfigError(
-            f"Context trigger '{context_path}' at path {'.'.join(path)} is "
+            f"Metadata trigger '{metadata_path}' at path {'.'.join(path)} is "
             f"not a valid dotted path.",
         )
-    return ContextTrigger(context_path=context_path)
+    return MetadataTrigger(metadata_path=metadata_path)
 
 
 def _load_next_states(
