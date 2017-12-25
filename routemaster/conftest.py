@@ -19,6 +19,7 @@ from routemaster.config import (
     ConstantNextState,
 )
 from routemaster.server import server
+from routemaster.middleware import wrap_application
 from routemaster.state_machine import Label
 from routemaster.exit_conditions import ExitConditionProgram
 
