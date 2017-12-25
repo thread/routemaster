@@ -5,8 +5,8 @@ import contextlib
 from typing import Any, Dict
 
 import pytest
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from routemaster import state_machine
 from routemaster.db import metadata

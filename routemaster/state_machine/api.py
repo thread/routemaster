@@ -4,7 +4,8 @@ from typing import Any, Dict, Iterable, NamedTuple
 
 import dateutil.tz
 
-from routemaster.db import Label as DBLabel, History as DBHistory
+from routemaster.db import Label as DBLabel
+from routemaster.db import History as DBHistory
 from routemaster.app import App
 from routemaster.utils import dict_merge
 from routemaster.config import State, Action, StateMachine

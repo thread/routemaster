@@ -1,12 +1,8 @@
 from sqlalchemy import func, select
 
 from routemaster.db import Edge, State, StateMachine
-from routemaster.config import (
-    Gate,
-    NoNextStates,
-    StateMachine as ConfigStateMachine,
-    ConstantNextState,
-)
+from routemaster.config import StateMachine as ConfigStateMachine
+from routemaster.config import Gate, NoNextStates, ConstantNextState
 from routemaster.record_states import record_state_machines
 from routemaster.exit_conditions import ExitConditionProgram
 
