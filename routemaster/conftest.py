@@ -12,6 +12,7 @@ import pytest
 import httpretty
 import dateutil.tz
 from sqlalchemy import and_, select, create_engine
+from sqlalchemy.orm import sessionmaker
 
 from routemaster import state_machine
 from routemaster.db import labels, history, metadata
@@ -202,13 +203,40 @@ class TestApp(App):
     """
     def __init__(self, config):
         self.config = config
-        self.database_used = False
+        self.session_used = False
+        self._session = None
+        self._needs_rollback = False
 
     @property
     def db(self):
         """Get the shared DB and set the used flag."""
-        self.database_used = True
-        return TEST_ENGINE
+        raise AssertionError("Cannot access db directly in tests")
+
+    @property
+    def session(self):
+        """Start if necessary and return a shared session."""
+        if self._session is not None:
+            return self._session
+        self.session_used = True
+        self._session = sessionmaker(bind=TEST_ENGINE)()
+        return self._session
+
+    @contextlib.contextmanager
+    def new_session(self):
+        """We make this do nothing in tests except rollbacks."""
+        try:
+            yield
+            if self._needs_rollback:
+                self.session.rollback()
+        except Exception:
+            self.session.rollback()
+            raise
+        finally:
+            self._needs_rollback = False
+
+    def set_rollback(self):
+        """Set the rollback flag for leaving `new_session`."""
+        self._needs_rollback = True
 
 
 @pytest.fixture()
@@ -260,10 +288,12 @@ def database_creation(request):
 def database_clear(app_config):
     """Truncate all tables after each test."""
     yield
-    if app_config.database_used:
-        with app_config.db.begin() as conn:
-            for table in metadata.tables:
-                conn.execute(f'truncate table {table} cascade')
+    if app_config.session_used:
+        # This does not necessarily imply `databased_used` if everything was
+        # done through the ORM session. In that case we can just roll back
+        # rather than doing separate truncations.
+        app_config.session.rollback()
+        app_config.session.close()
 
 
 @pytest.fixture()
