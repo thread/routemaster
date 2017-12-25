@@ -3,7 +3,7 @@ import json
 import mock
 from sqlalchemy import and_, select
 
-from routemaster.db import labels, history
+from routemaster.db import Label, History
 
 
 def test_root(client):
@@ -54,17 +54,15 @@ def test_create_label(client, app_config, mock_test_feed):
     assert response.status_code == 201
     assert response.json['metadata'] == {'bar': 'baz'}
 
-    with app_config.db.begin() as conn:
-        assert conn.scalar(labels.count()) == 1
-        label = conn.execute(labels.select()).fetchone()
-        assert label.name == label_name
-        assert label.state_machine == state_machine.name
-        assert label.metadata == label_metadata
+    label = app_config.session.query(Label).one()
+    assert label.name == label_name
+    assert label.state_machine == state_machine.name
+    assert label.metadata == label_metadata
 
-        history_entry = conn.execute(history.select()).fetchone()
-        assert history_entry.label_name == label_name
-        assert history_entry.old_state is None
-        assert history_entry.new_state == state_machine.states[0].name
+    history = app_config.session.query(History).one()
+    assert history.label_name == label_name
+    assert history.old_state is None
+    assert history.new_state == state_machine.states[0].name
 
 
 def test_create_label_404_for_not_found_state_machine(client):
@@ -117,10 +115,8 @@ def test_update_label(client, app_config, create_label):
     assert response.status_code == 200
     assert response.json['metadata'] == label_metadata
 
-    with app_config.db.begin() as conn:
-        result = conn.execute(labels.select())
-        label = result.fetchone()
-        assert label.metadata == label_metadata
+    label = app_config.session.query(Label).one()
+    assert label.context == label_metadata
 
 
 def test_update_label_404_for_not_found_label(client):
@@ -237,16 +233,13 @@ def test_update_label_moves_label(client, create_label, app_config, mock_webhook
     assert response.status_code == 200
     assert response.json['metadata'] == {'should_progress': True}
 
-    with app_config.db.begin() as conn:
-        latest_state = conn.scalar(
-            select([history.c.new_state]).where(and_(
-                history.c.label_name == 'foo',
-                history.c.label_state_machine == 'test_machine',
-            )).order_by(
-                history.c.created.desc(),
-            ).limit(1)
-        )
-        assert latest_state == 'end'
+    latest_state = app_config.session.query(History.new_state).filter_by(
+        label_name='foo',
+        label_state_machine='test_machine',
+    ).order_by(
+        History.created.desc(),
+    ).scalar()
+    assert latest_state == 'end'
 
 
 def test_delete_existing_label(client, app_config, create_label):
@@ -262,19 +255,17 @@ def test_delete_existing_label(client, app_config, create_label):
 
     assert response.status_code == 204
 
-    with app_config.db.begin() as conn:
-        assert conn.scalar(labels.count()) == 1
-        label = conn.execute(labels.select()).fetchone()
-        assert label.name == label_name
-        assert label.state_machine == state_machine.name
-        assert label.metadata == {}
+    label = app_config.session.query(Label).one()
+    assert label.name == label_name
+    assert label.state_machine == state_machine.name
+    assert label.metadata == {}
 
-        history_entry = conn.execute(
-            history.select().order_by(history.c.created.desc()),
-        ).fetchone()
-        assert history_entry.label_name == label_name
-        assert history_entry.old_state == state_machine.states[0].name
-        assert history_entry.new_state is None
+    history = app_config.session.query(History).order_by(
+        History.created.desc(),
+    ).first()
+    assert history.label_name == label_name
+    assert history.old_state == state_machine.states[0].name
+    assert history.new_state is None
 
 
 def test_delete_non_existent_label(client, app_config):
@@ -287,9 +278,8 @@ def test_delete_non_existent_label(client, app_config):
 
     assert response.status_code == 204
 
-    with app_config.db.begin() as conn:
-        assert conn.scalar(labels.count()) == 0
-        assert conn.scalar(history.count()) == 0
+    assert not app_config.session.query(Label).exists().scalar()
+    assert not app_config.session.query(History).exists().scalar()
 
 
 def test_delete_label_404_for_not_found_state_machine(client):
