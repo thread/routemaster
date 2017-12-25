@@ -218,6 +218,18 @@ def delete_label(app: App, label: LabelRef) -> None:
         new_state=None,
     ))
 
+<<<<<<< HEAD
+=======
+
+def _choose_destination(
+    state_machine: StateMachine,
+    current_state: State,
+    context: Context,
+) -> State:
+    next_state_name = current_state.next_states.next_state_for_label(context)
+    return state_machine.get_state(next_state_name)
+
+>>>>>>> flake8
 
 LabelStateProcessor = Callable[[App, State, StateMachine, LabelRef, Any], bool]
 
