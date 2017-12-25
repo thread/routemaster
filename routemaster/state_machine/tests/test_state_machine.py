@@ -1,20 +1,17 @@
 from sqlalchemy import and_, select
 
 from routemaster import state_machine
-from routemaster.db import history
+from routemaster.db import History
 from routemaster.state_machine import Label
 
 
 def current_state(app_config, label):
-    with app_config.db.begin() as conn:
-        return conn.scalar(
-            select([history.c.new_state]).where(and_(
-                history.c.label_name == label.name,
-                history.c.label_state_machine == label.state_machine,
-            )).order_by(
-                history.c.created.desc(),
-            ).limit(1)
-        )
+    return app_config.session.query(History.new_state).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).order_by(
+        History.created.desc(),
+    ).limit(1).scalar()
 
 
 def test_state_machine_simple(app_config):

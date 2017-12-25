@@ -3,11 +3,8 @@ import datetime
 from typing import Any, Dict, Iterable, NamedTuple
 
 import dateutil.tz
-from sqlalchemy import and_, not_
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql import select
 
-from routemaster.db import labels, history
+from routemaster.db import Label as DBLabel, History as DBHistory
 from routemaster.app import App
 from routemaster.utils import dict_merge
 from routemaster.config import State, Action, StateMachine
@@ -38,32 +35,18 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
 
     Labels are returned ordered alphabetically by name.
     """
-    with app.db.begin() as conn:
-        label_names = conn.execute(
-            select([
-                labels.c.name,
-            ]).where(and_(
-                labels.c.state_machine == state_machine.name,
-                not_(labels.c.deleted),
-            )).order_by(
-                labels.c.name,
-            ),
-        )
-        for row in label_names:
-            yield Label(row[labels.c.name], state_machine.name)
+    for (name,) in app.session.query(DBLabel.name).filter_by(
+        state_machine=state_machine.name,
+    ):
+        yield Label(name=name, state_machine=state_machine.name)
 
 
 def get_label_state(app: App, label: Label) -> State:
     """Finds the current state of a label."""
-    with app.db.begin() as conn:
-        history_entry = conn.execute(
-            select([history]).where(and_(
-                history.c.label_name == label.name,
-                history.c.label_state_machine == label.state_machine,
-            )).order_by(
-                history.c.created.desc(),
-            ).limit(1)
-        ).fetchone()
+    history_entry = app.session.query(DBHistory).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).order_by(DBHistory.created.desc()).one_or_none()
 
     if history_entry is None:
         raise UnknownLabel(label)
@@ -77,22 +60,18 @@ def get_label_state(app: App, label: Label) -> State:
 
 def get_label_context(app: App, label: Label) -> Context:
     """Returns the context associated with a label."""
-    with app.db.begin() as conn:
-        row = conn.execute(
-            select([labels.c.context, labels.c.deleted]).where(and_(
-                labels.c.name == label.name,
-                labels.c.state_machine == label.state_machine,
-            )),
-        ).fetchone()
+    row = app.session.query(DBLabel).filter_by(
+        name=label.name,
+        state_machine=label.state_machine,
+    ).one_or_none()
 
-        if row is None:
-            raise UnknownLabel(label)
+    if row is None:
+        raise UnknownLabel(label)
 
-        context, deleted = row
-        if deleted:
-            raise DeletedLabel(label)
+    if row.deleted:
+        raise DeletedLabel(label)
 
-        return context
+    return row.context
 
 
 def create_label(app: App, label: Label, context: Context) -> Context:
@@ -102,31 +81,38 @@ def create_label(app: App, label: Label, context: Context) -> Context:
     except KeyError as k:
         raise UnknownStateMachine(label.state_machine)
 
-    with app.db.begin() as conn:
-        try:
-            conn.execute(labels.insert().values(
-                name=label.name,
-                state_machine=state_machine.name,
-                context=context,
-            ))
-        except IntegrityError:
-            raise LabelAlreadyExists(label)
+    if app.session.query(
+        app.session.query(DBLabel).filter_by(
+            name=label.name,
+            state_machine=label.state_machine,
+        ).exists()
+    ).scalar():
+        raise LabelAlreadyExists(label)
 
-        _start_state_machine(state_machine, label, conn)
-        return context
+    app.session.add(DBLabel(
+        name=label.name,
+        state_machine=state_machine.name,
+        context=context,
+    ))
+    app.session.flush()
+
+    _start_state_machine(app, state_machine, label)
+
+    return context
 
 
 def _start_state_machine(
+    app: App,
     state_machine: StateMachine,
     label: Label,
-    conn,
 ) -> None:
-    conn.execute(history.insert().values(
+    new_entry = DBHistory(
         label_name=label.name,
         label_state_machine=label.state_machine,
         old_state=None,
         new_state=state_machine.states[0].name,
-    ))
+    )
+    app.session.add(new_entry)
 
 
 def update_context_for_label(
@@ -144,58 +130,46 @@ def update_context_for_label(
     except KeyError as k:
         raise UnknownStateMachine(label.state_machine)
 
-    context_field = labels.c.context
-    deleted_field = labels.c.deleted
-    label_filter = and_(
-        labels.c.name == label.name,
-        labels.c.state_machine == label.state_machine,
+    instance = app.session.query(DBLabel).filter_by(
+        name=label.name,
+        state_machine=label.state_machine,
+    ).one_or_none()
+
+    if instance is None:
+        raise UnknownLabel(label)
+
+    if instance.deleted:
+        raise DeletedLabel(label)
+
+    new_context = dict_merge(instance.context, update)
+    instance.context = new_context
+
+    _move_label_for_context_change(
+        app,
+        state_machine,
+        label,
+        update,
+        new_context,
     )
 
-    with app.db.begin() as conn:
-        row = conn.execute(
-            select([context_field, deleted_field]).where(label_filter),
-        ).fetchone()
-        if row is None:
-            raise UnknownLabel(label)
-
-        existing_context, deleted = row
-        if deleted:
-            raise DeletedLabel(label)
-
-        new_context = dict_merge(existing_context, update)
-
-        conn.execute(labels.update().where(label_filter).values(
-            context=new_context,
-        ))
-
-        _move_label_for_context_change(
-            state_machine,
-            label,
-            update,
-            new_context,
-            conn,
-        )
-
-        return new_context
+    return new_context
 
 
 def _move_label_for_context_change(
+    app: App,
     state_machine: StateMachine,
     label: Label,
     update: Context,
     context: Context,
-    conn,
 ) -> None:
-    history_entry = conn.execute(
-        select([history]).where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
-        )).order_by(
-            history.c.created.desc(),
-        ).limit(1)
-    ).fetchone()
+    (most_recent_state_name,) = app.session.query(
+        DBHistory.new_state,
+    ).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).order_by(DBHistory.created.desc()).first()
 
-    current_state = state_machine.get_state(history_entry.new_state)
+    current_state = state_machine.get_state(most_recent_state_name)
     if isinstance(current_state, Action):
         # Label is in an Action state so there's no trigger to resolve.
         return
@@ -217,13 +191,12 @@ def _move_label_for_context_change(
 
     destination = _choose_destination(state_machine, current_state, context)
 
-    conn.execute(history.insert().values(
+    app.session.add(DBHistory(
         label_name=label.name,
-        label_state_machine=state_machine.name,
+        label_state_machine=label.state_machine,
         old_state=current_state.name,
         new_state=destination.name,
     ))
-
 
 def _choose_destination(
     state_machine: StateMachine,
@@ -246,43 +219,29 @@ def delete_label(app: App, label: Label) -> None:
     except KeyError as k:
         raise UnknownStateMachine(label.state_machine)
 
-    context_field = labels.c.context
-    label_filter = and_(
-        labels.c.name == label.name,
-        labels.c.state_machine == label.state_machine,
-    )
+    instance = app.session.query(DBLabel).filter_by(
+        name=label.name,
+        state_machine=label.state_machine,
+    ).one()
 
-    with app.db.begin() as conn:
-        existing_context = conn.scalar(
-            select([context_field]).where(label_filter),
-        )
-        if existing_context is None:
-            return
+    instance.context = {}
+    instance.deleted = True
 
-        conn.execute(labels.update().where(label_filter).values(
-            context={},
-            deleted=True,
-        ))
-
-        _exit_state_machine(label, conn)
+    _exit_state_machine(app, label)
 
 
 def _exit_state_machine(
+    app: App,
     label: Label,
-    conn,
 ) -> None:
-    current_state_name = conn.scalar(
-        select([history.c.new_state]).where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
-        )).order_by(
-            history.c.created.desc(),
-        ).limit(1)
-    )
-
-    conn.execute(history.insert().values(
+    (most_recent_state,) = app.session.query(DBHistory.new_state).filter_by(
         label_name=label.name,
         label_state_machine=label.state_machine,
-        old_state=current_state_name,
+    ).order_by(DBHistory.created.desc()).first()
+
+    app.session.add(DBHistory(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+        old_state=most_recent_state,
         new_state=None,
     ))
