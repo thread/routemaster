@@ -35,6 +35,7 @@ from routemaster.config import (
 from routemaster.server import server
 from routemaster.context import Context
 from routemaster.webhooks import WebhookResult
+from routemaster.middleware import wrap_application
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
 
