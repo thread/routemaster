@@ -3,6 +3,7 @@
 from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
+from routemaster.db import StateMachine
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -25,12 +26,11 @@ def status():
                                might not be able to serve requests.
     """
     try:
-        with server.config.app.db.begin() as conn:
-            conn.execute('select 1')
-            return jsonify({
-                'status': 'ok',
-                'state-machines': '/state-machines',
-            })
+        server.config.app.session.query(StateMachine).count()
+        return jsonify({
+            'status': 'ok',
+            'state-machines': '/state-machines',
+        })
     except Exception:
         return jsonify({
             'status': 'error',
