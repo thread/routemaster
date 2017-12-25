@@ -1,10 +1,10 @@
 from sqlalchemy import func, select
 
-from routemaster.db import edges, states, state_machines
+from routemaster.db import Edge, State, StateMachine
 from routemaster.config import (
     Gate,
     NoNextStates,
-    StateMachine,
+    StateMachine as ConfigStateMachine,
     ConstantNextState,
 )
 from routemaster.record_states import record_state_machines
@@ -14,15 +14,13 @@ from routemaster.exit_conditions import ExitConditionProgram
 def test_record_no_states_has_no_effect(app_config):
     record_state_machines(app_config, [])
 
-    with app_config.db.begin() as conn:
-        num_machines = conn.scalar(state_machines.count())
-
+    num_machines = app_config.session.query(StateMachine).count()
     assert num_machines == 0
 
 
 def test_record_single_trivial_machine(app_config):
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -35,27 +33,20 @@ def test_record_single_trivial_machine(app_config):
         )
     ])
 
-    with app_config.db.begin() as conn:
-        num_machines = conn.scalar(state_machines.count())
-        assert num_machines == 1
+    machine_definition = app_config.session.query(StateMachine).one()
+    assert machine_definition.name == 'machine'
 
-        machine_definition = conn.execute(state_machines.select()).fetchone()
-        assert machine_definition.name == 'machine'
+    state_definition = app_config.session.query(State).one()
+    assert state_definition.name == 'state'
+    assert not state_definition.deprecated
 
-        num_states = conn.scalar(states.count())
-        assert num_states == 1
-
-        state_definition = conn.execute(states.select()).fetchone()
-        assert state_definition.name == 'state'
-        assert not state_definition.deprecated
-
-        num_edges = conn.scalar(edges.count())
-        assert num_edges == 0
+    num_edges = app_config.session.query(Edge).count()
+    assert num_edges == 0
 
 
 def test_delete_single_trivial_machine(app_config):
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -70,14 +61,13 @@ def test_delete_single_trivial_machine(app_config):
 
     record_state_machines(app_config, [])
 
-    with app_config.db.begin() as conn:
-        num_machines = conn.scalar(state_machines.count())
-        assert num_machines == 0
+    num_machines = app_config.session.query(StateMachine).count()
+    assert num_machines == 0
 
 
 def test_deprecate_state_in_state_machine(app_config):
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -91,7 +81,7 @@ def test_deprecate_state_in_state_machine(app_config):
     ])
 
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -104,26 +94,22 @@ def test_deprecate_state_in_state_machine(app_config):
         )
     ])
 
-    with app_config.db.begin() as conn:
-        state_deprecations = {
-            x.name: x.deprecated
-            for x in conn.execute(
-                select((
-                    states.c.name,
-                    states.c.deprecated,
-                )),
-            )
-        }
+    state_deprecations = dict(
+        app_config.session.query(
+            State.name,
+            State.deprecated,
+        ),
+    )
 
-        assert state_deprecations == {
-            'state_old': True,
-            'state_new': False,
-        }
+    assert state_deprecations == {
+        'state_old': True,
+        'state_new': False,
+    }
 
 
 def test_undeprecate_state_in_state_machine(app_config):
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -137,7 +123,7 @@ def test_undeprecate_state_in_state_machine(app_config):
     ])
 
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -151,7 +137,7 @@ def test_undeprecate_state_in_state_machine(app_config):
     ])
 
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -164,26 +150,22 @@ def test_undeprecate_state_in_state_machine(app_config):
         )
     ])
 
-    with app_config.db.begin() as conn:
-        state_deprecations = {
-            x.name: x.deprecated
-            for x in conn.execute(
-                select((
-                    states.c.name,
-                    states.c.deprecated,
-                )),
-            )
-        }
+    state_deprecations = dict(
+        app_config.session.query(
+            State.name,
+            State.deprecated,
+        ),
+    )
 
-        assert state_deprecations == {
-            'state_old': False,
-            'state_new': True,
-        }
+    assert state_deprecations == {
+        'state_old': False,
+        'state_new': True,
+    }
 
 
 def test_record_edges(app_config):
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -202,22 +184,16 @@ def test_record_edges(app_config):
         )
     ])
 
-    with app_config.db.begin() as conn:
-        num_states = conn.scalar(states.count())
-        assert num_states == 2
-
-        num_edges = conn.scalar(edges.count())
-        assert num_edges == 1
-
-        edge_definition = conn.execute(edges.select()).fetchone()
-        assert edge_definition.from_state == 'state1'
-        assert edge_definition.to_state == 'state2'
-        assert not edge_definition.deprecated
+    assert app_config.session.query(State).count() == 2
+    edge_definition = app_config.session.query(Edge).one()
+    assert edge_definition.from_state == 'state1'
+    assert edge_definition.to_state == 'state2'
+    assert not edge_definition.deprecated
 
 
 def test_edges_are_deprecated_when_removed(app_config):
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -237,7 +213,7 @@ def test_edges_are_deprecated_when_removed(app_config):
     ])
 
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -256,31 +232,20 @@ def test_edges_are_deprecated_when_removed(app_config):
         )
     ])
 
-    with app_config.db.begin() as conn:
-        num_edges = conn.scalar(edges.count())
-        assert num_edges == 2
+    edge_deprecations = {
+        (x.from_state, x.to_state): x.deprecated
+        for x in app_config.session.query(Edge)
+    }
 
-        edge_deprecations = {
-            (x.from_state, x.to_state): x.deprecated
-            for x in conn.execute(
-                select((
-                    edges.c.from_state,
-                    edges.c.to_state,
-                    edges.c.deprecated,
-                )).where(
-                    edges.c.state_machine == 'machine'
-                )
-            )
-        }
-        assert edge_deprecations == {
-            ('state1', 'state2'): True,
-            ('state1', 'state3'): False,
-        }
+    assert edge_deprecations == {
+        ('state1', 'state2'): True,
+        ('state1', 'state3'): False,
+    }
 
 
 def test_edges_are_undeprecated_when_readded(app_config):
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -300,7 +265,7 @@ def test_edges_are_undeprecated_when_readded(app_config):
     ])
 
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -314,7 +279,7 @@ def test_edges_are_undeprecated_when_readded(app_config):
     ])
 
     record_state_machines(app_config, [
-        StateMachine(
+        ConfigStateMachine(
             name='machine',
             states=[
                 Gate(
@@ -333,16 +298,5 @@ def test_edges_are_undeprecated_when_readded(app_config):
         ),
     ])
 
-    with app_config.db.begin() as conn:
-        num_edges = conn.scalar(edges.count())
-        assert num_edges == 1
-
-        any_deprecated = conn.scalar(
-            select((
-                func.bool_or(
-                    edges.c.deprecated,
-                ),
-            )),
-        )
-
-        assert not any_deprecated
+    edge_definition = app_config.session.query(Edge).one()
+    assert not edge_definition.deprecated
