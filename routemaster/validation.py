@@ -1,8 +1,8 @@
 """Validation of state machines."""
 import networkx
-from sqlalchemy import and_, func
+from sqlalchemy import func
 
-from routemaster.db import Label, History
+from routemaster.db import History
 from routemaster.app import App
 from routemaster.config import StateMachine
 

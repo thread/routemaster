@@ -199,6 +199,7 @@ def _move_label_for_context_change(
         new_state=destination.name,
     ))
 
+
 def _choose_destination(
     state_machine: StateMachine,
     current_state: State,
