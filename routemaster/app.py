@@ -65,3 +65,4 @@ class App(threading.local):
         finally:
             self._current_session.close()
             self._current_session = None
+            self._needs_rollback = False
