@@ -2,7 +2,7 @@
 import networkx
 from sqlalchemy import and_, func
 
-from routemaster.db import labels, history
+from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.config import StateMachine
 
@@ -39,29 +39,28 @@ def _validate_all_states_exist(state_machine):
 
 def _validate_no_labels_in_nonexistent_states(state_machine, app):
     states = [x.name for x in state_machine.states]
-    with app.db.begin() as conn:
-        current_states = history.select(
-            history.c.label_name,
-            history.c.state_machine_name,
-            history.c.new_state,
-            func.max(history.c.created),
-        ).group_by(
-            history.label_name,
-            history.label_state_machine,
+    states_by_rank = app.session.query(
+        History.label_name,
+        History.new_state,
+        func.row_number().over(
+            order_by=History.created.desc(),
+            partition_by=History.label_name,
+        ).label('rank'),
+    ).filter_by(
+        label_state_machine=state_machine.name,
+    ).subquery()
+
+    invalid_labels_and_states = app.session.query(
+        states_by_rank.c.label_name,
+        states_by_rank.c.new_state,
+    ).filter(
+        states_by_rank.c.rank == 1,
+        ~states_by_rank.c.new_state.in_(states),
+    ).all()
+
+    if invalid_labels_and_states:
+        raise ValueError(
+            f"{len(invalid_labels_and_states)} nodes in states that no "
+            f"longer exist",
         )
 
-        labels_in_invalid_states = current_states.select(
-            history.new_state,
-        ).join(
-            labels,
-            and_(
-                labels.c.name == history.c.label_name,
-                labels.c.state_machine == history.c.label_state_machine,
-                ~history.c.new_state.in_(states),
-            ),
-        )
-
-        result = conn.scalar(labels_in_invalid_states)
-        count = result.fetchone()
-        if count != 0:
-            raise ValueError(f"{count} nodes in states that no longer exist")
