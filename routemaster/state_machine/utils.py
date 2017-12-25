@@ -27,15 +27,15 @@ def get_state_machine(app: App, label: LabelRef) -> StateMachine:
         raise UnknownStateMachine(label.state_machine)
 
 
-def start_state_machine(app: App, label: LabelRef, conn) -> None:
+def start_state_machine(app: App, state_machine: StateMachine, label: LabelRef) -> None:
     """Create the first history entry for a label in a state machine."""
-    state_machine = get_state_machine(app, label)
-    conn.execute(history.insert().values(
+    new_entry = History(
         label_name=label.name,
         label_state_machine=label.state_machine,
         old_state=None,
         new_state=state_machine.states[0].name,
-    ))
+    )
+    app.session.add(new_entry)
 
 
 def choose_next_state(

@@ -4,7 +4,7 @@ from sqlalchemy import and_, select
 from requests.exceptions import RequestException
 
 from routemaster import state_machine
-from routemaster.db import labels, history
+from routemaster.db import Label, History
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -13,19 +13,21 @@ from routemaster.state_machine import (
 
 
 def current_state(app_config, label):
-    with app_config.db.begin() as conn:
-        return conn.scalar(
-            select([history.c.new_state]).where(and_(
-                history.c.label_name == label.name,
-                history.c.label_state_machine == label.state_machine,
-            )).order_by(
-                history.c.created.desc(),
-            ).limit(1)
-        )
+    return app_config.session.query(History.new_state).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).order_by(
+        History.created.desc(),
+    ).limit(1).scalar()
+
 
 def metadata_triggers_processed(app_config, label):
-    with app_config.db.begin() as conn:
-        return conn.scalar(select([labels.c.metadata_triggers_processed]))
+    return app_config.session.query(
+        Label.metadata_triggers_processed,
+    ).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).scalar()
 
 
 def test_label_get_state(app_config, mock_test_feed):
@@ -248,13 +250,12 @@ def test_maintains_updated_field_on_label(app_config, mock_test_feed):
             {},
         )
 
-    with app_config.db.begin() as conn:
-        first_updated = conn.scalar(
-            select([labels.c.updated]).where(and_(
-                labels.c.name == label.name,
-                labels.c.state_machine == label.state_machine,
-            )),
-        )
+    first_updated = app_config.session.query(
+        Label.updated,
+    ).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).scalar()
 
     with mock_test_feed():
         state_machine.update_metadata_for_label(
@@ -263,12 +264,11 @@ def test_maintains_updated_field_on_label(app_config, mock_test_feed):
             {'foo': 'bar'},
         )
 
-    with app_config.db.begin() as conn:
-        second_updated = conn.scalar(
-            select([labels.c.updated]).where(and_(
-                labels.c.name == label.name,
-                labels.c.state_machine == label.state_machine,
-            )),
-        )
+    second_updated = app_config.session.query(
+        Label.updated,
+    ).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).scalar()
 
     assert second_updated > first_updated
