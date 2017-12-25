@@ -26,7 +26,7 @@ def record_state_machines(
     machines = list(machines)
     machines_by_name = {x.name: x for x in machines}
 
-    with app.db.begin() as conn:
+    with app.session.bind.begin() as conn:
         old_machine_names = set(
             x.name
             for x in conn.execute(
