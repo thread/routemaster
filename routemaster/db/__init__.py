@@ -1,6 +1,5 @@
 """Public Database interface."""
 
-<<<<<<< HEAD
 from routemaster.db.model import Label, History, metadata
 from routemaster.db.initialisation import initialise_db
 

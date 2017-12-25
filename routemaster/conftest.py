@@ -280,8 +280,13 @@ def app_env():
 @pytest.fixture(autouse=True, scope='session')
 def database_creation(request):
     """Wrap test session in creating and destroying all required tables."""
+    metadata.drop_all(bind=TEST_ENGINE)
     metadata.create_all(bind=TEST_ENGINE)
+<<<<<<< HEAD
     request.addfinalizer(lambda: metadata.drop_all(bind=TEST_ENGINE))
+=======
+    yield
+>>>>>>> Drop and recreate tables at the start of tests
 
 
 @pytest.yield_fixture(autouse=True)
