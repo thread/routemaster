@@ -67,4 +67,4 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker thread/routemaster image
-          command: docker build -t thread/routemaster:$CIRCLE_BRANCH .
+          command: docker build -t thread/routemaster:build-$CIRCLE_BUILD_NUM .
