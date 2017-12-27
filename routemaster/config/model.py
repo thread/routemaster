@@ -12,6 +12,11 @@ class TimeTrigger(NamedTuple):
     time: datetime.time
 
 
+class IntervalTrigger(NamedTuple):
+    """Time based trigger for exit condition evaluation."""
+    interval: datetime.timedelta
+
+
 class MetadataTrigger(NamedTuple):
     """Context update based trigger for exit condition evaluation."""
     metadata_path: str
@@ -30,7 +35,7 @@ class MetadataTrigger(NamedTuple):
         return applies(self.metadata_path.split('.'), update)
 
 
-Trigger = Union[TimeTrigger, MetadataTrigger]
+Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger]
 
 
 class ConstantNextState(NamedTuple):

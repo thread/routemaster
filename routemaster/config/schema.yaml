@@ -54,6 +54,11 @@ properties:
                             time:
                               type: string
                               pattern: '^[0-9]{1,2}h[0-9]{2}m$'
+                        - type: object
+                          properties:
+                            interval:
+                              type: string
+                              pattern: '^[0-9]*d?[0-9]*h?[0-9]*m?$'
                   exit_condition:
                     title: Exit condition
                     anyOf:

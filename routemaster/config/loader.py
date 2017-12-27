@@ -20,6 +20,7 @@ from routemaster.config.model import (
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
@@ -143,19 +144,20 @@ def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
 
 
 def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
-    if 'time' in yaml_trigger and 'metadata' in yaml_trigger:
+    if len(yaml_trigger.keys()) > 1:
         raise ConfigError(
-            f"Trigger at path {'.'.join(path)} cannot be both a time and a "
-            f"metadata trigger."
+            f"Trigger at path {'.'.join(path)} cannot be of multiple types.",
         )
 
     if 'time' in yaml_trigger:
         return _load_time_trigger(path, yaml_trigger)
     elif 'metadata' in yaml_trigger:
         return _load_metadata_trigger(path, yaml_trigger)
+    elif 'interval' in yaml_trigger:
+        return _load_interval_trigger(path, yaml_trigger)
     else:
         raise ConfigError(
-            f"Trigger at path {'.'.join(path)} must be either a time or a "
+            f"Trigger at path {'.'.join(path)} must be a time, interval, or "
             f"metadata trigger.",
         )
 
@@ -171,6 +173,25 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
             f"does not meet expected format: {format}.",
         ) from None
     return TimeTrigger(time=trigger)
+
+
+RE_INTERVAL = re.compile(r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+
+
+def _load_interval_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
+    match = RE_INTERVAL.match(yaml_trigger['interval'])
+    if not match:
+        raise ConfigError(
+            f"Interval trigger '{yaml_trigger['interval']}' at path "
+            f"{'.'.join(path)} does not meet expected format: 'XdYhZm'.",
+        )
+
+    parts = match.groupdict()
+    interval = datetime.timedelta(**{
+        x: int(y) if y is not None else 0
+        for x, y in parts.items()
+    })
+    return IntervalTrigger(interval=interval)
 
 
 RE_PATH = re.compile(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$')
