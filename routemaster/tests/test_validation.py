@@ -8,7 +8,7 @@ from routemaster.config import (
     ContextNextStates,
     ContextNextStatesOption,
 )
-from routemaster.validation import _validate_state_machine
+from routemaster.validation import ValidationError, _validate_state_machine
 from routemaster.exit_conditions import ExitConditionProgram
 
 
@@ -50,7 +50,7 @@ def test_disconnected_state_machine_invalid(app_config):
             ),
         ]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         _validate_state_machine(app_config, state_machine)
 
 
@@ -73,7 +73,7 @@ def test_no_path_from_start_to_end_state_machine_invalid(app_config):
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         _validate_state_machine(app_config, state_machine)
 
 
@@ -107,7 +107,7 @@ def test_nonexistent_node_destination_invalid(app_config):
             ),
         ]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         _validate_state_machine(app_config, state_machine)
 
 
@@ -125,5 +125,5 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
             ),
         ]
     )
-    # with pytest.raises(ValueError): This should be enabled!
+    # with pytest.raises(ValidationError): This should be enabled!
     _validate_state_machine(app_config, state_machine)
