@@ -175,10 +175,13 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
     return TimeTrigger(time=trigger)
 
 
-RE_INTERVAL = re.compile(r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+RE_INTERVAL = re.compile(
+    r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?'
+    r'((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?',
+)
 
 
-def _load_interval_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
+def _load_interval_trigger(path: Path, yaml_trigger: Yaml) -> IntervalTrigger:
     match = RE_INTERVAL.match(yaml_trigger['interval'])
     if not match:
         raise ConfigError(
