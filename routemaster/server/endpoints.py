@@ -1,6 +1,6 @@
 """Core API endpoints for routemaster service."""
 
-from flask import Flask, abort, jsonify, request
+from flask import Flask, Response, abort, jsonify, request
 
 from routemaster import state_machine
 from routemaster.state_machine import (
@@ -8,6 +8,7 @@ from routemaster.state_machine import (
     UnknownLabel,
     LabelAlreadyExists,
     UnknownStateMachine,
+    draw_state_machine,
 )
 
 server = Flask('routemaster')
@@ -34,11 +35,35 @@ def get_state_machines():
         'state-machines': [
             {
                 'name': x.name,
+                'view': f'/state-machines/{x.name}/view',
                 'labels': f'/state-machines/{x.name}/labels',
             }
             for x in server.config.app.config.state_machines.values()
         ],
     })
+
+
+@server.route('/state-machines/<state_machine_name>/view', methods=['GET'])
+def view_state_machine(state_machine_name):
+    """
+    Render an image of a state machine.
+
+    Returns:
+    - 200 Ok, SVG: if the state machine exists.
+    - 404 Not Found: if the state machine does not exist.
+    """
+    app = server.config.app
+
+    try:
+        state_machine = app.config.state_machines[state_machine_name]
+    except KeyError as k:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+
+    return Response(
+        draw_state_machine(state_machine),
+        mimetype='image/svg+xml',
+    )
 
 
 @server.route(

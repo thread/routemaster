@@ -14,6 +14,7 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
     UnknownStateMachine,
 )
+from routemaster.state_machine.visualisation import draw_state_machine
 
 __all__ = (
     'Label',
@@ -23,6 +24,7 @@ __all__ = (
     'UnknownLabel',
     'get_label_state',
     'get_label_metadata',
+    'draw_state_machine',
     'LabelAlreadyExists',
     'UnknownStateMachine',
     'update_metadata_for_label',
