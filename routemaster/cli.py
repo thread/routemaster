@@ -5,6 +5,7 @@ import click
 from routemaster.app import App
 from routemaster.config import load_config
 from routemaster.server import server
+from routemaster.validation import ValidationError, validate_config
 from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
@@ -28,8 +29,8 @@ def main(ctx, config_file):
 @click.pass_context
 def validate(ctx):
     """Entrypoint for validation of configuration files."""
-    print("Validating")
-    print(ctx.obj)
+    app = ctx.obj
+    _validate_config(app)
 
 
 @main.command()
@@ -49,6 +50,7 @@ def validate(ctx):
 def serve(ctx, bind, debug):
     """Entrypoint for serving the Routemaster HTTP service."""
     app = ctx.obj
+    _validate_config(app)
 
     server.config.app = app
     if debug:
@@ -58,3 +60,13 @@ def serve(ctx, bind, debug):
 
     instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
     instance.run()
+
+
+def _validate_config(app):
+    try:
+        validate_config(app, app.config)
+    except ValidationError as e:
+        msg = f"Validation Error: {e}"
+
+        click.echo(click.style(msg, bold=True, fg='red'))
+        click.get_current_context().exit(1)

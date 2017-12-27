@@ -1,0 +1,7 @@
+state_machines:
+  example:
+    states:
+      - gate: start
+        exit_condition: false
+      - gate: end
+        exit_condition: false

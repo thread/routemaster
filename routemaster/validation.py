@@ -4,10 +4,21 @@ from sqlalchemy import and_, func
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.config import StateMachine
+from routemaster.config import Config, StateMachine
 
 
-def validate(app: App, state_machine: StateMachine):
+class ValidationError(Exception):
+    """Class for errors raised to indicate invalid configuration."""
+    pass
+
+
+def validate_config(app: App, config: Config):
+    """Validate that a given config satisfies invariants."""
+    for state_machine in config.state_machines.values():
+        _validate_state_machine(app, state_machine)
+
+
+def _validate_state_machine(app: App, state_machine: StateMachine):
     """Validate that a given state machine is internally consistent."""
     _validate_route_start_to_end(state_machine)
     _validate_all_states_exist(state_machine)
@@ -26,7 +37,7 @@ def _build_graph(state_machine: StateMachine) -> networkx.Graph:
 def _validate_route_start_to_end(state_machine):
     graph = _build_graph(state_machine)
     if not networkx.is_connected(graph):
-        raise ValueError("Graph is not fully connected")
+        raise ValidationError("Graph is not fully connected")
 
 
 def _validate_all_states_exist(state_machine):
@@ -34,7 +45,7 @@ def _validate_all_states_exist(state_machine):
     for state in state_machine.states:
         for destination_name in state.next_states.all_destinations():
             if destination_name not in state_names:
-                raise ValueError(f"{destination_name} does not exist")
+                raise ValidationError(f"{destination_name} does not exist")
 
 
 def _validate_no_labels_in_nonexistent_states(state_machine, app):
@@ -64,4 +75,6 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
         result = conn.scalar(labels_in_invalid_states)
         count = result.fetchone()
         if count != 0:
-            raise ValueError(f"{count} nodes in states that no longer exist")
+            raise ValidationError(
+                f"{count} nodes in states that no longer exist",
+            )
