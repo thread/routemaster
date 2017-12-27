@@ -4,10 +4,16 @@ from sqlalchemy import and_, func
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.config import StateMachine
+from routemaster.config import Config, StateMachine
 
 
-def validate(app: App, state_machine: StateMachine):
+def validate_config(app: App, config: Config):
+    """Validate that a given config satisfies invariants."""
+    for state_machine in config.state_machines.values():
+        _validate_state_machine(app, state_machine)
+
+
+def _validate_state_machine(app: App, state_machine: StateMachine):
     """Validate that a given state machine is internally consistent."""
     _validate_route_start_to_end(state_machine)
     _validate_all_states_exist(state_machine)
