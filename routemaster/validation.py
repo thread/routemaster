@@ -75,4 +75,6 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
         result = conn.scalar(labels_in_invalid_states)
         count = result.fetchone()
         if count != 0:
-            raise ValidationError(f"{count} nodes in states that no longer exist")
+            raise ValidationError(
+                f"{count} nodes in states that no longer exist",
+            )
