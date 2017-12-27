@@ -194,6 +194,8 @@ def _load_next_states(
     if yaml_next_states is None:
         return NoNextStates()
 
+    if isinstance(yaml_next_states, str):
+        return _load_constant_next_state(path, {'state': yaml_next_states})
     if yaml_next_states['type'] == 'constant':
         return _load_constant_next_state(path, yaml_next_states)
     elif yaml_next_states['type'] == 'context':

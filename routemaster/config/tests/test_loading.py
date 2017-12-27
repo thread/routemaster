@@ -152,3 +152,36 @@ def test_raises_for_invalid_path_format_in_trigger():
 def test_raises_for_neither_constant_no_context_next_states():
     with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('next_states_not_constant_or_context_invalid'))
+
+
+def test_next_states_shorthand_results_in_constant_config():
+    data = yaml_data('next_states_shorthand')
+    expected = Config(
+        state_machines={
+            'example': StateMachine(
+                name='example',
+                states=[
+                    Gate(
+                        name='start',
+                        triggers=[],
+                        next_states=ConstantNextState(state='end'),
+                        exit_condition=ExitConditionProgram('false'),
+                    ),
+                    Gate(
+                        name='end',
+                        triggers=[],
+                        next_states=NoNextStates(),
+                        exit_condition=ExitConditionProgram('false'),
+                    ),
+                ]
+            )
+        },
+        database=DatabaseConfig(
+            host='localhost',
+            port=5432,
+            name='routemaster',
+            username='',
+            password='',
+        ),
+    )
+    assert load_config(data) == expected

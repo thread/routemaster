@@ -63,6 +63,7 @@ properties:
                   next: &next_definition
                     title: Next state
                     anyOf:
+                      - type: string
                       - type: object
                         properties:
                           type:
