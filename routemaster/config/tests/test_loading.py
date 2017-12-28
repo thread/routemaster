@@ -12,8 +12,9 @@ from routemaster.config import (
     TimeTrigger,
     NoNextStates,
     StateMachine,
-    MetadataTrigger,
     DatabaseConfig,
+    IntervalTrigger,
+    MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
@@ -73,6 +74,9 @@ def test_realistic_config():
                         triggers=[
                             TimeTrigger(time=datetime.time(18, 30)),
                             MetadataTrigger(metadata_path='foo.bar'),
+                            IntervalTrigger(
+                                interval=datetime.timedelta(hours=1),
+                            ),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),
@@ -135,7 +139,7 @@ def test_raises_for_time_and_context_trigger():
 
 
 def test_raises_for_neither_time_nor_context_trigger():
-    with assert_config_error("Trigger at path state_machines.example.states.0.triggers.0 must be either a time or a metadata trigger."):
+    with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('not_time_or_context_invalid'))
 
 
@@ -145,10 +149,48 @@ def test_raises_for_invalid_time_format_in_trigger():
 
 
 def test_raises_for_invalid_path_format_in_trigger():
-    with assert_config_error("Metadata trigger 'foo.bar+' at path state_machines.example.states.0.triggers.0 is not a valid dotted path."):
+    with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('path_format_context_trigger_invalid'))
 
 
 def test_raises_for_neither_constant_no_context_next_states():
     with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('next_states_not_constant_or_context_invalid'))
+
+
+def test_raises_for_invalid_interval_format_in_trigger():
+    with assert_config_error("Could not validate config file against schema."):
+        load_config(yaml_data('trigger_interval_format_invalid'))
+
+
+def test_next_states_shorthand_results_in_constant_config():
+    data = yaml_data('next_states_shorthand')
+    expected = Config(
+        state_machines={
+            'example': StateMachine(
+                name='example',
+                states=[
+                    Gate(
+                        name='start',
+                        triggers=[],
+                        next_states=ConstantNextState(state='end'),
+                        exit_condition=ExitConditionProgram('false'),
+                    ),
+                    Gate(
+                        name='end',
+                        triggers=[],
+                        next_states=NoNextStates(),
+                        exit_condition=ExitConditionProgram('false'),
+                    ),
+                ]
+            )
+        },
+        database=DatabaseConfig(
+            host='localhost',
+            port=5432,
+            name='routemaster',
+            username='',
+            password='',
+        ),
+    )
+    assert load_config(data) == expected

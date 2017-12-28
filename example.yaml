@@ -7,7 +7,7 @@ state_machines:
     states:
       - gate: start
         triggers:
-          - context: jacquard.has_redesigned_first_two_drip_emails
+          - metadata: jacquard.has_redesigned_first_two_drip_emails
         exit_condition: >
           jacquard.has_redesigned_first_two_drip_emails is defined
         next:
@@ -39,7 +39,7 @@ state_machines:
 
       - gate: wait_for_first_recs
         triggers:
-          - context: metadata.recs.has_first_recommendations
+          - metadata: metadata.recs.has_first_recommendations
         exit_condition: >
           recs.has_first_recommendations and
           (jacquard.has_redesigned_first_two_drip_emails is defined)

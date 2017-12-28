@@ -5,6 +5,7 @@ state_machines:
         triggers:
           - time: 18h30m
           - metadata: foo.bar
+          - interval: 1h
         exit_condition: true
         next:
           type: constant
