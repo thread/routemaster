@@ -24,8 +24,6 @@ class MetadataTrigger(NamedTuple):
     def should_trigger_for_update(self, update: Dict[str, Any]) -> bool:
         """Returns whether this trigger should fire for a given update."""
         def applies(path, d):
-            if not path:
-                return False
             component, path = path[0], path[1:]
             if component in d:
                 if path:
