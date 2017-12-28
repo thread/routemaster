@@ -95,12 +95,11 @@ def app_config(**kwargs):
     ))
 
 
-@pytest.yield_fixture(autouse=True, scope='session')
-def database_creation():
+@pytest.fixture(autouse=True, scope='session')
+def database_creation(request):
     """Wrap test session in creating and destroying all required tables."""
     metadata.create_all(bind=TEST_ENGINE)
-    yield
-    metadata.drop_all(bind=TEST_ENGINE)
+    request.addfinalizer(lambda: metadata.drop_all(bind=TEST_ENGINE))
 
 
 @pytest.yield_fixture(autouse=True)
