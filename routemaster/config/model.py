@@ -12,8 +12,7 @@ from typing import (
     NamedTuple,
 )
 
-from routemaster.utils import get_path
-from routemaster.exit_conditions import ExitConditionProgram
+from routemaster.exit_conditions import Context, ExitConditionProgram
 
 
 class TimeTrigger(NamedTuple):
@@ -69,9 +68,9 @@ class ContextNextStates(NamedTuple):
     path: str
     destinations: Iterable[ContextNextStatesOption]
 
-    def next_state_for_label(self, label_context: Any) -> str:
+    def next_state_for_label(self, label_context: Context) -> str:
         """Returns next state based on context value at `self.path`."""
-        val = get_path(self.path.split('.'), label_context)
+        val = label_context.lookup(self.path.split('.'))
         for destination in self.destinations:
             if destination.value == val:
                 return destination.state
@@ -163,7 +162,7 @@ class DatabaseConfig(NamedTuple):
         elif self.username and self.password:
             auth = f'{self.username}:{self.password}@'
 
-        return f'postgresql://{auth}{self.host}/{self.name}'
+        return f'postgresql://{auth}{self.host}:{self.port}/{self.name}'
 
 
 class Config(NamedTuple):
