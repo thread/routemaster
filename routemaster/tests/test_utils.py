@@ -25,6 +25,7 @@ def test_get_path():
     assert get_path(['foo'], {'foo': 'bar'}) == 'bar'
     assert get_path(['foo'], {'foo': {'bar': 'baz'}}) == {'bar': 'baz'}
     assert get_path(['foo', 'bar'], {'foo': {'bar': 'baz'}}) == 'baz'
+    assert get_path(['unknown'], {'foo': 'bar'}) is None
 
     with pytest.raises(ValueError):
         get_path([], {'foo': 'bar'})

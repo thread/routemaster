@@ -1,7 +1,6 @@
 """Context definition for exit condition programs."""
 
 from routemaster.utils import get_path
-from routemaster.exit_conditions.exceptions import UndefinedVariable
 
 
 class Context(object):
@@ -27,9 +26,7 @@ class Context(object):
                 'metadata': lambda p: get_path(p, self.metadata)
             }[location](rest)
         except KeyError:
-            raise UndefinedVariable(
-                f"Variable at '{'.'.join(path)}' is undefined"
-            )
+            return None
 
     def property_handler(self, property_name, value, **kwargs):
         """Handle a property in execution."""
