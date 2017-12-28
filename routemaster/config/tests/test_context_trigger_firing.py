@@ -3,6 +3,7 @@ import pytest
 from routemaster.config import MetadataTrigger
 
 TEST_CASES = [
+    ('', {}, False),
     ('foo', {}, False),
     ('foo', {'foo': True}, True),
     ('foo', {'foo': False}, True),
