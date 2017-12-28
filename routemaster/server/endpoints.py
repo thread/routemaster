@@ -97,6 +97,8 @@ def get_label(state_machine_name, label_name):
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
+    except UnknownStateMachine:
+        abort(404, f"State machine '{label.state_machine}' does not exist.")
 
     state = state_machine.get_label_state(app, label)
     return jsonify(metadata=metadata, state=state.name)
