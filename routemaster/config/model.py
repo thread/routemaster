@@ -1,7 +1,16 @@
 """Loading and validation of config files."""
 
 import datetime
-from typing import Any, Dict, List, Union, Mapping, Iterable, NamedTuple
+from typing import (
+    Any,
+    Dict,
+    List,
+    Union,
+    Mapping,
+    Iterable,
+    Sequence,
+    NamedTuple,
+)
 
 from routemaster.utils import get_path
 from routemaster.exit_conditions import ExitConditionProgram
@@ -23,7 +32,7 @@ class MetadataTrigger(NamedTuple):
 
     def should_trigger_for_update(self, update: Dict[str, Any]) -> bool:
         """Returns whether this trigger should fire for a given update."""
-        def applies(path, d):
+        def applies(path: Sequence[str], d: Dict[str, Any]) -> bool:
             component, path = path[0], path[1:]
             if component in d:
                 if path:
