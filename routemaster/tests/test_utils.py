@@ -1,4 +1,6 @@
-from routemaster.utils import dict_merge
+import pytest
+
+from routemaster.utils import get_path, dict_merge
 
 
 def test_dict_merge_simple():
@@ -17,3 +19,12 @@ def test_dict_merge_d2_priority():
     d1 = {'foo': {'bar': {'baz': 1}}}
     d2 = {'foo': {'bar': {'baz': 3}}}
     assert dict_merge(d1, d2) == {'foo': {'bar': {'baz': 3}}}
+
+
+def test_get_path():
+    assert get_path(['foo'], {'foo': 'bar'}) == 'bar'
+    assert get_path(['foo'], {'foo': {'bar': 'baz'}}) == {'bar': 'baz'}
+    assert get_path(['foo', 'bar'], {'foo': {'bar': 'baz'}}) == 'baz'
+
+    with pytest.raises(ValueError):
+        get_path([], {'foo': 'bar'})

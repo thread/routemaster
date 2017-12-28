@@ -23,7 +23,10 @@ def dict_merge(d1, d2):
 
 
 def get_path(path: Sequence[str], d: Dict[str, Any]) -> Any:
-    """Get the path from the dict."""
+    """Get the path from a structure of nested dicts."""
+    if not len(path):
+        raise ValueError("Path must be non-empty")
+
     component, rest = path[0], path[1:]
     if rest:
         return get_path(rest, d.get(component, {}))
