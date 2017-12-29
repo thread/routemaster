@@ -15,7 +15,15 @@ server = Flask('routemaster')
 
 @server.route('/', methods=['GET'])
 def status():
-    """Status check endpoint."""
+    """
+    Status check endpoint.
+
+    Returns:
+    - 200 Ok:                  if upstream services are up and the application
+                               appears ready to serve requests.
+    - 503 Service Unavailable: if there is any detected reason why the service
+                               might not be able to serve requests.
+    """
     try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
@@ -27,7 +35,7 @@ def status():
         return jsonify({
             'status': 'error',
             'message': 'Cannot connect to database',
-        })
+        }), 503
 
 
 @server.route('/state-machines', methods=['GET'])

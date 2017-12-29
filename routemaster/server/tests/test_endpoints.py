@@ -20,6 +20,7 @@ def test_root_error_state(client):
         side_effect=RuntimeError,
     ):
         response = client.get('/')
+        assert response.status_code == 503
         assert response.json == {
             'status': 'error',
             'message': 'Cannot connect to database',
