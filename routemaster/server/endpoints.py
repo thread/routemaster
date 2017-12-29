@@ -24,7 +24,10 @@ def status():
                 'state-machines': '/state-machines',
             })
     except Exception:
-        return jsonify({'status': 'Could not connect to database'})
+        return jsonify({
+            'status': 'error',
+            'message': 'Cannot connect to database',
+        })
 
 
 @server.route('/state-machines', methods=['GET'])
