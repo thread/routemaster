@@ -1,5 +1,6 @@
 import json
 
+import mock
 from sqlalchemy import and_, select
 
 from routemaster.db import labels, history
@@ -11,6 +12,18 @@ def test_root(client):
         'status': 'ok',
         'state-machines': '/state-machines',
     }
+
+
+def test_root_error_state(client):
+    with mock.patch(
+        'routemaster.server.endpoints.server.config.app.db.begin',
+        side_effect=RuntimeError,
+    ):
+        response = client.get('/')
+        assert response.json == {
+            'status': 'error',
+            'message': 'Cannot connect to database',
+        }
 
 
 def test_enumerate_state_machines(client, app_config):
