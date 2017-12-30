@@ -95,6 +95,22 @@ def app_config(**kwargs):
     ))
 
 
+@pytest.fixture()
+def app_env():
+    """
+    Create a dict of environment variables.
+
+    Mirrors the testing environment for use in subprocesses.
+    """
+    return {
+        'DB_HOST': TEST_DATABASE_CONFIG.host,
+        'DB_PORT': str(TEST_DATABASE_CONFIG.port),
+        'DB_DB': TEST_DATABASE_CONFIG.name,
+        'DB_USER': TEST_DATABASE_CONFIG.username,
+        'DB_PASS': TEST_DATABASE_CONFIG.password,
+    }
+
+
 @pytest.fixture(autouse=True, scope='session')
 def database_creation(request):
     """Wrap test session in creating and destroying all required tables."""
