@@ -212,7 +212,7 @@ def _move_label_for_metadata_change(
     destination = _choose_destination(
         state_machine,
         current_state,
-        metadata,
+        exit_condition_context,
     )
 
     conn.execute(history.insert().values(
@@ -226,9 +226,9 @@ def _move_label_for_metadata_change(
 def _choose_destination(
     state_machine: StateMachine,
     current_state: State,
-    metadata: Metadata,
+    context: Context,
 ) -> State:
-    next_state_name = current_state.next_states.next_state_for_label(metadata)
+    next_state_name = current_state.next_states.next_state_for_label(context)
     return state_machine.get_state(next_state_name)
 
 
