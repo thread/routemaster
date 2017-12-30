@@ -70,8 +70,11 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
                 latest_states,
                 and_(
                     latest_states.c.label_name == history.c.label_name,
-                    latest_states.c.label_state_machine == history.c.label_state_machine,
                     latest_states.c.latest == history.c.created,
+                    (
+                        latest_states.c.label_state_machine ==
+                        history.c.label_state_machine
+                    ),
                 ),
             ).join(
                 labels,
