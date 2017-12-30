@@ -41,7 +41,7 @@ def load_config(yaml: Yaml) -> Config:
     try:
         yaml_state_machines = yaml['state_machines']
     except KeyError:  # pragma: no cover
-        raise ConfigError(  # pragma: no cover
+        raise ConfigError(
             "No top-level state_machines key defined.",
         ) from None
 
@@ -183,7 +183,7 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
         dt = datetime.datetime.strptime(str(yaml_trigger['time']), format)
         trigger = dt.time()
     except ValueError:  # pragma: no cover
-        raise ConfigError(  # pragma: no cover
+        raise ConfigError(
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
             f"does not meet expected format: {format}.",
         ) from None

@@ -52,7 +52,7 @@ def validate(ctx):
     default=False,
 )
 @click.pass_context
-def serve(ctx, bind, debug):
+def serve(ctx, bind, debug):  # pragma: no cover
     """Entrypoint for serving the Routemaster HTTP service."""
     app = ctx.obj
 
