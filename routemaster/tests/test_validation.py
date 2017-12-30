@@ -125,5 +125,27 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
             ),
         ]
     )
-    # with pytest.raises(ValidationError): This should be enabled!
-    _validate_state_machine(app_config, state_machine)
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
+
+
+def test_label_in_deleted_state_on_per_state_machine_basis(
+    app_config,
+    create_label,
+):
+    create_label('foo', 'test_machine', {})  # Created in "start" implicitly
+    state_machine = StateMachine(
+        name='other_machine',
+        states=[
+            # Note: state "start" is not present, but that we're in a different
+            # state machine.
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ]
+    )
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
