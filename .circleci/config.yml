@@ -62,3 +62,9 @@ jobs:
       - store_artifacts:
           path: build/artifacts/coverage
           destination: coverage
+
+      # Build the Docker image
+      - setup_remote_docker
+      - run:
+          name: Build Docker thread/routemaster image
+          command: docker build -t thread/routemaster:build-$CIRCLE_BUILD_NUM .

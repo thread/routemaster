@@ -105,7 +105,7 @@ def app_env():
     return {
         'DB_HOST': TEST_DATABASE_CONFIG.host,
         'DB_PORT': str(TEST_DATABASE_CONFIG.port),
-        'DB_DB': TEST_DATABASE_CONFIG.name,
+        'DB_NAME': TEST_DATABASE_CONFIG.name,
         'DB_USER': TEST_DATABASE_CONFIG.username,
         'DB_PASS': TEST_DATABASE_CONFIG.password,
     }

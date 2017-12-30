@@ -4,6 +4,6 @@ pytest-cov
 pytest-sugar
 pytest-flask
 pytest-faulthandler
-fakeredis
 networkx
 mypy
+mock
