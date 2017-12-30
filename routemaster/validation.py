@@ -1,6 +1,6 @@
 """Validation of state machines."""
 import networkx
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, false, select
 
 from routemaster.db import labels, history
 from routemaster.app import App
@@ -22,7 +22,7 @@ def _validate_state_machine(app: App, state_machine: StateMachine):
     """Validate that a given state machine is internally consistent."""
     _validate_route_start_to_end(state_machine)
     _validate_all_states_exist(state_machine)
-    # _validate_no_labels_in_nonexistent_states(state_machine, app)
+    _validate_no_labels_in_nonexistent_states(state_machine, app)
 
 
 def _build_graph(state_machine: StateMachine) -> networkx.Graph:
@@ -50,31 +50,51 @@ def _validate_all_states_exist(state_machine):
 
 def _validate_no_labels_in_nonexistent_states(state_machine, app):
     states = [x.name for x in state_machine.states]
+    print(app.db)
     with app.db.begin() as conn:
-        current_states = history.select(
-            history.c.label_name,
-            history.c.state_machine_name,
-            history.c.new_state,
-            func.max(history.c.created),
-        ).group_by(
-            history.label_name,
-            history.label_state_machine,
-        )
 
-        labels_in_invalid_states = current_states.select(
-            history.new_state,
-        ).join(
-            labels,
+        latest_states = select([
+            func.max(history.c.created).label('latest'),
+            history.c.label_name,
+            history.c.label_state_machine,
+        ]).group_by(
+            history.c.label_name,
+            history.c.label_state_machine,
+        ).alias('latest_states')
+
+        invalid_states = select([
+            history.c.new_state,
+            func.count(history.c.id),
+        ]).select_from(
+            history.join(
+                latest_states,
+                and_(
+                    latest_states.c.label_name == history.c.label_name,
+                    latest_states.c.label_state_machine == history.c.label_state_machine,
+                    latest_states.c.latest == history.c.created,
+                ),
+            ).join(
+                labels,
+                and_(
+                    labels.c.name == history.c.label_name,
+                    labels.c.state_machine == history.c.label_state_machine,
+                ),
+            ),
+        ).where(
             and_(
-                labels.c.name == history.c.label_name,
-                labels.c.state_machine == history.c.label_state_machine,
+                labels.c.deleted == false(),
                 ~history.c.new_state.in_(states),
             ),
+        ).group_by(
+            history.c.label_name,
+            history.c.label_state_machine,
+            history.c.new_state,
         )
 
-        result = conn.scalar(labels_in_invalid_states)
-        count = result.fetchone()
-        if count != 0:
+        result = conn.execute(invalid_states)
+        inhabited = dict(result.fetchall())
+        if inhabited:
             raise ValidationError(
-                f"{count} nodes in states that no longer exist",
+                f"Labels currently in states that no longer exist: "
+                f"{', '.join(inhabited)}",
             )
