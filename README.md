@@ -93,8 +93,9 @@ States in a state machine can either be an [_action_](action) or a
 
 An action has an associated URL that is called on entry into the state, in order
 for an external system to perform the action associated with that state.
-Routemster will keep re-trying requests to the URL until it receives a 200
-series status code, or until a certain number of attempts have been made.
+Routemaster will keep re-trying requests to the URL until it receives a 200
+series status code, or until a certain number of attempts have been made. At
+this point the label will be marked as "errored" and no longer retried.
 
 Requests are made as HTTP `POST` requests with the label metadata included as
 JSON encoded body data.
