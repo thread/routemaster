@@ -75,7 +75,7 @@ jobs:
             command: docker build -t thread/routemaster:$CIRCLE_BUILD_NUM .
         - run:
             name: Push Docker image
-            command: >
+            command: |
               docker login -u $DOCKER_USER -p $DOCKER_PASS
               docker push thread/routemaster:$CIRCLE_BUILD_NUM
 
