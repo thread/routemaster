@@ -33,13 +33,13 @@ system (Jacquard).
 
 We also came to build Routemaster as a replacement for a third party service
 that was a poor fit for us given our significant complexity and data consistency
-requirements, and that created significant operational complexity it
+requirements, and that created significant operational complexity in
 understanding the system when it went wrong.
 
 With all of these separate services needing to integrate with the drip feed, a
 backlog of ideas to test in the drip feed, and the need for a system that we
-could understand at a level above previous implementation, we decided to build a
-generic state machine service that would be able to scale to our future
+could understand at a level above our previous implementation, we decided to
+build a generic state machine service that would be able to scale to our future
 requirements.
 
 
@@ -53,7 +53,7 @@ state machine.
 As a result, no external system is able to directly change the state of a label
 in a state machine. The most an external client can do is push more
 [metadata](metadata) into the system that _may_ change the state of a label,
-depending on dow the state machine is configured.
+depending on how the state machine is configured.
 
 Routemaster is also designed to operate in a multi-service environment, where
 multiple systems may want to affect the route of a label through a state
@@ -64,7 +64,7 @@ label pay off.
 ### State machines
 
 A state machine is a series of states, with defined transitions between states,
-and conditions for when those tranitions are allowed to occur.
+and conditions for when those transitions are allowed to occur.
 
 A single Routemaster instance can manage multiple state machines.
 
@@ -79,8 +79,8 @@ Routemaster treats the label as opaque data and imparts no semantics onto it.
 Given that a label is the only piece of data required for a state machine to
 work, it follows that labels must be unique within a state machine. However
 there are no such requirements between multiple state machines—in fact
-internally the primary key on the labes table is composed of the label name and
-the state machine's name.
+internally the primary key on the labels table is composed of the label name
+and the state machine's name.
 
 
 ### States
@@ -113,13 +113,13 @@ condition.
 
 ##### Exit conditions
 
-Exit conditions are small programs execute with a [context](context) formed of
-the metadata attatched to a label, optional dynamic data fetched from data
-feeds, and system provided data including the current date and time, and the
-time that has passed since the label entered the current state.
+Exit conditions are small programs which execute with a [context](context)
+formed of the metadata attached to a label, optional dynamic data fetched from
+data feeds, and system provided data including the current date and time, and
+the time that has passed since the label entered the current state.
 
 All exit conditions evaluate to a either a truthy value, in which case the label
-progresses to the next state, or to a falsy value, in vhich the label remains at
+progresses to the next state, or to a falsy value, in which the label remains at
 the gate.
 
 An example of an exit condition is:
@@ -130,7 +130,7 @@ metadata.has_recommendations and
 system.time >= 18:30
 ```
 
-This will prevent the label (in this example a user)from progressing until
+This will prevent the label (in this example a user) from progressing until
 another system has pushed `{"has_recommendations": true}` into the metadata, and
 the label has been in this state for at least 12 hours (in this case so we space
 emails apart far enough), and the time is after 18:30, as we know that is a time
@@ -161,7 +161,7 @@ sources.
 
 Data feeds are defined at the state machine level, and are formed of a pair of a
 name and a URL. The string `<label>` in the URL will be replaced with the
-correct label when requested. For exmple:
+correct label when requested. For example:
 
 ```yaml
 feeds:
@@ -183,7 +183,7 @@ order to make this distinction as clear as possible._
 ### Transitions
 
 Transitions from a state to the next state(s) are defined in `next` blocks in
-the config file. There are two types of transition...
+the config file. There are two types of transition:
 
 **Constant transitions** are exactly what they sound like, they always
 transition a label to the same next state.
@@ -192,7 +192,7 @@ transition a label to the same next state.
 determine the destination. This is the same context as used in the exit
 condition evaluation that will have taken place immediately beforehand.
 
-These tranitions map a set of possible values at the path in the context to a
+These transitions map a set of possible values at the path in the context to a
 set of state names. Multiple values may map to the same next state, but the same
 value cannot map to multiple states. A default state must also be provided for
 cases where the value does not match any of the given options.
