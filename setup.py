@@ -6,9 +6,9 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='routemaster',
-    version='0.0.1',
+    version='0.0.2',
     url='https://github.com/thread/routemaster',
-    description="Placeholder package",
+    description="State machines as a service.",
     long_description=long_description,
 
     author="Thread",
@@ -16,7 +16,7 @@ setup(
 
     keywords=(
     ),
-    license='Unlicensed',
+    license='MIT',
 
     zip_safe=False,
 
