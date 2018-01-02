@@ -15,6 +15,19 @@ properties:
         type: string
       password:
         type: string
+    additionalProperties: false
+  webhooks:
+    type: array
+    uniqueItems: true
+    items:
+      title: Webhook
+      type: object
+      properties:
+        match:
+          type: string
+        headers:
+          type: object
+      additionalProperties: false
   state_machines:
     type: object
     additionalProperties:

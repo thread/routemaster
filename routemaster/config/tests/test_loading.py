@@ -1,8 +1,9 @@
 import os
-import mock
+import re
 import datetime
 import contextlib
 
+import mock
 import yaml
 import pytest
 
@@ -10,6 +11,7 @@ from routemaster.config import (
     Gate,
     Action,
     Config,
+    Webhook,
     ConfigError,
     TimeTrigger,
     NoNextStates,
@@ -60,6 +62,7 @@ def test_trivial_config():
             username='routemaster',
             password='',
         ),
+        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -124,6 +127,14 @@ def test_realistic_config():
             username='routemaster',
             password='routemaster',
         ),
+        webhooks=[
+            Webhook(
+                match=re.compile('.+\\.example\\.com'),
+                headers={
+                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                },
+            ),
+        ],
     )
     assert load_config(data) == expected
 
@@ -202,6 +213,7 @@ def test_next_states_shorthand_results_in_constant_config():
             username='routemaster',
             password='',
         ),
+        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -266,6 +278,14 @@ def test_environment_variables_override_config_file_for_database_config():
             username='username',
             password='password',
         ),
+        webhooks=[
+            Webhook(
+                match=re.compile('.+\\.example\\.com'),
+                headers={
+                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                },
+            ),
+        ],
     )
 
     with mock.patch.dict(os.environ, {

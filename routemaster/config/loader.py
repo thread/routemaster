@@ -16,6 +16,7 @@ from routemaster.config.model import (
     Action,
     Config,
     Trigger,
+    Webhook,
     NextStates,
     TimeTrigger,
     NoNextStates,
@@ -55,6 +56,7 @@ def load_config(yaml: Yaml) -> Config:
             for name, yaml_state_machine in yaml_state_machines.items()
         },
         database=_load_database(yaml.get('database', {})),
+        webhooks=[_load_webhook(x) for x in yaml.get('webhooks', [])],
     )
 
 
@@ -91,6 +93,13 @@ def _load_database(yaml: Yaml) -> DatabaseConfig:
             yaml.get('username', 'routemaster'),
         ),
         password=os.environ.get('DB_PASS', yaml.get('password', '')),
+    )
+
+
+def _load_webhook(yaml: Yaml) -> Webhook:
+    return Webhook(
+        match=re.compile(yaml['match']),
+        headers=yaml['headers'],
     )
 
 

@@ -91,7 +91,8 @@ def app_config(**kwargs):
     """Create an `App` config object for testing."""
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
-        database=kwargs.get('database', TEST_DATABASE_CONFIG)
+        database=kwargs.get('database', TEST_DATABASE_CONFIG),
+        webhooks=[],
     ))
 
 

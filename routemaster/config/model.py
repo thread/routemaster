@@ -7,6 +7,7 @@ from typing import (
     List,
     Union,
     Mapping,
+    Pattern,
     Iterable,
     Sequence,
     NamedTuple,
@@ -165,6 +166,12 @@ class DatabaseConfig(NamedTuple):
         return f'postgresql://{auth}{self.host}:{self.port}/{self.name}'
 
 
+class Webhook(NamedTuple):
+    """Configuration for webdook requests."""
+    match: Pattern
+    headers: Dict[str, str]
+
+
 class Config(NamedTuple):
     """
     The top-level configuration object.
@@ -173,3 +180,4 @@ class Config(NamedTuple):
     """
     state_machines: Mapping[str, StateMachine]
     database: DatabaseConfig
+    webhooks: List[Webhook]
