@@ -63,13 +63,31 @@ jobs:
           path: build/artifacts/coverage
           destination: coverage
 
-      # Build the Docker image
-      - setup_remote_docker
-      - run:
-          name: Build Docker thread/routemaster image
-          command: docker build -t thread/routemaster:$CIRCLE_BUILD_NUM .
-      - run:
-          name: Push Docker image
-          command: >
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
-            docker push thread/routemaster:$CIRCLE_BUILD_NUM
+    deploy:
+      working_directory: ~/routemaster
+      docker:
+        - image: circleci/python:3.6.3
+      steps:
+        - checkout
+        - setup_remote_docker
+        - run:
+            name: Build Docker thread/routemaster image
+            command: docker build -t thread/routemaster:$CIRCLE_BUILD_NUM .
+        - run:
+            name: Push Docker image
+            command: >
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              docker push thread/routemaster:$CIRCLE_BUILD_NUM
+
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
