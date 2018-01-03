@@ -25,9 +25,9 @@ class Feed:
         self.url = url
         self.data = None
 
-    def fetch(self):
+    def fetch(self, label: str):
         """Trigger the fetching of a feed's data."""
-        response = requests.get(self.url)
+        response = requests.get(self.url.replace('<label>', label))
         self.data = response.json()
 
     def lookup(self, path):

@@ -1,12 +1,22 @@
 """Context definition for exit condition programs."""
+import datetime
+from typing import Any, Dict, Iterable
 
+from routemaster.feeds import Feed
 from routemaster.utils import get_path
 
 
 class Context(object):
     """Execution context for exit condition programs."""
 
-    def __init__(self, metadata, now, feeds, accessed_variables):
+    def __init__(
+        self,
+        label: str,
+        metadata: Dict[str, Any],
+        now: datetime.datetime,
+        feeds: Dict[str, Feed],
+        accessed_variables: Iterable[str],
+    ):
         """Create an execution context."""
         if now.tzinfo is None:
             raise ValueError(
@@ -17,7 +27,7 @@ class Context(object):
         self.metadata = metadata
         self.feeds = feeds
 
-        self._pre_warm_feeds(accessed_variables)
+        self._pre_warm_feeds(label, accessed_variables)
 
     def lookup(self, path):
         """Look up a path in the execution context."""
@@ -51,7 +61,7 @@ class Context(object):
             name='.'.join(property_name)),
         )
 
-    def _pre_warm_feeds(self, accessed_variables):
+    def _pre_warm_feeds(self, label, accessed_variables):
         for accessed_variable in accessed_variables:
             parts = accessed_variable.split('.')
 
@@ -61,6 +71,6 @@ class Context(object):
             if parts[0] != 'feeds':
                 continue
 
-            feed = self.feeds.get(self.feeds[1])
+            feed = self.feeds.get(parts[1])
             if feed is not None:
-                feed.fetch()
+                feed.fetch(label)

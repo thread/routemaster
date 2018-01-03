@@ -206,6 +206,7 @@ def _move_label_for_metadata_change(
 
     feeds = feeds_for_state_machine(state_machine)
     exit_condition_context = Context(
+        label.name,
         metadata,
         _utcnow(),
         feeds,
