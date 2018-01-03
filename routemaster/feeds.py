@@ -4,10 +4,12 @@ from typing import Dict
 import requests
 
 from routemaster.utils import get_path
-from routemaster.config import StateMachine
+
+if False:  # typing
+    from routemaster.config import StateMachine
 
 
-def feeds_for_state_machine(state_machine: StateMachine) -> Dict[str, 'Feed']:
+def feeds_for_state_machine(state_machine: 'StateMachine') -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
     pass
 

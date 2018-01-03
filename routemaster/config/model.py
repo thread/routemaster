@@ -13,8 +13,10 @@ from typing import (
     NamedTuple,
 )
 
-from routemaster.context import Context
 from routemaster.exit_conditions import ExitConditionProgram
+
+if False:  # typing
+    from routemaster.context import Context
 
 
 class TimeTrigger(NamedTuple):
@@ -70,7 +72,7 @@ class ContextNextStates(NamedTuple):
     path: str
     destinations: Iterable[ContextNextStatesOption]
 
-    def next_state_for_label(self, label_context: Context) -> str:
+    def next_state_for_label(self, label_context: 'Context') -> str:
         """Returns next state based on context value at `self.path`."""
         val = label_context.lookup(self.path.split('.'))
         for destination in self.destinations:
