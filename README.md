@@ -46,13 +46,13 @@ requirements.
 ## Design
 
 Routemaster is designed to be understandable. At any given time, the location of
-a [label](label), the reason for it not progressing to the next state, its
+a [label][label], the reason for it not progressing to the next state, its
 current planned route through the state machine, and the whole shape of the
 state machine.
 
 As a result, no external system is able to directly change the state of a label
 in a state machine. The most an external client can do is push more
-[metadata](metadata) into the system that _may_ change the state of a label,
+[metadata][metadata] into the system that _may_ change the state of a label,
 depending on how the state machine is configured.
 
 Routemaster is also designed to operate in a multi-service environment, where
@@ -85,8 +85,8 @@ and the state machine's name.
 
 ### States
 
-States in a state machine can either be an [_action_](action) or a
-[_gate_](gate).
+States in a state machine can either be an [_action_][action] or a
+[_gate_][gate].
 
 
 #### Actions
@@ -107,14 +107,14 @@ and directly into the next state.
 #### Gates
 
 A gate is a state that that may prevent a label from progressing until an [exit
-condition](exit-condition) is met. Routemaster will evaluate the exit condition
+condition][exit-condition] is met. Routemaster will evaluate the exit condition
 in response to configurable triggers, and advance any label that passes the
 condition.
 
 
 ##### Exit conditions
 
-Exit conditions are small programs which execute with a [context](context)
+Exit conditions are small programs which execute with a [context][context]
 formed of the metadata attached to a label, optional dynamic data fetched from
 data feeds, and system provided data including the current date and time, and
 the time that has passed since the label entered the current state.
