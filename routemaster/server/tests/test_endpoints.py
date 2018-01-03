@@ -1,5 +1,6 @@
 import json
 
+import mock
 from sqlalchemy import and_, select
 
 from routemaster.db import labels, history
@@ -11,6 +12,19 @@ def test_root(client):
         'status': 'ok',
         'state-machines': '/state-machines',
     }
+
+
+def test_root_error_state(client):
+    with mock.patch(
+        'routemaster.server.endpoints.server.config.app.db.begin',
+        side_effect=RuntimeError,
+    ):
+        response = client.get('/')
+        assert response.status_code == 503
+        assert response.json == {
+            'status': 'error',
+            'message': 'Cannot connect to database',
+        }
 
 
 def test_enumerate_state_machines(client, app_config):
@@ -117,6 +131,15 @@ def test_update_label_404_for_not_found_label(client):
     assert response.status_code == 404
 
 
+def test_update_label_404_for_not_found_state_machine(client):
+    response = client.patch(
+        '/state-machines/nonexistent_machine/labels/foo',
+        data=json.dumps({'metadata': {'foo': 'bar'}}),
+        content_type='application/json',
+    )
+    assert response.status_code == 404
+
+
 def test_update_label_400_for_invalid_body(client, create_label):
     create_label('foo', 'test_machine', {})
     response = client.patch(
@@ -124,6 +147,19 @@ def test_update_label_400_for_invalid_body(client, create_label):
         data='not valid json',
         content_type='application/json',
     )
+    assert response.status_code == 400
+
+
+def test_update_label_400_for_no_metadata(client, app_config, create_label):
+    create_label('foo', 'test_machine', {})
+
+    label_metadata = {'bar': 'baz'}
+    response = client.patch(
+        '/state-machines/test_machine/labels/foo',
+        data=json.dumps({'not_metadata': label_metadata}),
+        content_type='application/json',
+    )
+
     assert response.status_code == 400
 
 

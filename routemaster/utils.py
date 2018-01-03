@@ -22,22 +22,11 @@ def dict_merge(d1, d2):
     return new
 
 
-def is_list_prefix(l1, l2):
-    """
-    Given two lists, determine if the first is a prefix of the second.
-    """
-    if len(l1) > len(l2):
-        return False
-
-    for idx, elem in enumerate(l1):
-        if l2[idx] != elem:
-            return False
-
-    return True
-
-
 def get_path(path: Sequence[str], d: Dict[str, Any]) -> Any:
-    """Get the path from the dict."""
+    """Get the path from a structure of nested dicts."""
+    if not len(path):
+        raise ValueError("Path must be non-empty")
+
     component, rest = path[0], path[1:]
     if rest:
         return get_path(rest, d.get(component, {}))

@@ -2,19 +2,18 @@ $schema: http://json-schema.org/draft-06/schema#
 title: Configuration
 type: object
 properties:
-  database:
-    type: object
-    properties:
-      host:
-        type: string
-      port:
-        type: number
-      name:
-        type: string
-      username:
-        type: string
-      password:
-        type: string
+  webhooks:
+    type: array
+    uniqueItems: true
+    items:
+      title: Webhook
+      type: object
+      properties:
+        match:
+          type: string
+        headers:
+          type: object
+      additionalProperties: false
   state_machines:
     type: object
     additionalProperties:

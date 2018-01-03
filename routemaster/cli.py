@@ -23,14 +23,19 @@ def main(ctx, config_file):
     """Shared entrypoint configuration."""
     config = load_config(yaml.load(config_file))
     ctx.obj = App(config)
+    _validate_config(ctx.obj)
 
 
 @main.command()
 @click.pass_context
 def validate(ctx):
-    """Entrypoint for validation of configuration files."""
-    app = ctx.obj
-    _validate_config(app)
+    """
+    Entrypoint for validation of configuration files.
+
+    Validation is done by the main handler in order to cover all code paths,
+    so this function is a stub so that `serve` does not have to be called.
+    """
+    pass
 
 
 @main.command()
@@ -47,10 +52,9 @@ def validate(ctx):
     default=False,
 )
 @click.pass_context
-def serve(ctx, bind, debug):
+def serve(ctx, bind, debug):  # pragma: no cover
     """Entrypoint for serving the Routemaster HTTP service."""
     app = ctx.obj
-    _validate_config(app)
 
     server.config.app = app
     if debug:
@@ -62,7 +66,7 @@ def serve(ctx, bind, debug):
     instance.run()
 
 
-def _validate_config(app):
+def _validate_config(app: App):
     try:
         validate_config(app, app.config)
     except ValidationError as e:

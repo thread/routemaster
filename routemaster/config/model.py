@@ -1,10 +1,19 @@
 """Loading and validation of config files."""
 
 import datetime
-from typing import Any, Dict, List, Union, Mapping, Iterable, NamedTuple
+from typing import (
+    Any,
+    Dict,
+    List,
+    Union,
+    Mapping,
+    Pattern,
+    Iterable,
+    Sequence,
+    NamedTuple,
+)
 
-from routemaster.utils import get_path
-from routemaster.exit_conditions import ExitConditionProgram
+from routemaster.exit_conditions import Context, ExitConditionProgram
 
 
 class TimeTrigger(NamedTuple):
@@ -23,9 +32,7 @@ class MetadataTrigger(NamedTuple):
 
     def should_trigger_for_update(self, update: Dict[str, Any]) -> bool:
         """Returns whether this trigger should fire for a given update."""
-        def applies(path, d):
-            if not path:
-                return False
+        def applies(path: Sequence[str], d: Dict[str, Any]) -> bool:
             component, path = path[0], path[1:]
             if component in d:
                 if path:
@@ -62,9 +69,9 @@ class ContextNextStates(NamedTuple):
     path: str
     destinations: Iterable[ContextNextStatesOption]
 
-    def next_state_for_label(self, label_context: Any) -> str:
+    def next_state_for_label(self, label_context: Context) -> str:
         """Returns next state based on context value at `self.path`."""
-        val = get_path(self.path.split('.'), label_context)
+        val = label_context.lookup(self.path.split('.'))
         for destination in self.destinations:
             if destination.value == val:
                 return destination.state
@@ -156,7 +163,13 @@ class DatabaseConfig(NamedTuple):
         elif self.username and self.password:
             auth = f'{self.username}:{self.password}@'
 
-        return f'postgresql://{auth}{self.host}/{self.name}'
+        return f'postgresql://{auth}{self.host}:{self.port}/{self.name}'
+
+
+class Webhook(NamedTuple):
+    """Configuration for webdook requests."""
+    match: Pattern
+    headers: Dict[str, str]
 
 
 class Config(NamedTuple):
@@ -167,3 +180,4 @@ class Config(NamedTuple):
     """
     state_machines: Mapping[str, StateMachine]
     database: DatabaseConfig
+    webhooks: List[Webhook]

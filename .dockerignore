@@ -1,0 +1,12 @@
+.circleci
+docs/
+test_data/
+build/*
+.tox/
+.cache/
+.coverage*
+.eggs/
+.git/
+.mypy_cache/
+.python-version
+config.dev.yaml

@@ -57,11 +57,13 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
 
 def get_label_state(app: App, label: Label) -> State:
     """Finds the current state of a label."""
+    state_machine = _get_state_machine(app, label)
+
     with app.db.begin() as conn:
         history_entry = conn.execute(
             select([history]).where(and_(
                 history.c.label_name == label.name,
-                history.c.label_state_machine == label.state_machine,
+                history.c.label_state_machine == state_machine.name,
             )).order_by(
                 history.c.created.desc(),
             ).limit(1)
@@ -70,20 +72,20 @@ def get_label_state(app: App, label: Label) -> State:
     if history_entry is None:
         raise UnknownLabel(label)
 
-    current_state = app.config.state_machines[label.state_machine].get_state(
-        history_entry.new_state,
-    )
+    current_state = state_machine.get_state(history_entry.new_state)
 
     return current_state
 
 
 def get_label_metadata(app: App, label: Label) -> Metadata:
     """Returns the metadata associated with a label."""
+    state_machine = _get_state_machine(app, label)
+
     with app.db.begin() as conn:
         row = conn.execute(
             select([labels.c.metadata, labels.c.deleted]).where(and_(
                 labels.c.name == label.name,
-                labels.c.state_machine == label.state_machine,
+                labels.c.state_machine == state_machine.name,
             )),
         ).fetchone()
 
@@ -99,10 +101,7 @@ def get_label_metadata(app: App, label: Label) -> Metadata:
 
 def create_label(app: App, label: Label, metadata: Metadata) -> Metadata:
     """Creates a label and starts it in a state machine."""
-    try:
-        state_machine = app.config.state_machines[label.state_machine]
-    except KeyError as k:
-        raise UnknownStateMachine(label.state_machine)
+    state_machine = _get_state_machine(app, label)
 
     with app.db.begin() as conn:
         try:
@@ -141,10 +140,7 @@ def update_metadata_for_label(
 
     Moves the label through the state machine as appropriate.
     """
-    try:
-        state_machine = app.config.state_machines[label.state_machine]
-    except KeyError as k:
-        raise UnknownStateMachine(label.state_machine)
+    state_machine = _get_state_machine(app, label)
 
     metadata_field = labels.c.metadata
     deleted_field = labels.c.deleted
@@ -223,7 +219,7 @@ def _move_label_for_metadata_change(
     destination = _choose_destination(
         state_machine,
         current_state,
-        metadata,
+        exit_condition_context,
     )
 
     conn.execute(history.insert().values(
@@ -237,9 +233,9 @@ def _move_label_for_metadata_change(
 def _choose_destination(
     state_machine: StateMachine,
     current_state: State,
-    metadata: Metadata,
+    context: Context,
 ) -> State:
-    next_state_name = current_state.next_states.next_state_for_label(metadata)
+    next_state_name = current_state.next_states.next_state_for_label(context)
     return state_machine.get_state(next_state_name)
 
 
@@ -250,15 +246,12 @@ def delete_label(app: App, label: Label) -> None:
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
     """
-    try:
-        app.config.state_machines[label.state_machine]
-    except KeyError as k:
-        raise UnknownStateMachine(label.state_machine)
+    state_machine = _get_state_machine(app, label)
 
     metadata_field = labels.c.metadata
     label_filter = and_(
         labels.c.name == label.name,
-        labels.c.state_machine == label.state_machine,
+        labels.c.state_machine == state_machine.name,
     )
 
     with app.db.begin() as conn:
@@ -295,3 +288,10 @@ def _exit_state_machine(
         old_state=current_state_name,
         new_state=None,
     ))
+
+
+def _get_state_machine(app: App, label: Label) -> StateMachine:
+    try:
+        return app.config.state_machines[label.state_machine]
+    except KeyError as k:
+        raise UnknownStateMachine(label.state_machine)

@@ -1,7 +1,6 @@
 """Context definition for exit condition programs."""
 
 from routemaster.utils import get_path
-from routemaster.exit_conditions.exceptions import UndefinedVariable
 
 
 class Context(object):
@@ -30,9 +29,8 @@ class Context(object):
                 'feeds': self._lookup_feed_data,
             }[location](rest)
         except (KeyError, ValueError):
-            raise UndefinedVariable(
-                f"Variable at '{'.'.join(path)}' is undefined"
-            )
+            return None
+
 
     def _lookup_metadata(self, path):
         return get_path(path, self.metadata)

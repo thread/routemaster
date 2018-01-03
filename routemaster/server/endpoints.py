@@ -15,7 +15,15 @@ server = Flask('routemaster')
 
 @server.route('/', methods=['GET'])
 def status():
-    """Status check endpoint."""
+    """
+    Status check endpoint.
+
+    Returns:
+    - 200 Ok:                  if upstream services are up and the application
+                               appears ready to serve requests.
+    - 503 Service Unavailable: if there is any detected reason why the service
+                               might not be able to serve requests.
+    """
     try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
@@ -24,7 +32,10 @@ def status():
                 'state-machines': '/state-machines',
             })
     except Exception:
-        return jsonify({'status': 'Could not connect to database'})
+        return jsonify({
+            'status': 'error',
+            'message': 'Cannot connect to database',
+        }), 503
 
 
 @server.route('/state-machines', methods=['GET'])
@@ -97,6 +108,8 @@ def get_label(state_machine_name, label_name):
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
+    except UnknownStateMachine:
+        abort(404, f"State machine '{label.state_machine}' does not exist.")
 
     state = state_machine.get_label_state(app, label)
     return jsonify(metadata=metadata, state=state.name)
