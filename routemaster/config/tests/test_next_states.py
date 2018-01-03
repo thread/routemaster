@@ -9,7 +9,7 @@ from routemaster.config import (
     ContextNextStates,
     ContextNextStatesOption,
 )
-from routemaster.exit_conditions import Context
+from routemaster.context import Context
 
 UTC_NOW = datetime.datetime.now(dateutil.tz.tzutc())
 

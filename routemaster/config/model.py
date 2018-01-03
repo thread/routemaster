@@ -13,7 +13,8 @@ from typing import (
     NamedTuple,
 )
 
-from routemaster.exit_conditions import Context, ExitConditionProgram
+from routemaster.context import Context
+from routemaster.exit_conditions import ExitConditionProgram
 
 
 class TimeTrigger(NamedTuple):

@@ -2,8 +2,8 @@
 
 import typing
 
+from routemaster.context import Context
 from routemaster.exit_conditions.parser import parse
-from routemaster.exit_conditions.context import Context
 from routemaster.exit_conditions.analysis import find_accessed_keys
 from routemaster.exit_conditions.peephole import peephole_optimise
 from routemaster.exit_conditions.evaluator import evaluate

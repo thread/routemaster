@@ -4,7 +4,8 @@ import textwrap
 import pytest
 import dateutil.tz
 
-from routemaster.exit_conditions import Context, ExitConditionProgram
+from routemaster.context import Context
+from routemaster.exit_conditions import ExitConditionProgram
 
 PROGRAMS = [
     ("true", True, ()),

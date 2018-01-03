@@ -12,7 +12,7 @@ from routemaster.app import App
 from routemaster.feeds import feeds_for_state_machine
 from routemaster.utils import dict_merge
 from routemaster.config import State, Action, StateMachine
-from routemaster.exit_conditions import Context
+from routemaster.context import Context
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
