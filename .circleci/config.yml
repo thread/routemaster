@@ -72,11 +72,16 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker thread/routemaster image
-          command: docker build -t thread/routemaster:$CIRCLE_BUILD_NUM .
+          command: docker build -t routemaster .
       - run:
           name: Push Docker image
           command: |
+            docker tag routemaster thread/routemaster:latest
+            docker tag routemaster thread/routemaster:$CIRCLE_BUILD_NUM
+
             docker login -u $DOCKER_USER -p $DOCKER_PASS
+
+            docker push thread/routemaster:latest
             docker push thread/routemaster:$CIRCLE_BUILD_NUM
 
 
