@@ -8,8 +8,8 @@ services:
 
   serve:
     build: .
-    image: routemaster:dev
-    entrypoint:
+    image: routemaster
+    command:
       - routemaster
       - --config-file=config.dev.yaml
       - serve
@@ -18,42 +18,6 @@ services:
       - .:/routemaster/app
     ports:
       - "2017:2017"
-    working_dir: /routemaster/app
-    environment:
-      DB_NAME: routemaster
-      DB_USER: routemaster
-      DB_HOST: db
-      DB_PORT: 5432
-    depends_on:
-      - db
-
-  migrate:
-    build: .
-    image: routemaster:migrations
-    entrypoint:
-      - alembic
-      - upgrade
-      - head
-    volumes:
-      - .:/routemaster/app
-    working_dir: /routemaster/app
-    environment:
-      DB_NAME: routemaster
-      DB_USER: routemaster
-      DB_HOST: db
-      DB_PORT: 5432
-    depends_on:
-      - db
-
-  validate:
-    build: .
-    image: routemaster:dev
-    entrypoint:
-      - routemaster
-      - --config-file=config.dev.yaml
-      - validate
-    volumes:
-      - .:/routemaster/app
     working_dir: /routemaster/app
     environment:
       DB_NAME: routemaster
