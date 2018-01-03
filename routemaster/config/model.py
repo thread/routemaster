@@ -16,7 +16,7 @@ from typing import (
 from routemaster.exit_conditions import ExitConditionProgram
 
 if False:  # typing
-    from routemaster.context import Context
+    from routemaster.context import Context  # noqa
 
 
 class TimeTrigger(NamedTuple):

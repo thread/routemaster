@@ -6,10 +6,12 @@ import requests
 from routemaster.utils import get_path
 
 if False:  # typing
-    from routemaster.config import StateMachine
+    from routemaster.config import StateMachine  # noqa
 
 
-def feeds_for_state_machine(state_machine: 'StateMachine') -> Dict[str, 'Feed']:
+def feeds_for_state_machine(
+    state_machine: 'StateMachine',
+) -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
     pass
 
