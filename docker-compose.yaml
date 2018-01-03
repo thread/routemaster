@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: routemaster
 
-  serve:
+  routemaster:
     build: .
     image: routemaster
     command:
