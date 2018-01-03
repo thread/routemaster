@@ -17,17 +17,35 @@ def test_context_does_not_accept_naive_datetimes():
 
 
 def test_finds_path_in_context():
-    context = Context('label1', {'foo': {'bar': 'baz'}}, UTC_NOW, None, [])
+    context = Context(
+        'label1',
+        {'foo': {'bar': 'baz'}},
+        UTC_NOW,
+        None,
+        ['metadata.foo.bar'],
+    )
     assert context.lookup(['metadata', 'foo', 'bar']) == 'baz'
 
 
 def test_returns_none_for_unknown_prefix():
-    context = Context('label1', {'foo': {'bar': 'baz'}}, UTC_NOW, None, [])
+    context = Context(
+        'label1',
+        {'foo': {'bar': 'baz'}},
+        UTC_NOW,
+        None,
+        ['unknown.foo.bar'],
+    )
     assert context.lookup(['unknown', 'foo', 'bar']) is None
 
 
 def test_returns_none_for_unknown_metadata_variable():
-    context = Context('label1', {'foo': {'bar': 'baz'}}, UTC_NOW, None, [])
+    context = Context(
+        'label1',
+        {'foo': {'bar': 'baz'}},
+        UTC_NOW,
+        None,
+        ['metadata.unknown'],
+    )
     assert context.lookup(['metadata', 'unknown']) is None
 
 
