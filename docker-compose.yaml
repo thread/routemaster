@@ -18,7 +18,6 @@ services:
       - .:/routemaster/app
     ports:
       - "2017:2017"
-    working_dir: /routemaster/app
     environment:
       DB_NAME: routemaster
       DB_USER: routemaster
