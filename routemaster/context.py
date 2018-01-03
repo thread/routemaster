@@ -1,6 +1,6 @@
 """Context definition for exit condition programs."""
 import datetime
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Sequence
 
 from routemaster.feeds import Feed
 from routemaster.utils import get_path
@@ -16,7 +16,7 @@ class Context(object):
         now: datetime.datetime,
         feeds: Dict[str, Feed],
         accessed_variables: Iterable[str],
-    ):
+    ) -> None:
         """Create an execution context."""
         if now.tzinfo is None:
             raise ValueError(
@@ -29,7 +29,7 @@ class Context(object):
 
         self._pre_warm_feeds(label, accessed_variables)
 
-    def lookup(self, path):
+    def lookup(self, path: Sequence[str]) -> Any:
         """Look up a path in the execution context."""
         location, *rest = path
 
@@ -41,10 +41,10 @@ class Context(object):
         except (KeyError, ValueError):
             return None
 
-    def _lookup_metadata(self, path):
+    def _lookup_metadata(self, path: Sequence[str]) -> Any:
         return get_path(path, self.metadata)
 
-    def _lookup_feed_data(self, path):
+    def _lookup_feed_data(self, path: Sequence[str]) -> Any:
         feed_name, *rest = path
         return self.feeds[feed_name].lookup(rest)
 
