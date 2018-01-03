@@ -12,4 +12,4 @@ COPY alembic.ini alembic.ini
 
 EXPOSE 2017
 
-CMD ["routemaster", "serve", "--config-file=config.yaml"]
+CMD ["routemaster", "--config-file=config.yaml", "serve"]
