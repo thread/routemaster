@@ -26,6 +26,9 @@ def resync_state_machine_names(
     deletions = old_machine_names - new_machine_names
     updates = new_machine_names & old_machine_names
 
+    if deletions:
+        raise ValueError("Deleting a state machine is unsupported.")
+
     if insertions:
         conn.execute(
             state_machines.insert().values(updated=func.now()),
@@ -35,23 +38,6 @@ def resync_state_machine_names(
                 }
                 for new_machine in insertions
             ]
-        )
-
-    if deletions:
-        conn.execute(
-            edges.delete().where(
-                edges.c.state_machine.in_(list(deletions)),
-            ),
-        )
-        conn.execute(
-            states.delete().where(
-                states.c.state_machine.in_(list(deletions)),
-            ),
-        )
-        conn.execute(
-            state_machines.delete().where(
-                state_machines.c.name.in_(list(deletions)),
-            ),
         )
 
     return updates | insertions

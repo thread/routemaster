@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import func, select
 
 from routemaster.db import edges, states, state_machines
@@ -89,6 +90,9 @@ def test_record_single_trivial_machine_twice(app_config):
         assert num_edges == 0
 
 
+@pytest.mark.xfail(
+    reason="removed while we investigate implementation options",
+)
 def test_delete_single_trivial_machine(app_config):
     record_state_machines(app_config, [
         StateMachine(
