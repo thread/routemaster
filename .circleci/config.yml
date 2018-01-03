@@ -62,6 +62,11 @@ jobs:
       - store_artifacts:
           path: build/artifacts/coverage
           destination: coverage
+      - run:
+          name: Report coverage
+          command: |
+            pip install coveralls
+            coveralls
 
   deploy:
     working_directory: ~/routemaster
