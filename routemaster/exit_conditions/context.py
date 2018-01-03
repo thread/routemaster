@@ -31,7 +31,6 @@ class Context(object):
         except (KeyError, ValueError):
             return None
 
-
     def _lookup_metadata(self, path):
         return get_path(path, self.metadata)
 
