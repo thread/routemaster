@@ -29,6 +29,9 @@ class Feed:
 
     def fetch(self, label: str):
         """Trigger the fetching of a feed's data."""
+        if self.data is not None:
+            return
+
         response = requests.get(self.url.replace('<label>', label))
         self.data = response.json()
 
