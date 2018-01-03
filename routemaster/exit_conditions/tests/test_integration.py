@@ -40,7 +40,13 @@ VARIABLES = {
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
 def test_evaluate(program, expected, variables):
     program = ExitConditionProgram(program)
-    context = Context(VARIABLES, NOW, None, program.accessed_variables())
+    context = Context(
+        'label1',
+        VARIABLES,
+        NOW,
+        {},
+        program.accessed_variables(),
+    )
     assert program.run(context) == expected
 
 
@@ -136,7 +142,13 @@ ERRORS = [
 def test_errors(source, error):
     with pytest.raises(ValueError) as compile_error:
         program = ExitConditionProgram(source)
-        context = Context(VARIABLES, NOW, None, program.accessed_variables())
+        context = Context(
+            'label1',
+            VARIABLES,
+            NOW,
+            {},
+            program.accessed_variables(),
+        )
         program.run(context)
 
     message = str(compile_error.value)
