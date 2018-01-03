@@ -5,3 +5,4 @@ pytest-flask
 pytest-faulthandler
 mypy
 mock
+httpretty
