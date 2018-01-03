@@ -107,6 +107,8 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
 
 def _validate_no_deleted_state_machines(app: App, config: Config):
     """
+    Validate that no state machines already recorded in the DB are gone.
+
     Currently we do not support deleting a state machine. This validation check
     should be removed once we do safely support deletion.
     """
