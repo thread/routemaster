@@ -55,7 +55,7 @@ def load_config(yaml: Yaml) -> Config:
             )
             for name, yaml_state_machine in yaml_state_machines.items()
         },
-        database=_load_database(yaml.get('database', {})),
+        database=load_database_config(),
         webhooks=[_load_webhook(x) for x in yaml.get('webhooks', [])],
     )
 
@@ -74,8 +74,9 @@ def _schema_validate(config: Yaml) -> None:
         raise ConfigError("Could not validate config file against schema.")
 
 
-def _load_database(yaml: Yaml) -> DatabaseConfig:
-    port_string = os.environ.get('DB_PORT', yaml.get('port', 5432))
+def load_database_config() -> DatabaseConfig:
+    """Load the database config from the environment."""
+    port_string = os.environ.get('DB_PORT', 5432)
 
     try:
         port = int(port_string)
@@ -85,14 +86,11 @@ def _load_database(yaml: Yaml) -> DatabaseConfig:
         )
 
     return DatabaseConfig(
-        host=os.environ.get('DB_HOST', yaml.get('host', 'localhost')),
+        host=os.environ.get('DB_HOST', 'localhost'),
         port=port,
-        name=os.environ.get('DB_NAME', yaml.get('name', 'routemaster')),
-        username=os.environ.get(
-            'DB_USER',
-            yaml.get('username', 'routemaster'),
-        ),
-        password=os.environ.get('DB_PASS', yaml.get('password', '')),
+        name=os.environ.get('DB_NAME', 'routemaster'),
+        username=os.environ.get('DB_USER', 'routemaster'),
+        password=os.environ.get('DB_PASS', ''),
     )
 
 

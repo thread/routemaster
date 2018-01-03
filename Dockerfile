@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir .
 
 WORKDIR /routemaster/config
 COPY scripts/build/default_config.yaml config.yaml
+COPY alembic.ini alembic.ini
 
 EXPOSE 2017
 

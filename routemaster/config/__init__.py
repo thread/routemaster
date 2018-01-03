@@ -18,11 +18,12 @@ from routemaster.config.model import (
     ContextNextStates,
     ContextNextStatesOption,
 )
-from routemaster.config.loader import load_config
+from routemaster.config.loader import load_config, load_database_config
 from routemaster.config.exceptions import ConfigError
 
 __all__ = (
     'load_config',
+    'load_database_config',
     'Gate',
     'State',
     'Action',

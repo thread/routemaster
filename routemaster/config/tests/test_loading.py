@@ -123,9 +123,9 @@ def test_realistic_config():
         database=DatabaseConfig(
             host='localhost',
             port=5432,
-            name='routemaster_test',
+            name='routemaster',
             username='routemaster',
-            password='routemaster',
+            password='',
         ),
         webhooks=[
             Webhook(
