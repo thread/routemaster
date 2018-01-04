@@ -311,3 +311,8 @@ def test_raises_for_unparseable_database_port_in_environment_variable():
     with mock.patch.dict(os.environ, {'DB_PORT': 'not an int'}):
         with assert_config_error(f"Could not parse DB_PORT as an integer: 'not an int'."):
             load_config(yaml_data('realistic'))
+
+
+def test_multiple_feeds_same_name_invalid():
+    with assert_config_error(f"Feeds must have unique names at state_machines.example.feeds"):
+        load_config(yaml_data('multiple_feeds_same_name_invalid'))
