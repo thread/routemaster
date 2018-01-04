@@ -45,6 +45,7 @@ setup(
         'alembic >=0.9.6',
         'gunicorn >=19.7',
         'schedule',
+        'freezegun',
         'networkx',
     ),
 
