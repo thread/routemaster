@@ -95,3 +95,25 @@ def test_only_loads_feed_once():
         context.lookup(('feeds', 'example', 'baz'))
 
         assert json.call_count == 1
+
+
+def test_non_existent_feed_is_none():
+    context = Context(
+        'label1',
+        {},
+        UTC_NOW,
+        {},
+        ['feeds.foo.bar'],
+    )
+    assert context.lookup(['feeds', 'foo', 'bar']) is None
+
+
+def test_accessing_prefix_directly_does_not_error():
+    context = Context(
+        'label1',
+        {},
+        UTC_NOW,
+        {},
+        ['metadata'],
+    )
+    assert context.lookup(['metadata']) == {}
