@@ -1,5 +1,8 @@
 state_machines:
   example:
+    feeds:
+      - name: data_feed
+        url: http://localhost/<label>
     states:
       - gate: start
         triggers:

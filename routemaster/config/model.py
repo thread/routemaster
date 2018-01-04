@@ -13,7 +13,10 @@ from typing import (
     NamedTuple,
 )
 
-from routemaster.exit_conditions import Context, ExitConditionProgram
+from routemaster.exit_conditions import ExitConditionProgram
+
+if False:  # typing
+    from routemaster.context import Context  # noqa
 
 
 class TimeTrigger(NamedTuple):
@@ -69,7 +72,7 @@ class ContextNextStates(NamedTuple):
     path: str
     destinations: Iterable[ContextNextStatesOption]
 
-    def next_state_for_label(self, label_context: Context) -> str:
+    def next_state_for_label(self, label_context: 'Context') -> str:
         """Returns next state based on context value at `self.path`."""
         val = label_context.lookup(self.path.split('.'))
         for destination in self.destinations:
@@ -133,10 +136,19 @@ class Action(NamedTuple):
 State = Union[Action, Gate]
 
 
+class Feed(NamedTuple):
+    """
+    The definition of a feed of dynamic data to be included in a context.
+    """
+    name: str
+    url: str
+
+
 class StateMachine(NamedTuple):
     """A state machine."""
     name: str
     states: List[State]
+    feeds: List[Feed]
 
     def get_state(self, state_name: str) -> State:
         """Get the state object for a given state name."""

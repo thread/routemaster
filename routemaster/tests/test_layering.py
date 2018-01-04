@@ -24,6 +24,9 @@ DEPENDENCIES = (
 
     ('exit_conditions', 'utils'),
 
+    ('context', 'utils'),
+    ('context', 'feeds'),
+
     ('config', 'exit_conditions'),
     ('config', 'utils'),
     ('db', 'config'),
@@ -40,9 +43,13 @@ DEPENDENCIES = (
     ('state_machine', 'db'),
     ('state_machine', 'utils'),
     ('state_machine', 'config'),
+    ('state_machine', 'feeds'),
+    ('state_machine', 'context'),
 
     ('record_states', 'app'),
     ('record_states', 'config'),
+
+    ('feeds', 'config'),
 
     ('actions', 'app'),
     ('actions', 'config'),

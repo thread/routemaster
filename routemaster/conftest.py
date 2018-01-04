@@ -33,6 +33,7 @@ TEST_DATABASE_CONFIG = DatabaseConfig(
 TEST_STATE_MACHINES = {
     'test_machine': StateMachine(
         name='test_machine',
+        feeds=[],
         states=[
             Gate(
                 name='start',

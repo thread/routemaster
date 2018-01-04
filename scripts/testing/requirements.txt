@@ -1,8 +1,8 @@
 tox
 pytest
 pytest-cov
-pytest-sugar
 pytest-flask
 pytest-faulthandler
 mypy
 mock
+httpretty
