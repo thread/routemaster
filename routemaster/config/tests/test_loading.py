@@ -8,6 +8,7 @@ import yaml
 import pytest
 
 from routemaster.config import (
+    Feed,
     Gate,
     Action,
     Config,
@@ -45,6 +46,7 @@ def test_trivial_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[],
                 states=[
                     Gate(
                         name='start',
@@ -73,6 +75,9 @@ def test_realistic_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[
+                    Feed(name='data_feed', url='http://localhost/<label>'),
+                ],
                 states=[
                     Gate(
                         name='start',
@@ -190,6 +195,7 @@ def test_next_states_shorthand_results_in_constant_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[],
                 states=[
                     Gate(
                         name='start',
@@ -224,6 +230,9 @@ def test_environment_variables_override_config_file_for_database_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[
+                    Feed(name='data_feed', url='http://localhost/<label>'),
+                ],
                 states=[
                     Gate(
                         name='start',

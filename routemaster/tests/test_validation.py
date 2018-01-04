@@ -21,6 +21,7 @@ from routemaster.exit_conditions import ExitConditionProgram
 def test_valid(app_config):
     _validate_state_machine(app_config, StateMachine(
         name='example',
+        feeds=[],
         states=[
             Gate(
                 name='start',
@@ -41,6 +42,7 @@ def test_valid(app_config):
 def test_disconnected_state_machine_invalid(app_config):
     state_machine = StateMachine(
         name='example',
+        feeds=[],
         states=[
             Gate(
                 name='start',
@@ -63,6 +65,7 @@ def test_disconnected_state_machine_invalid(app_config):
 def test_no_path_from_start_to_end_state_machine_invalid(app_config):
     state_machine = StateMachine(
         name='example',
+        feeds=[],
         states=[
             Gate(
                 name='start',
@@ -86,6 +89,7 @@ def test_no_path_from_start_to_end_state_machine_invalid(app_config):
 def test_nonexistent_node_destination_invalid(app_config):
     state_machine = StateMachine(
         name='example',
+        feeds=[],
         states=[
             Gate(
                 name='start',
@@ -121,6 +125,7 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
     create_label('foo', 'test_machine', {})  # Created in "start" implicitly
     state_machine = StateMachine(
         name='test_machine',
+        feeds=[],
         states=[
             # Note: state "start" from "test_machine" is gone.
             Gate(
@@ -142,6 +147,7 @@ def test_label_in_deleted_state_on_per_state_machine_basis(
     create_label('foo', 'test_machine', {})  # Created in "start" implicitly
     state_machine = StateMachine(
         name='other_machine',
+        feeds=[],
         states=[
             # Note: state "start" is not present, but that we're in a different
             # state machine.
@@ -161,6 +167,7 @@ def test_deleted_state_machine_invalid(app_config):
     record_state_machines(app_config, [
         StateMachine(
             name='machine_1',
+            feeds=[],
             states=[
                 Gate(
                     name='start',
@@ -176,6 +183,7 @@ def test_deleted_state_machine_invalid(app_config):
         state_machines={
             'machine_2': StateMachine(
                 name='machine_2',
+                feeds=[],
                 states=[
                     Gate(
                         name='start',

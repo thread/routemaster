@@ -136,10 +136,19 @@ class Action(NamedTuple):
 State = Union[Action, Gate]
 
 
+class Feed(NamedTuple):
+    """
+    The definition of a feed of dynamic data to be included in a context.
+    """
+    name: str
+    url: str
+
+
 class StateMachine(NamedTuple):
     """A state machine."""
     name: str
     states: List[State]
+    feeds: List[Feed]
 
     def get_state(self, state_name: str) -> State:
         """Get the state object for a given state name."""
