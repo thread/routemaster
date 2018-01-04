@@ -20,6 +20,21 @@ properties:
       title: State Machine
       type: object
       properties:
+        feeds:
+          title: Feeds
+          type: array
+          items:
+            title: Feed
+            type: object
+            properties:
+              name:
+                type: string
+              url:
+                type: string
+            required:
+              - name
+              - url
+            additionalProperties: false
         states:
           title: States
           type: array

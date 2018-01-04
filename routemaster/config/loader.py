@@ -11,6 +11,7 @@ import pkg_resources
 import jsonschema.exceptions
 
 from routemaster.config.model import (
+    Feed,
     Gate,
     State,
     Action,
@@ -106,13 +107,25 @@ def _load_state_machine(
     name: str,
     yaml_state_machine: Yaml,
 ) -> StateMachine:
+    feeds = [_load_feed(x) for x in yaml_state_machine.get('feeds', [])]
+
+    if len(set(x.name for x in feeds)) < len(feeds):
+        raise ConfigError(
+            f"Feeds must have unique names at {'.'.join(path + ['feeds'])}",
+        )
+
     return StateMachine(
         name=name,
         states=[
             _load_state(path + ['states', str(idx)], yaml_state)
             for idx, yaml_state in enumerate(yaml_state_machine['states'])
         ],
+        feeds=feeds,
     )
+
+
+def _load_feed(yaml: Yaml) -> Feed:
+    return Feed(name=yaml['name'], url=yaml['url'])
 
 
 def _load_state(path: Path, yaml_state: Yaml) -> State:

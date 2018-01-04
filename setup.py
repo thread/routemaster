@@ -44,6 +44,7 @@ setup(
         'python-dateutil',
         'alembic >=0.9.6',
         'gunicorn >=19.7',
+        'requests',
         'networkx',
     ),
 
