@@ -2,7 +2,8 @@ state_machines:
   example:
     states:
       - gate: start
-        triggers:
-          - time: 18:30
-            metadata: foo.bar
+        exit_condition: false
+        next: end
+
+      - gate: end
         exit_condition: false

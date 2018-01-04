@@ -1,11 +1,10 @@
-import yaml
-
-from alembic import context
-from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 
-from routemaster.config import load_config
-from routemaster.db import metadata as routemaster_metadata, initialise_db
+from alembic import context
+
+from routemaster.db import metadata as routemaster_metadata
+from routemaster.db import initialise_db
+from routemaster.config import load_database_config
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,14 +22,6 @@ target_metadata = routemaster_metadata
 # ... etc.
 
 
-def get_database_config():
-    config_file = config.get_main_option('routemaster.config')
-    with open(config_file, 'r') as f:
-        config_yaml = yaml.load(f)
-    routemaster_config = load_config(config_yaml)
-    return routemaster_config.database
-
-
 def run_migrations_offline():
     """
     Run migrations in 'offline' mode.
@@ -45,7 +36,7 @@ def run_migrations_offline():
 
     """
     context.configure(
-        url=get_database_config().connstr,
+        url=load_database_config().connstr,
         target_metadata=target_metadata,
         literal_binds=True,
     )
@@ -62,7 +53,7 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    database_config = get_database_config()
+    database_config = load_database_config()
     engine = initialise_db(database_config)
 
     with engine.connect() as connection:
@@ -73,6 +64,7 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

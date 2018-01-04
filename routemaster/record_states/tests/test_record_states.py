@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import func, select
 
 from routemaster.db import edges, states, state_machines
@@ -53,6 +54,45 @@ def test_record_single_trivial_machine(app_config):
         assert num_edges == 0
 
 
+def test_record_single_trivial_machine_twice(app_config):
+    state_machines_config = [
+        StateMachine(
+            name='machine',
+            states=[
+                Gate(
+                    name='state',
+                    exit_condition=ExitConditionProgram('false'),
+                    next_states=NoNextStates(),
+                    triggers=[],
+                ),
+            ],
+        )
+    ]
+
+    record_state_machines(app_config, state_machines_config)
+    record_state_machines(app_config, state_machines_config)
+
+    with app_config.db.begin() as conn:
+        num_machines = conn.scalar(state_machines.count())
+        assert num_machines == 1
+
+        machine_definition = conn.execute(state_machines.select()).fetchone()
+        assert machine_definition.name == 'machine'
+
+        num_states = conn.scalar(states.count())
+        assert num_states == 1
+
+        state_definition = conn.execute(states.select()).fetchone()
+        assert state_definition.name == 'state'
+        assert not state_definition.deprecated
+
+        num_edges = conn.scalar(edges.count())
+        assert num_edges == 0
+
+
+@pytest.mark.xfail(
+    reason="removed while we investigate implementation options",
+)
 def test_delete_single_trivial_machine(app_config):
     record_state_machines(app_config, [
         StateMachine(

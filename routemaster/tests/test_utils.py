@@ -1,4 +1,6 @@
-from routemaster.utils import dict_merge, is_list_prefix
+import pytest
+
+from routemaster.utils import get_path, dict_merge
 
 
 def test_dict_merge_simple():
@@ -19,11 +21,11 @@ def test_dict_merge_d2_priority():
     assert dict_merge(d1, d2) == {'foo': {'bar': {'baz': 3}}}
 
 
-def test_is_list_prefix():
-    assert is_list_prefix([], [])
-    assert is_list_prefix(['foo'], []) is False
-    assert is_list_prefix([], ['foo'])
-    assert is_list_prefix(['foo'], ['foo', 'bar'])
-    assert is_list_prefix(['foo', 'bar'], ['foo', 'bar'])
-    assert is_list_prefix(['foo', 'bar'], ['foo', 'bar', 'baz'])
-    assert is_list_prefix(['foo', 'bar'], ['baz']) is False
+def test_get_path():
+    assert get_path(['foo'], {'foo': 'bar'}) == 'bar'
+    assert get_path(['foo'], {'foo': {'bar': 'baz'}}) == {'bar': 'baz'}
+    assert get_path(['foo', 'bar'], {'foo': {'bar': 'baz'}}) == 'baz'
+    assert get_path(['unknown'], {'foo': 'bar'}) is None
+
+    with pytest.raises(ValueError):
+        get_path([], {'foo': 'bar'})

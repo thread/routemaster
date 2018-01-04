@@ -1,5 +1,6 @@
 """Data model for configuration format."""
 
+import os
 import re
 import datetime
 from typing import Any, Dict, List, Optional
@@ -15,12 +16,14 @@ from routemaster.config.model import (
     Action,
     Config,
     Trigger,
+    Webhook,
     NextStates,
     TimeTrigger,
     NoNextStates,
     StateMachine,
-    ContextTrigger,
     DatabaseConfig,
+    IntervalTrigger,
+    MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
@@ -38,8 +41,10 @@ def load_config(yaml: Yaml) -> Config:
 
     try:
         yaml_state_machines = yaml['state_machines']
-    except KeyError:
-        raise ConfigError("No top-level state_machines key defined.") from None
+    except KeyError:  # pragma: no cover
+        raise ConfigError(
+            "No top-level state_machines key defined.",
+        ) from None
 
     return Config(
         state_machines={
@@ -50,7 +55,8 @@ def load_config(yaml: Yaml) -> Config:
             )
             for name, yaml_state_machine in yaml_state_machines.items()
         },
-        database=_load_database(yaml.get('database', {})),
+        database=load_database_config(),
+        webhooks=[_load_webhook(x) for x in yaml.get('webhooks', [])],
     )
 
 
@@ -68,13 +74,30 @@ def _schema_validate(config: Yaml) -> None:
         raise ConfigError("Could not validate config file against schema.")
 
 
-def _load_database(yaml: Yaml) -> DatabaseConfig:
+def load_database_config() -> DatabaseConfig:
+    """Load the database config from the environment."""
+    port_string = os.environ.get('DB_PORT', 5432)
+
+    try:
+        port = int(port_string)
+    except ValueError:
+        raise ConfigError(
+            f"Could not parse DB_PORT as an integer: '{port_string}'."
+        )
+
     return DatabaseConfig(
-        host=yaml.get('host', 'localhost'),
-        port=yaml.get('port', 5432),
-        name=yaml.get('name', 'routemaster'),
-        username=yaml.get('username', ''),
-        password=yaml.get('password', ''),
+        host=os.environ.get('DB_HOST', 'localhost'),
+        port=port,
+        name=os.environ.get('DB_NAME', 'routemaster'),
+        username=os.environ.get('DB_USER', 'routemaster'),
+        password=os.environ.get('DB_PASS', ''),
+    )
+
+
+def _load_webhook(yaml: Yaml) -> Webhook:
+    return Webhook(
+        match=re.compile(yaml['match']),
+        headers=yaml['headers'],
     )
 
 
@@ -93,18 +116,18 @@ def _load_state_machine(
 
 
 def _load_state(path: Path, yaml_state: Yaml) -> State:
-    if 'action' in yaml_state and 'gate' in yaml_state:
-        raise ConfigError(
+    if 'action' in yaml_state and 'gate' in yaml_state:  # pragma: no branch
+        raise ConfigError(  # pragma: no cover
             f"State at path {'.'.join(path)} cannot be both a gate and an "
             f"action.",
         )
 
     if 'action' in yaml_state:
         return _load_action(path, yaml_state)
-    elif 'gate' in yaml_state:
+    elif 'gate' in yaml_state:  # pragma: no branch
         return _load_gate(path, yaml_state)
     else:
-        raise ConfigError(
+        raise ConfigError(  # pragma: no cover
             f"State at path {'.'.join(path)} must be either a gate or an "
             f"action.",
         )
@@ -143,20 +166,21 @@ def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
 
 
 def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
-    if 'time' in yaml_trigger and 'context' in yaml_trigger:
-        raise ConfigError(
-            f"Trigger at path {'.'.join(path)} cannot be both a time and a "
-            f"context trigger."
+    if len(yaml_trigger.keys()) > 1:  # pragma: no branch
+        raise ConfigError(  # pragma: no cover
+            f"Trigger at path {'.'.join(path)} cannot be of multiple types.",
         )
 
     if 'time' in yaml_trigger:
         return _load_time_trigger(path, yaml_trigger)
-    elif 'context' in yaml_trigger:
-        return _load_context_trigger(path, yaml_trigger)
+    elif 'metadata' in yaml_trigger:
+        return _load_metadata_trigger(path, yaml_trigger)
+    elif 'interval' in yaml_trigger:  # pragma: no branch
+        return _load_interval_trigger(path, yaml_trigger)
     else:
-        raise ConfigError(
-            f"Trigger at path {'.'.join(path)} must be either a time or a "
-            f"context trigger.",
+        raise ConfigError(  # pragma: no cover
+            f"Trigger at path {'.'.join(path)} must be a time, interval, or "
+            f"metadata trigger.",
         )
 
 
@@ -165,7 +189,7 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
     try:
         dt = datetime.datetime.strptime(str(yaml_trigger['time']), format)
         trigger = dt.time()
-    except ValueError:
+    except ValueError:  # pragma: no cover
         raise ConfigError(
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
             f"does not meet expected format: {format}.",
@@ -173,17 +197,39 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
     return TimeTrigger(time=trigger)
 
 
+RE_INTERVAL = re.compile(
+    r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?'
+    r'((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?',
+)
+
+
+def _load_interval_trigger(path: Path, yaml_trigger: Yaml) -> IntervalTrigger:
+    match = RE_INTERVAL.match(yaml_trigger['interval'])
+    if not match:  # pragma: no branch
+        raise ConfigError(  # pragma: no cover
+            f"Interval trigger '{yaml_trigger['interval']}' at path "
+            f"{'.'.join(path)} does not meet expected format: 'XdYhZm'.",
+        )
+
+    parts = match.groupdict()
+    interval = datetime.timedelta(**{
+        x: int(y) if y is not None else 0
+        for x, y in parts.items()
+    })
+    return IntervalTrigger(interval=interval)
+
+
 RE_PATH = re.compile(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$')
 
 
-def _load_context_trigger(path: Path, yaml_trigger: Yaml) -> ContextTrigger:
-    context_path = yaml_trigger['context']
-    if not RE_PATH.match(context_path):
-        raise ConfigError(
-            f"Context trigger '{context_path}' at path {'.'.join(path)} is "
+def _load_metadata_trigger(path: Path, yaml_trigger: Yaml) -> MetadataTrigger:
+    metadata_path = yaml_trigger['metadata']
+    if not RE_PATH.match(metadata_path):  # pragma: no branch
+        raise ConfigError(  # pragma: no cover
+            f"Metadata trigger '{metadata_path}' at path {'.'.join(path)} is "
             f"not a valid dotted path.",
         )
-    return ContextTrigger(context_path=context_path)
+    return MetadataTrigger(metadata_path=metadata_path)
 
 
 def _load_next_states(
@@ -194,12 +240,14 @@ def _load_next_states(
     if yaml_next_states is None:
         return NoNextStates()
 
+    if isinstance(yaml_next_states, str):
+        return _load_constant_next_state(path, {'state': yaml_next_states})
     if yaml_next_states['type'] == 'constant':
         return _load_constant_next_state(path, yaml_next_states)
-    elif yaml_next_states['type'] == 'context':
+    elif yaml_next_states['type'] == 'context':  # pragma: no branch
         return _load_context_next_states(path, yaml_next_states)
     else:
-        raise ConfigError(
+        raise ConfigError(  # pragma: no cover
             f"Next state config at path {'.'.join(path)} must be of type "
             f"'constant' or 'context'",
         ) from None
