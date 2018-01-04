@@ -48,7 +48,7 @@ requirements.
 Routemaster is designed to be understandable. At any given time, the location of
 a [label][label], the reason for it not progressing to the next state, its
 current planned route through the state machine, and the whole shape of the
-state machine.
+state machine, should be easy to inspect, and easy to understand.
 
 As a result, no external system is able to directly change the state of a label
 in a state machine. The most an external client can do is push more
