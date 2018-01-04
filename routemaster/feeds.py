@@ -42,6 +42,7 @@ class Feed:
         )
 
         response = requests.get(url)
+        response.raise_for_status()
         self.data = response.json()
 
     def lookup(self, path):
