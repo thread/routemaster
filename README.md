@@ -60,6 +60,10 @@ multiple systems may want to affect the route of a label through a state
 machine. This is where the benefits of not allowing clients to explicitly move a
 label pay off.
 
+This README refers to the state machine configuration. The behaviour of
+Routemaster is configured with a YAML file, an example of which can be found in
+`example.yaml`.
+
 
 ### State machines
 
