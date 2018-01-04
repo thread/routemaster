@@ -58,7 +58,7 @@ def test_accesses_variable_in_feed():
         content_type='application/json',
     )
 
-    feed = Feed('http://example.com/<label>')
+    feed = Feed('http://example.com/<label>', 'test_machine')
     context = Context(
         'label1',
         {},
@@ -82,7 +82,7 @@ def test_only_loads_feed_once():
     with mock.patch('requests.Response.json') as json:
         json.return_value = {'foo': 'bar'}
 
-        feed = Feed('http://example.com/<label>')
+        feed = Feed('http://example.com/<label>', 'test_machine')
         context = Context(
             'label1',
             {},

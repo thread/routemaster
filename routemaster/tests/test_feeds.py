@@ -29,18 +29,19 @@ def test_feeds_for_state_machine():
     assert 'test_feed' in feeds
     assert feeds['test_feed'].data is None
     assert feeds['test_feed'].url == 'http://localhost/<label>'
+    assert feeds['test_feed'].state_machine == 'example'
 
 
 @httpretty.activate
 def test_fetch_only_once():
     httpretty.register_uri(
         httpretty.GET,
-        'http://example.com/label1',
+        'http://example.com/test_machine/label1',
         body='{"foo": "bar"}',
         content_type='application/json',
     )
 
-    feed = Feed('http://example.com/<label>')
+    feed = Feed('http://example.com/<state_machine>/<label>', 'test_machine')
 
     with mock.patch('requests.Response.json') as json:
         feed.fetch('label1')
@@ -54,18 +55,18 @@ def test_fetch_only_once():
 def test_lookup():
     httpretty.register_uri(
         httpretty.GET,
-        'http://example.com/label1',
+        'http://example.com/test_machine/label1',
         body='{"foo": "bar"}',
         content_type='application/json',
     )
 
-    feed = Feed('http://example.com/<label>')
+    feed = Feed('http://example.com/<state_machine>/<label>', 'test_machine')
     feed.fetch('label1')
 
     assert feed.lookup(('foo',)) == 'bar'
 
 
 def test_lookup_fails_on_unfetched_feed():
-    feed = Feed('http://example.com/<label>')
+    feed = Feed('http://example.com/<state_machine>/<label>', 'test_machine')
     with pytest.raises(FeedNotFetched):
         feed.lookup(('foo',))

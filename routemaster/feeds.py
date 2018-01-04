@@ -8,7 +8,10 @@ from routemaster.utils import get_path
 
 def feeds_for_state_machine(state_machine) -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
-    return {x.name: Feed(x.url) for x in state_machine.feeds}
+    return {
+        x.name: Feed(x.url, state_machine.name)
+        for x in state_machine.feeds
+    }
 
 
 class FeedNotFetched(Exception):
@@ -19,17 +22,26 @@ class FeedNotFetched(Exception):
 class Feed:
     """A feed fetcher, able to retreive a feed and read keys out of it."""
 
-    def __init__(self, url):
+    def __init__(self, url, state_machine):
         """Create an un-fetched data feed."""
         self.url = url
         self.data = None
+        self.state_machine = state_machine
 
     def fetch(self, label: str):
         """Trigger the fetching of a feed's data."""
         if self.data is not None:
             return
 
-        response = requests.get(self.url.replace('<label>', label))
+        url = self.url.replace(
+            '<label>',
+            label,
+        ).replace(
+            '<state_machine>',
+            self.state_machine,
+        )
+
+        response = requests.get(url)
         self.data = response.json()
 
     def lookup(self, path):
