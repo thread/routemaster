@@ -45,7 +45,7 @@ def configure_schedule(scheduler: schedule.Scheduler, app: App) -> None:
         _configure_schedule_for_state_machine(scheduler, state_machine)
 
 
-class CronThread(threading.Thread):
+class CronThread(threading.Thread):  # pragma: no cover
     """Background thread for running periodic jobs."""
 
     def __init__(self, app: App) -> None:
