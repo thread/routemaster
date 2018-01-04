@@ -172,6 +172,8 @@ correct label when requested. For example:
 feeds:
   - name: split_tests
     url: http://localhost:8001/user/<label>
+  - name: extra_config
+    url: http://localhost:8002/<state_machine>
 ```
 
 When evaluating the any exit condition in the state machine that uses any value
