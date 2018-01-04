@@ -73,4 +73,4 @@ class Context(object):
 
             feed = self.feeds.get(parts[1])
             if feed is not None:
-                feed.fetch(label)
+                feed.prefetch(label)

@@ -28,7 +28,7 @@ class Feed:
         self.data = None
         self.state_machine = state_machine
 
-    def fetch(self, label: str):
+    def prefetch(self, label: str):
         """Trigger the fetching of a feed's data."""
         if self.data is not None:
             return

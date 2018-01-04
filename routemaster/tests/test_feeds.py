@@ -44,9 +44,9 @@ def test_fetch_only_once():
     feed = Feed('http://example.com/<state_machine>/<label>', 'test_machine')
 
     with mock.patch('requests.Response.json') as json:
-        feed.fetch('label1')
-        feed.fetch('label1')
-        feed.fetch('label1')
+        feed.prefetch('label1')
+        feed.prefetch('label1')
+        feed.prefetch('label1')
 
         assert json.call_count == 1
 
@@ -61,7 +61,7 @@ def test_lookup():
     )
 
     feed = Feed('http://example.com/<state_machine>/<label>', 'test_machine')
-    feed.fetch('label1')
+    feed.prefetch('label1')
 
     assert feed.lookup(('foo',)) == 'bar'
 
