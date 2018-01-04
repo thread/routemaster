@@ -3,6 +3,5 @@ state_machines:
     states:
       - gate: start
         triggers:
-          - time: 18:30
-            metadata: foo.bar
+          - interval: 1d22389h1d
         exit_condition: false

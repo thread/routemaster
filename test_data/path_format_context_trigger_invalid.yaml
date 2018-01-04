@@ -3,5 +3,5 @@ state_machines:
     states:
       - gate: start
         triggers:
-          - context: foo.bar+
+          - metadata: foo.bar+
         exit_condition: false

@@ -14,8 +14,8 @@ from routemaster.config import (
     Config,
     NoNextStates,
     StateMachine,
-    ContextTrigger,
     DatabaseConfig,
+    MetadataTrigger,
     ConstantNextState,
 )
 from routemaster.server import server
@@ -37,11 +37,11 @@ TEST_STATE_MACHINES = {
             Gate(
                 name='start',
                 triggers=[
-                    ContextTrigger(context_path='should_progress'),
+                    MetadataTrigger(metadata_path='should_progress'),
                 ],
                 next_states=ConstantNextState(state='end'),
                 exit_condition=ExitConditionProgram(
-                    'should_progress = true',
+                    'metadata.should_progress = true',
                 ),
             ),
             Gate(
@@ -91,16 +91,32 @@ def app_config(**kwargs):
     """Create an `App` config object for testing."""
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
-        database=kwargs.get('database', TEST_DATABASE_CONFIG)
+        database=kwargs.get('database', TEST_DATABASE_CONFIG),
+        webhooks=[],
     ))
 
 
-@pytest.yield_fixture(autouse=True, scope='session')
-def database_creation():
+@pytest.fixture()
+def app_env():
+    """
+    Create a dict of environment variables.
+
+    Mirrors the testing environment for use in subprocesses.
+    """
+    return {
+        'DB_HOST': TEST_DATABASE_CONFIG.host,
+        'DB_PORT': str(TEST_DATABASE_CONFIG.port),
+        'DB_NAME': TEST_DATABASE_CONFIG.name,
+        'DB_USER': TEST_DATABASE_CONFIG.username,
+        'DB_PASS': TEST_DATABASE_CONFIG.password,
+    }
+
+
+@pytest.fixture(autouse=True, scope='session')
+def database_creation(request):
     """Wrap test session in creating and destroying all required tables."""
     metadata.create_all(bind=TEST_ENGINE)
-    yield
-    metadata.drop_all(bind=TEST_ENGINE)
+    request.addfinalizer(lambda: metadata.drop_all(bind=TEST_ENGINE))
 
 
 @pytest.yield_fixture(autouse=True)
@@ -117,11 +133,11 @@ def database_clear(app_config):
 def create_label(app_config):
     """Create a label in the database."""
 
-    def _create(name: str, state_machine_name: str, context: Dict[str, Any]):
+    def _create(name: str, state_machine_name: str, metadata: Dict[str, Any]):
         return state_machine.create_label(
             app_config,
             Label(name, state_machine_name),
-            context,
+            metadata,
         )
 
     return _create

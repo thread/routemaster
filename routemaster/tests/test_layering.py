@@ -20,6 +20,7 @@ DEPENDENCIES = (
     ('cli', 'app'),
     ('cli', 'gunicorn_application'),
     ('cli', 'record_states'),
+    ('cli', 'validation'),
 
     ('exit_conditions', 'utils'),
 

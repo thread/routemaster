@@ -5,6 +5,7 @@ import click
 from routemaster.app import App
 from routemaster.config import load_config
 from routemaster.server import server
+from routemaster.validation import ValidationError, validate_config
 from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
@@ -22,14 +23,19 @@ def main(ctx, config_file):
     """Shared entrypoint configuration."""
     config = load_config(yaml.load(config_file))
     ctx.obj = App(config)
+    _validate_config(ctx.obj)
 
 
 @main.command()
 @click.pass_context
 def validate(ctx):
-    """Entrypoint for validation of configuration files."""
-    print("Validating")
-    print(ctx.obj)
+    """
+    Entrypoint for validation of configuration files.
+
+    Validation is done by the main handler in order to cover all code paths,
+    so this function is a stub so that `serve` does not have to be called.
+    """
+    pass
 
 
 @main.command()
@@ -46,7 +52,7 @@ def validate(ctx):
     default=False,
 )
 @click.pass_context
-def serve(ctx, bind, debug):
+def serve(ctx, bind, debug):  # pragma: no cover
     """Entrypoint for serving the Routemaster HTTP service."""
     app = ctx.obj
 
@@ -58,3 +64,13 @@ def serve(ctx, bind, debug):
 
     instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
     instance.run()
+
+
+def _validate_config(app: App):
+    try:
+        validate_config(app, app.config)
+    except ValidationError as e:
+        msg = f"Validation Error: {e}"
+
+        click.echo(click.style(msg, bold=True, fg='red'))
+        click.get_current_context().exit(1)

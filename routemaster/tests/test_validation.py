@@ -2,18 +2,24 @@ import pytest
 
 from routemaster.config import (
     Gate,
+    Config,
     NoNextStates,
     StateMachine,
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
 )
-from routemaster.validation import validate
+from routemaster.validation import (
+    ValidationError,
+    _validate_state_machine,
+    _validate_no_deleted_state_machines,
+)
+from routemaster.record_states import record_state_machines
 from routemaster.exit_conditions import ExitConditionProgram
 
 
 def test_valid(app_config):
-    validate(app_config, StateMachine(
+    _validate_state_machine(app_config, StateMachine(
         name='example',
         states=[
             Gate(
@@ -50,8 +56,8 @@ def test_disconnected_state_machine_invalid(app_config):
             ),
         ]
     )
-    with pytest.raises(ValueError):
-        validate(app_config, state_machine)
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
 
 
 def test_no_path_from_start_to_end_state_machine_invalid(app_config):
@@ -73,8 +79,8 @@ def test_no_path_from_start_to_end_state_machine_invalid(app_config):
         ],
     )
 
-    with pytest.raises(ValueError):
-        validate(app_config, state_machine)
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
 
 
 def test_nonexistent_node_destination_invalid(app_config):
@@ -107,8 +113,8 @@ def test_nonexistent_node_destination_invalid(app_config):
             ),
         ]
     )
-    with pytest.raises(ValueError):
-        validate(app_config, state_machine)
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
 
 
 def test_label_in_deleted_state_invalid(app_config, create_label):
@@ -125,5 +131,63 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
             ),
         ]
     )
-    # with pytest.raises(ValueError): This should be enabled!
-    validate(app_config, state_machine)
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
+
+
+def test_label_in_deleted_state_on_per_state_machine_basis(
+    app_config,
+    create_label,
+):
+    create_label('foo', 'test_machine', {})  # Created in "start" implicitly
+    state_machine = StateMachine(
+        name='other_machine',
+        states=[
+            # Note: state "start" is not present, but that we're in a different
+            # state machine.
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ]
+    )
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
+
+
+def test_deleted_state_machine_invalid(app_config):
+    record_state_machines(app_config, [
+        StateMachine(
+            name='machine_1',
+            states=[
+                Gate(
+                    name='start',
+                    triggers=[],
+                    next_states=NoNextStates(),
+                    exit_condition=ExitConditionProgram('false'),
+                ),
+            ]
+        )
+    ])
+
+    state_machine = Config(
+        state_machines={
+            'machine_2': StateMachine(
+                name='machine_2',
+                states=[
+                    Gate(
+                        name='start',
+                        triggers=[],
+                        next_states=NoNextStates(),
+                        exit_condition=ExitConditionProgram('false'),
+                    ),
+                ]
+            )
+        },
+        database=None,
+        webhooks=[],
+    )
+    with pytest.raises(ValidationError):
+        _validate_no_deleted_state_machines(app_config, state_machine)

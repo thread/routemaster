@@ -4,7 +4,8 @@ state_machines:
       - gate: start
         triggers:
           - time: 18h30m
-          - context: foo.bar
+          - metadata: foo.bar
+          - interval: 1h
         exit_condition: true
         next:
           type: constant
@@ -32,9 +33,7 @@ state_machines:
       - gate: end
         exit_condition: false
 
-database:
-  host: localhost
-  port: 5432
-  name: routemaster_test
-  username: routemaster
-  password: routemaster
+webhooks:
+  - match: ".+\\.example\\.com"
+    headers:
+      x-api-key: Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei
