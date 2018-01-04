@@ -40,7 +40,7 @@ def test_action_once_per_minute():
 
     mock_trigger_action.assert_not_called()
 
-    with freezegun.freeze_time('2018-01-01 12:01'):
+    with freezegun.freeze_time(job.next_run):
         job.run()
 
     mock_trigger_action.assert_called_with(action)
@@ -69,7 +69,7 @@ def test_gate_at_fixed_time():
 
     mock_trigger_gate.assert_not_called()
 
-    with freezegun.freeze_time('2018-01-01 18:30'):
+    with freezegun.freeze_time(job.next_run):
         job.run()
 
     mock_trigger_gate.assert_called_with(gate)
