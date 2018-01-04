@@ -1,12 +1,12 @@
 """Periodic job running."""
 
 import time
+import threading
+
 import schedule
 
 from routemaster.app import App
-from routemaster.config import StateMachine, Action, Gate, TimeTrigger
-
-import threading
+from routemaster.config import Gate, Action, TimeTrigger, StateMachine
 
 
 class CronThread(threading.Thread):
