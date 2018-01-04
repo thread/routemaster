@@ -61,7 +61,7 @@ class Context(object):
             name='.'.join(property_name)),
         )
 
-    def _pre_warm_feeds(self, label, accessed_variables):
+    def _pre_warm_feeds(self, label: str, accessed_variables: Iterable[str]):
         for accessed_variable in accessed_variables:
             parts = accessed_variable.split('.')
 
