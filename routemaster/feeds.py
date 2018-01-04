@@ -8,7 +8,7 @@ from routemaster.utils import get_path
 
 def feeds_for_state_machine(state_machine) -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
-    pass
+    return {x.name: Feed(x.url) for x in state_machine.feeds}
 
 
 class FeedNotFetched(Exception):
