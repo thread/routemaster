@@ -6,7 +6,13 @@ import threading
 import schedule
 
 from routemaster.app import App
-from routemaster.config import Gate, Action, TimeTrigger, StateMachine
+from routemaster.config import (
+    Gate,
+    Action,
+    TimeTrigger,
+    StateMachine,
+    IntervalTrigger,
+)
 
 
 def _trigger_action(action: Action) -> None:
@@ -34,6 +40,13 @@ def _configure_schedule_for_state_machine(
                     scheduler.every().day.at(
                         f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
                     ).do(
+                        _trigger_gate,
+                        state,
+                    )
+                elif isinstance(trigger, IntervalTrigger):
+                    scheduler.every(
+                        trigger.interval.total_seconds()
+                    ).seconds.do(
                         _trigger_gate,
                         state,
                     )

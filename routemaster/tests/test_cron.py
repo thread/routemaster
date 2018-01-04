@@ -75,3 +75,32 @@ def test_gate_at_fixed_time():
     mock_trigger_gate.assert_called_with(gate)
 
     assert job.next_run == datetime.datetime(2018, 1, 2, 18, 30)
+
+
+@freezegun.freeze_time('2018-01-01 12:00')
+def test_gate_at_interval():
+    gate = Gate(
+        'fixed_time_gate',
+        next_states=NoNextStates(),
+        exit_condition=ExitConditionProgram('false'),
+        triggers=[IntervalTrigger(datetime.timedelta(minutes=20))],
+    )
+    app = create_app([gate])
+
+    scheduler = schedule.Scheduler()
+    with mock.patch('routemaster.cron._trigger_gate') as mock_trigger_gate:
+        configure_schedule(scheduler, app)
+
+    assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
+    job, = scheduler.jobs
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 20)
+
+    mock_trigger_gate.assert_not_called()
+
+    with freezegun.freeze_time(job.next_run):
+        job.run()
+
+    mock_trigger_gate.assert_called_with(gate)
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 40)
