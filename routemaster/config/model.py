@@ -125,6 +125,11 @@ class Gate(NamedTuple):
         """Return a list of the metadata triggers for this state."""
         return [x for x in self.triggers if isinstance(x, MetadataTrigger)]
 
+    @property
+    def trigger_on_entry(self) -> bool:
+        """Util to check if this gate should be triggered on entry."""
+        return any(isinstance(x, OnEntryTrigger) for x in self.triggers)
+
 
 class Action(NamedTuple):
     """
