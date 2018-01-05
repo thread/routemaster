@@ -1,8 +1,7 @@
 """The core of the state machine logic."""
-import datetime
-from typing import Any, Dict, Iterable, NamedTuple
 
-import dateutil.tz
+from typing import Any, Dict, Iterable
+
 from sqlalchemy import and_, not_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
@@ -13,25 +12,19 @@ from routemaster.feeds import feeds_for_state_machine
 from routemaster.utils import dict_merge
 from routemaster.config import State, Action, StateMachine
 from routemaster.context import Context
+from routemaster.state_machine.types import LabelRef
+from routemaster.state_machine.utils import (
+    _utcnow,
+    _get_state_machine,
+    _start_state_machine,
+)
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
     LabelAlreadyExists,
-    UnknownStateMachine,
 )
 
-
-class LabelRef(NamedTuple):
-    """API representation of a label for the state machine."""
-    name: str
-    state_machine: str
-
-
 Metadata = Dict[str, Any]
-
-
-def _utcnow():
-    return datetime.datetime.now(dateutil.tz.tzutc())
 
 
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
@@ -113,21 +106,9 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
         except IntegrityError:
             raise LabelAlreadyExists(label)
 
-        _start_state_machine(state_machine, label, conn)
+        _start_state_machine(app, label, conn)
         return metadata
-
-
-def _start_state_machine(
-    state_machine: StateMachine,
-    label: LabelRef,
-    conn,
-) -> None:
-    conn.execute(history.insert().values(
-        label_name=label.name,
-        label_state_machine=label.state_machine,
-        old_state=None,
-        new_state=state_machine.states[0].name,
-    ))
+    # TODO progress label outside of transaction
 
 
 def update_metadata_for_label(
@@ -142,8 +123,6 @@ def update_metadata_for_label(
     """
     state_machine = _get_state_machine(app, label)
 
-    metadata_field = labels.c.metadata
-    deleted_field = labels.c.deleted
     label_filter = and_(
         labels.c.name == label.name,
         labels.c.state_machine == label.state_machine,
@@ -151,7 +130,10 @@ def update_metadata_for_label(
 
     with app.db.begin() as conn:
         row = conn.execute(
-            select([metadata_field, deleted_field]).where(label_filter),
+            select([
+                labels.c.metadata,
+                labels.c.deleted,
+            ]).where(label_filter),
         ).fetchone()
         if row is None:
             raise UnknownLabel(label)
@@ -250,7 +232,6 @@ def delete_label(app: App, label: LabelRef) -> None:
     """
     state_machine = _get_state_machine(app, label)
 
-    metadata_field = labels.c.metadata
     label_filter = and_(
         labels.c.name == label.name,
         labels.c.state_machine == state_machine.name,
@@ -258,42 +239,29 @@ def delete_label(app: App, label: LabelRef) -> None:
 
     with app.db.begin() as conn:
         existing_metadata = conn.scalar(
-            select([metadata_field]).where(label_filter),
+            select([labels.c.metadata]).where(label_filter),
         )
         if existing_metadata is None:
             return
 
+        # Record the label as having been deleted and remove its metadata
         conn.execute(labels.update().where(label_filter).values(
             metadata={},
             deleted=True,
         ))
 
-        _exit_state_machine(label, conn)
-
-
-def _exit_state_machine(
-    label: LabelRef,
-    conn,
-) -> None:
-    current_state_name = conn.scalar(
-        select([history.c.new_state]).where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
-        )).order_by(
-            history.c.created.desc(),
-        ).limit(1)
-    )
-
-    conn.execute(history.insert().values(
-        label_name=label.name,
-        label_state_machine=label.state_machine,
-        old_state=current_state_name,
-        new_state=None,
-    ))
-
-
-def _get_state_machine(app: App, label: LabelRef) -> StateMachine:
-    try:
-        return app.config.state_machines[label.state_machine]
-    except KeyError as k:
-        raise UnknownStateMachine(label.state_machine)
+        # Add a history entry for the deletion
+        current_state_name = conn.scalar(
+            select([history.c.new_state]).where(and_(
+                history.c.label_name == label.name,
+                history.c.label_state_machine == label.state_machine,
+            )).order_by(
+                history.c.created.desc(),
+            ).limit(1)
+        )
+        conn.execute(history.insert().values(
+            label_name=label.name,
+            label_state_machine=label.state_machine,
+            old_state=current_state_name,
+            new_state=None,
+        ))

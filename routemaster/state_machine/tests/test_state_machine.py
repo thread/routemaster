@@ -89,6 +89,18 @@ def test_state_machine_progresses_on_update(app_config):
     assert current_state(app_config, label) == 'end'
 
 
+def test_state_machine_progresses_automatically(app_config):
+    label = LabelRef('foo', 'test_machine')
+
+    state_machine.create_label(
+        app_config,
+        label,
+        {'should_progress': True},
+    )
+
+    assert current_state(app_config, label) == 'end'
+
+
 def test_state_machine_does_not_progress_when_not_eligible(app_config):
     label = LabelRef('foo', 'test_machine')
 
