@@ -1,27 +1,14 @@
 """Action (webhook invocation) evaluator."""
 
-import enum
 import json
-from typing import Callable
 
-import requests
 from sqlalchemy import and_, func, select
 
 from routemaster.db import labels, history
 from routemaster.app import App
 from routemaster.config import Action, StateMachine
-from routemaster.state_machine import choose_next_state
-
-
-@enum.unique
-class WebhookResult(enum.Enum):
-    """Possible results from invoking a webhook."""
-    SUCCESS = 'success'
-    RETRY = 'retry'
-    FAIL = 'fail'
-
-
-WebhookRunner = Callable[[str, str, bytes], WebhookResult]
+from routemaster.webhooks import WebhookResult, WebhookRunner
+from routemaster.state_machine.api import choose_next_state
 
 
 def run_action(
@@ -46,7 +33,7 @@ def run_action(
 
         active_participants = select((
             ranked_transitions.c.label_name,
-            labels.c.context,
+            labels.c.metadata,
         )).where(and_(
             ranked_transitions.c.new_state == action.name,
             ranked_transitions.c.rank == 1,
@@ -55,15 +42,15 @@ def run_action(
         ))
 
         relevant_labels = {
-            x.label_name: x.context
+            x.label_name: x.metadata
             for x in conn.execute(active_participants)
         }
 
         new_transitions = []
 
-        for label_name, context in relevant_labels.items():
+        for label_name, metadata in relevant_labels.items():
             webhook_argument = json.dumps({
-                'context': context,
+                'metadata': metadata,
                 'label': label_name,
             }, sort_keys=True).encode('utf-8')
             result = run_webhook(
@@ -73,7 +60,7 @@ def run_action(
             )
 
             if result == WebhookResult.SUCCESS:
-                next_state = choose_next_state(state_machine, action, context)
+                next_state = choose_next_state(state_machine, action, metadata)
                 new_transitions.append((label_name, next_state.name))
 
         if new_transitions:
@@ -91,34 +78,3 @@ def run_action(
                     for label, next_state_name in new_transitions
                 ],
             )
-
-
-class RequestsWebhookRunner(object):
-    """Webhook runner which uses `requests` to actually hit webhooks."""
-
-    def __init__(self) -> None:
-        self.session = requests.Session()
-
-    def __call__(
-        self,
-        url: str,
-        content_type: str,
-        data: bytes,
-    ) -> WebhookResult:
-        """Run a POST on the given webhook."""
-        try:
-            result = self.session.post(
-                url,
-                data=data,
-                headers={'Content-Type': content_type},
-                timeout=10,
-            )
-        except requests.exceptions.RequestException:
-            return WebhookResult.RETRY
-
-        if result.status_code == 410:
-            return WebhookResult.FAIL
-        elif str(result.status_code)[0] == '2':
-            return WebhookResult.SUCCESS
-        else:
-            return WebhookResult.RETRY

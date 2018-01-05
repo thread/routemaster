@@ -217,7 +217,7 @@ def _move_label_for_metadata_change(
     if not can_exit:
         return
 
-    destination = _choose_destination(
+    destination = choose_next_state(
         state_machine,
         current_state,
         exit_condition_context,
