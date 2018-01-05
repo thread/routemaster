@@ -19,7 +19,7 @@ from routemaster.config import (
     ConstantNextState,
 )
 from routemaster.server import server
-from routemaster.state_machine import Label
+from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
 
 TEST_DATABASE_CONFIG = DatabaseConfig(
@@ -137,7 +137,7 @@ def create_label(app_config):
     def _create(name: str, state_machine_name: str, metadata: Dict[str, Any]):
         return state_machine.create_label(
             app_config,
-            Label(name, state_machine_name),
+            LabelRef(name, state_machine_name),
             metadata,
         )
 
@@ -153,7 +153,7 @@ def delete_label(app_config):
     def _delete(name: str, state_machine_name: str) -> None:
         state_machine.delete_label(
             app_config,
-            Label(name, state_machine_name),
+            LabelRef(name, state_machine_name),
         )
 
     return _delete

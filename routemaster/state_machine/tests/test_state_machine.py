@@ -4,7 +4,11 @@ from sqlalchemy import and_, select
 
 from routemaster import state_machine
 from routemaster.db import history
-from routemaster.state_machine import Label, UnknownLabel, UnknownStateMachine
+from routemaster.state_machine import (
+    LabelRef,
+    UnknownLabel,
+    UnknownStateMachine,
+)
 
 
 def current_state(app_config, label):
@@ -20,7 +24,7 @@ def current_state(app_config, label):
 
 
 def test_label_get_state(app_config):
-    label = Label('foo', 'test_machine')
+    label = LabelRef('foo', 'test_machine')
     state_machine.create_label(
         app_config,
         label,
@@ -31,19 +35,19 @@ def test_label_get_state(app_config):
 
 
 def test_label_get_state_raises_for_unknown_label(app_config):
-    label = Label('unknown', 'test_machine')
+    label = LabelRef('unknown', 'test_machine')
     with pytest.raises(UnknownLabel):
         assert state_machine.get_label_state(app_config, label)
 
 
 def test_label_get_state_raises_for_unknown_state_machine(app_config):
-    label = Label('foo', 'unknown_machine')
+    label = LabelRef('foo', 'unknown_machine')
     with pytest.raises(UnknownStateMachine):
         assert state_machine.get_label_state(app_config, label)
 
 
 def test_state_machine_simple(app_config):
-    label = Label('foo', 'test_machine')
+    label = LabelRef('foo', 'test_machine')
 
     state_machine.create_label(
         app_config,
@@ -60,13 +64,13 @@ def test_state_machine_simple(app_config):
 
 
 def test_update_metadata_for_label_raises_foc_unknown_state_machine(app_config):
-    label = Label('foo', 'nonexistent_machine')
+    label = LabelRef('foo', 'nonexistent_machine')
     with pytest.raises(UnknownStateMachine):
         state_machine.update_metadata_for_label(app_config, label, {})
 
 
 def test_state_machine_progresses_on_update(app_config):
-    label = Label('foo', 'test_machine')
+    label = LabelRef('foo', 'test_machine')
 
     state_machine.create_label(
         app_config,
@@ -86,7 +90,7 @@ def test_state_machine_progresses_on_update(app_config):
 
 
 def test_state_machine_does_not_progress_when_not_eligible(app_config):
-    label = Label('foo', 'test_machine')
+    label = LabelRef('foo', 'test_machine')
 
     state_machine.create_label(
         app_config,

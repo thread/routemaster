@@ -21,7 +21,7 @@ from routemaster.state_machine.exceptions import (
 )
 
 
-class Label(NamedTuple):
+class LabelRef(NamedTuple):
     """API representation of a label for the state machine."""
     name: str
     state_machine: str
@@ -34,7 +34,7 @@ def _utcnow():
     return datetime.datetime.now(dateutil.tz.tzutc())
 
 
-def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
+def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
     """
     Returns a sorted iterable of labels associated with a state machine.
 
@@ -52,10 +52,10 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
             ),
         )
         for row in label_names:
-            yield Label(row[labels.c.name], state_machine.name)
+            yield LabelRef(row[labels.c.name], state_machine.name)
 
 
-def get_label_state(app: App, label: Label) -> State:
+def get_label_state(app: App, label: LabelRef) -> State:
     """Finds the current state of a label."""
     state_machine = _get_state_machine(app, label)
 
@@ -77,7 +77,7 @@ def get_label_state(app: App, label: Label) -> State:
     return current_state
 
 
-def get_label_metadata(app: App, label: Label) -> Metadata:
+def get_label_metadata(app: App, label: LabelRef) -> Metadata:
     """Returns the metadata associated with a label."""
     state_machine = _get_state_machine(app, label)
 
@@ -99,7 +99,7 @@ def get_label_metadata(app: App, label: Label) -> Metadata:
         return metadata
 
 
-def create_label(app: App, label: Label, metadata: Metadata) -> Metadata:
+def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     """Creates a label and starts it in a state machine."""
     state_machine = _get_state_machine(app, label)
 
@@ -119,7 +119,7 @@ def create_label(app: App, label: Label, metadata: Metadata) -> Metadata:
 
 def _start_state_machine(
     state_machine: StateMachine,
-    label: Label,
+    label: LabelRef,
     conn,
 ) -> None:
     conn.execute(history.insert().values(
@@ -132,7 +132,7 @@ def _start_state_machine(
 
 def update_metadata_for_label(
     app: App,
-    label: Label,
+    label: LabelRef,
     update: Metadata,
 ) -> Metadata:
     """
@@ -179,7 +179,7 @@ def update_metadata_for_label(
 
 def _move_label_for_metadata_change(
     state_machine: StateMachine,
-    label: Label,
+    label: LabelRef,
     update: Metadata,
     metadata: Metadata,
     conn,
@@ -241,7 +241,7 @@ def choose_next_state(
     return state_machine.get_state(next_state_name)
 
 
-def delete_label(app: App, label: Label) -> None:
+def delete_label(app: App, label: LabelRef) -> None:
     """
     Deletes the metadata for a label and marks the label as deleted.
 
@@ -272,7 +272,7 @@ def delete_label(app: App, label: Label) -> None:
 
 
 def _exit_state_machine(
-    label: Label,
+    label: LabelRef,
     conn,
 ) -> None:
     current_state_name = conn.scalar(
@@ -292,7 +292,7 @@ def _exit_state_machine(
     ))
 
 
-def _get_state_machine(app: App, label: Label) -> StateMachine:
+def _get_state_machine(app: App, label: LabelRef) -> StateMachine:
     try:
         return app.config.state_machines[label.state_machine]
     except KeyError as k:

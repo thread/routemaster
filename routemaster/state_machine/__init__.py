@@ -1,7 +1,7 @@
 """Public API for state machines."""
 
 from routemaster.state_machine.api import (
-    Label,
+    LabelRef,
     list_labels,
     create_label,
     delete_label,
@@ -16,7 +16,7 @@ from routemaster.state_machine.exceptions import (
 )
 
 __all__ = (
-    'Label',
+    'LabelRef',
     'list_labels',
     'create_label',
     'delete_label',
