@@ -4,6 +4,7 @@ import enum
 from typing import Callable
 
 import requests
+from routemaster.config import StateMachine
 
 
 @enum.unique
@@ -46,3 +47,9 @@ class RequestsWebhookRunner(object):
             return WebhookResult.SUCCESS
         else:
             return WebhookResult.RETRY
+
+
+def _webhook_runner_for_state_machine(
+    state_machine: StateMachine,
+) -> WebhookRunner:
+    return RequestsWebhookRunner()

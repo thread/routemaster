@@ -4,12 +4,11 @@ import datetime
 from typing import Any, Dict, Tuple
 
 import dateutil.tz
-from sqlalchemy import and_
-from sqlalchemy.sql import select
+from sqlalchemy import and_, func, select
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.config import Gate, State, StateMachine
+from routemaster.config import Gate, State, Action, StateMachine
 from routemaster.context import Context
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (
@@ -114,3 +113,36 @@ def _lock_label(label: LabelRef, conn):
 
     if not row:
         raise UnknownLabel(label)
+
+
+def _labels_to_retry_for_action(
+    state_machine: StateMachine,
+    action: Action,
+    conn,
+) -> Dict[str, Metadata]:
+    ranked_transitions = select((
+        history.c.label_name,
+        history.c.old_state,
+        history.c.new_state,
+        func.row_number().over(
+            order_by=history.c.created.desc(),
+            partition_by=history.c.label_name,
+        ).label('rank'),
+    )).where(
+        history.c.label_state_machine == state_machine.name,
+    ).alias('transitions')
+
+    active_participants = select((
+        ranked_transitions.c.label_name,
+        labels.c.metadata,
+    )).where(and_(
+        ranked_transitions.c.new_state == action.name,
+        ranked_transitions.c.rank == 1,
+        ranked_transitions.c.label_name == labels.c.name,
+        labels.c.state_machine == state_machine.name,
+    ))
+
+    return {
+        x.label_name: x.metadata
+        for x in conn.execute(active_participants)
+    }

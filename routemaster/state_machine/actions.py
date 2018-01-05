@@ -6,9 +6,78 @@ from sqlalchemy import and_, func, select
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.config import Action, StateMachine
-from routemaster.webhooks import WebhookResult, WebhookRunner
-from routemaster.state_machine.api import choose_next_state
+from routemaster.feeds import feeds_for_state_machine
+from routemaster.config import Gate, Action, StateMachine
+from routemaster.context import Context
+from routemaster.webhooks import (
+    WebhookResult,
+    WebhookRunner,
+    _webhook_runner_for_state_machine,
+)
+from routemaster.state_machine.types import LabelRef
+from routemaster.state_machine.utils import (
+    _utcnow,
+    _lock_label,
+    _choose_next_state,
+    _get_current_state,
+    _get_state_machine,
+    _get_label_metadata,
+    _labels_to_retry_for_action,
+)
+from routemaster.state_machine.exceptions import DeletedLabel
+
+
+def transactional_process_action(app: App, label: LabelRef) -> bool:
+    """
+    Process the action for a label.
+
+    Transactional wrapper with required locking, around `process_action`.
+
+    Raises a TypeError when the current state is not an action.
+    """
+
+
+def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
+    """
+    Process an action for a label.
+
+    Assumes that `action` is the current state of the label, and that the label
+    has been locked.
+
+    Returns whether the label progressed in the state machine, for which `True`
+    implies further progression should be attempted.
+    """
+    state_machine = _get_state_machine(app, label)
+
+    webhook_data = json.dumps({
+        'metadata': metadata,
+        'label': label_name,
+    }, sort_keys=True).encode('utf-8')
+
+    result = run_webhook(
+        action.webhook,
+        'application/json',
+        webhook_data,
+    )
+
+    if result == WebhookResult.SUCCESS:
+        next_state = _choose_next_state(state_machine, action, context)
+
+        conn.execute(history.insert().values(
+            label_state_machine=state_machine.name,
+            label_name=label.name,
+            created=func.now(),
+            old_state=action.name,
+            new_state=next_state,
+        ))
+
+        return True
+
+
+def process_retries(action: Action):
+    """
+    Cron retry entrypoint. This will retry all labels in a given action.
+    """
 
 
 def run_action(
@@ -19,62 +88,16 @@ def run_action(
 ) -> None:
     """Run `action` for all outstanding users."""
     with app.db.begin() as conn:
-        ranked_transitions = select((
-            history.c.label_name,
-            history.c.old_state,
-            history.c.new_state,
-            func.row_number().over(
-                order_by=history.c.created.desc(),
-                partition_by=history.c.label_name,
-            ).label('rank'),
-        )).where(
-            history.c.label_state_machine == state_machine.name,
-        ).alias('transitions')
-
-        active_participants = select((
-            ranked_transitions.c.label_name,
-            labels.c.metadata,
-        )).where(and_(
-            ranked_transitions.c.new_state == action.name,
-            ranked_transitions.c.rank == 1,
-            ranked_transitions.c.label_name == labels.c.name,
-            labels.c.state_machine == state_machine.name,
-        ))
-
-        relevant_labels = {
-            x.label_name: x.metadata
-            for x in conn.execute(active_participants)
-        }
-
-        new_transitions = []
+        relevant_labels = _labels_to_retry_for_action(
+            state_machine,
+            action,
+            conn,
+        )
 
         for label_name, metadata in relevant_labels.items():
-            webhook_argument = json.dumps({
-                'metadata': metadata,
-                'label': label_name,
-            }, sort_keys=True).encode('utf-8')
-            result = run_webhook(
-                action.webhook,
-                'application/json',
-                webhook_argument,
-            )
-
-            if result == WebhookResult.SUCCESS:
-                next_state = choose_next_state(state_machine, action, metadata)
-                new_transitions.append((label_name, next_state.name))
-
-        if new_transitions:
-            conn.execute(
-                history.insert().values(
-                    label_state_machine=state_machine.name,
-                    created=func.now(),
-                    old_state=action.name,
-                ),
-                [
-                    {
-                        'label_name': label,
-                        'new_state': next_state_name,
-                    }
-                    for label, next_state_name in new_transitions
-                ],
+            process_action(
+                app,
+                action,
+                LabelRef(name=label_name, state_machine=state_machine.name),
+                conn,
             )
