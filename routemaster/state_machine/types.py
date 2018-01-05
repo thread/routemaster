@@ -1,6 +1,8 @@
 """Shared types for state machine execution."""
 
-from typing import NamedTuple
+from typing import Any, Dict, NamedTuple
+
+Metadata = Dict[str, Any]
 
 
 class LabelRef(NamedTuple):
