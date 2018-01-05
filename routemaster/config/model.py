@@ -45,7 +45,13 @@ class MetadataTrigger(NamedTuple):
         return applies(self.metadata_path.split('.'), update)
 
 
-Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger]
+class OnEntryTrigger:
+    """Trigger on entry to a given gate."""
+    def __eq__(self, other):
+        return isinstance(other, OnEntryTrigger)
+
+
+Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
 
 
 class ConstantNextState(NamedTuple):

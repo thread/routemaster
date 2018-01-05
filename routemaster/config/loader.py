@@ -3,7 +3,7 @@
 import os
 import re
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union, Optional
 
 import yaml
 import jsonschema
@@ -22,6 +22,7 @@ from routemaster.config.model import (
     TimeTrigger,
     NoNextStates,
     StateMachine,
+    OnEntryTrigger,
     DatabaseConfig,
     IntervalTrigger,
     MetadataTrigger,
@@ -190,6 +191,8 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
         return _load_metadata_trigger(path, yaml_trigger)
     elif 'interval' in yaml_trigger:  # pragma: no branch
         return _load_interval_trigger(path, yaml_trigger)
+    elif yaml_trigger.get('event') == 'entry':
+        return OnEntryTrigger()
     else:
         raise ConfigError(  # pragma: no cover
             f"Trigger at path {'.'.join(path)} must be a time, interval, or "

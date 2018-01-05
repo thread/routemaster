@@ -79,6 +79,13 @@ properties:
                           required:
                             - interval
                           additionalProperties: false
+                        - type: object
+                          properties:
+                            event:
+                              const: entry
+                          required:
+                            - event
+                          additionalProperties: false
                   exit_condition:
                     title: Exit condition
                     anyOf:

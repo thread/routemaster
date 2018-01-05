@@ -18,6 +18,7 @@ from routemaster.config import (
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
@@ -87,6 +88,7 @@ def test_realistic_config():
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
                             ),
+                            OnEntryTrigger(),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),
@@ -242,6 +244,7 @@ def test_environment_variables_override_config_file_for_database_config():
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
                             ),
+                            OnEntryTrigger(),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),

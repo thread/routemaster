@@ -9,6 +9,7 @@ state_machines:
           - time: 18h30m
           - metadata: foo.bar
           - interval: 1h
+          - event: entry
         exit_condition: true
         next:
           type: constant
