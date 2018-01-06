@@ -31,10 +31,6 @@ def _get_state_machine(app: App, label: LabelRef) -> StateMachine:
         raise UnknownStateMachine(label.state_machine)
 
 
-def _utcnow():
-    return datetime.datetime.now(dateutil.tz.tzutc())
-
-
 def _start_state_machine(app: App, label: LabelRef, conn) -> None:
     state_machine = _get_state_machine(app, label)
     conn.execute(history.insert().values(
@@ -172,7 +168,7 @@ def _context_for_label(
     return Context(
         label.name,
         metadata,
-        _utcnow(),
+        datetime.datetime.now(dateutil.tz.tzutc()),
         feeds,
         accessed_variables,
     )
