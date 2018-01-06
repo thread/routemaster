@@ -11,7 +11,7 @@ from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
 )
-from routemaster.state_machine.types import LabelRef
+from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import (
     lock_label,
     choose_next_state,
@@ -57,6 +57,24 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
     if deleted:
         raise DeletedLabel(label)
 
+    return _process_action_with_metadata(
+        app,
+        action,
+        label,
+        metadata,
+        state_machine,
+        conn,
+    )
+
+
+def _process_action_with_metadata(
+    app: App,
+    action: Action,
+    label: LabelRef,
+    metadata: Metadata,
+    state_machine: StateMachine,
+    conn,
+) -> bool:
     webhook_data = json.dumps({
         'metadata': metadata,
         'label': label.name,
@@ -105,10 +123,12 @@ def process_retries(
         for label_name, metadata in relevant_labels.items():
             label = LabelRef(name=label_name, state_machine=state_machine.name)
 
-            with conn.begin() as savepoint:
-                process_action(
+            with conn.begin():
+                _process_action_with_metadata(
                     app,
                     action,
                     label,
-                    savepoint,
+                    metadata,
+                    state_machine,
+                    conn,
                 )
