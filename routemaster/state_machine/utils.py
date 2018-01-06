@@ -24,15 +24,17 @@ from routemaster.state_machine.exceptions import (
 )
 
 
-def _get_state_machine(app: App, label: LabelRef) -> StateMachine:
+def get_state_machine(app: App, label: LabelRef) -> StateMachine:
+    """Finds the state machine instance by name in the app config."""
     try:
         return app.config.state_machines[label.state_machine]
     except KeyError as k:
         raise UnknownStateMachine(label.state_machine)
 
 
-def _start_state_machine(app: App, label: LabelRef, conn) -> None:
-    state_machine = _get_state_machine(app, label)
+def start_state_machine(app: App, label: LabelRef, conn) -> None:
+    """Create the first history entry for a label in a state machine."""
+    state_machine = get_state_machine(app, label)
     conn.execute(history.insert().values(
         label_name=label.name,
         label_state_machine=label.state_machine,
@@ -41,21 +43,22 @@ def _start_state_machine(app: App, label: LabelRef, conn) -> None:
     ))
 
 
-def _choose_next_state(
+def choose_next_state(
     state_machine: StateMachine,
     current_state: State,
     context: Context,
 ) -> State:
-    """Assuming a transition out of a given state, choose a next state."""
+    """Assuming a transition is valid, choose a next state."""
     next_state_name = current_state.next_states.next_state_for_label(context)
     return state_machine.get_state(next_state_name)
 
 
-def _get_label_metadata(
+def get_label_metadata(
     label: LabelRef,
     state_machine: StateMachine,
     conn,
 ) -> Tuple[Dict[str, Any], bool]:
+    """Get the metadata and whether the label has been deleted."""
     return conn.execute(
         select([labels.c.metadata, labels.c.deleted]).where(and_(
             labels.c.name == label.name,
@@ -64,11 +67,12 @@ def _get_label_metadata(
     ).fetchone()
 
 
-def _get_current_state(
+def get_current_state(
     label: LabelRef,
     state_machine: StateMachine,
     conn,
 ) -> State:
+    """Get the current state of a label, based on its last history entry."""
     history_entry = conn.execute(
         select([history]).where(and_(
             history.c.label_name == label.name,
@@ -84,13 +88,17 @@ def _get_current_state(
     return state_machine.get_state(history_entry.new_state)
 
 
-def _needs_gate_evaluation_for_metadata_change(
+def needs_gate_evaluation_for_metadata_change(
     state_machine: StateMachine,
     label: LabelRef,
     update: Metadata,
     conn,
 ) -> bool:
-    current_state = _get_current_state(label, state_machine, conn)
+    """
+    Given a change to the metadata, should the gate evaluation be triggered.
+    """
+
+    current_state = get_current_state(label, state_machine, conn)
     if not isinstance(current_state, Gate):
         # Label is not a gate state so there's no trigger to resolve.
         return False
@@ -104,7 +112,8 @@ def _needs_gate_evaluation_for_metadata_change(
     return False
 
 
-def _lock_label(label: LabelRef, conn):
+def lock_label(label: LabelRef, conn):
+    """Lock a label in the current transaction."""
     row = conn.execute(
         labels.select().where(
             and_(
@@ -118,11 +127,12 @@ def _lock_label(label: LabelRef, conn):
         raise UnknownLabel(label)
 
 
-def _labels_to_retry_for_action(
+def labels_to_retry_for_action(
     state_machine: StateMachine,
     action: Action,
     conn,
 ) -> Dict[str, Metadata]:
+    """Util to get all the labels in an action state that need retrying."""
     ranked_transitions = select((
         history.c.label_name,
         history.c.old_state,
@@ -151,12 +161,13 @@ def _labels_to_retry_for_action(
     }
 
 
-def _context_for_label(
+def context_for_label(
     label: LabelRef,
     metadata: Metadata,
     state_machine: StateMachine,
     state: State,
 ) -> Context:
+    """Util to build the context for a label in a state."""
     feeds = feeds_for_state_machine(state_machine)
 
     accessed_variables: List[str] = []

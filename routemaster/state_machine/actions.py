@@ -13,13 +13,13 @@ from routemaster.webhooks import (
 )
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
-    _lock_label,
-    _choose_next_state,
-    _context_for_label,
-    _get_current_state,
-    _get_state_machine,
-    _get_label_metadata,
-    _labels_to_retry_for_action,
+    lock_label,
+    choose_next_state,
+    context_for_label,
+    get_current_state,
+    get_state_machine,
+    get_label_metadata,
+    labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -32,11 +32,11 @@ def transactional_process_action(app: App, label: LabelRef) -> bool:
 
     Raises a TypeError when the current state is not an action.
     """
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
-        _lock_label(label, conn)
-        current_state = _get_current_state(label, state_machine, conn)
+        lock_label(label, conn)
+        current_state = get_current_state(label, state_machine, conn)
         if not isinstance(current_state, Action):
             raise TypeError("Label not in an action state")
         return process_action(app, current_state, label, conn)
@@ -52,8 +52,8 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
     Returns whether the label progressed in the state machine, for which `True`
     implies further progression should be attempted.
     """
-    state_machine = _get_state_machine(app, label)
-    metadata, deleted = _get_label_metadata(label, state_machine, conn)
+    state_machine = get_state_machine(app, label)
+    metadata, deleted = get_label_metadata(label, state_machine, conn)
     if deleted:
         raise DeletedLabel(label)
 
@@ -73,8 +73,8 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
     if result != WebhookResult.SUCCESS:
         return False
 
-    context = _context_for_label(label, metadata, state_machine, action)
-    next_state = _choose_next_state(state_machine, action, context)
+    context = context_for_label(label, metadata, state_machine, action)
+    next_state = choose_next_state(state_machine, action, context)
 
     conn.execute(history.insert().values(
         label_state_machine=state_machine.name,
@@ -96,7 +96,7 @@ def process_retries(
     Cron retry entrypoint. This will retry all labels in a given action.
     """
     with app.db.begin() as conn:
-        relevant_labels = _labels_to_retry_for_action(
+        relevant_labels = labels_to_retry_for_action(
             state_machine,
             action,
             conn,

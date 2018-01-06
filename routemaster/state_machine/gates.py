@@ -7,12 +7,12 @@ from routemaster.app import App
 from routemaster.config import Gate
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
-    _lock_label,
-    _choose_next_state,
-    _context_for_label,
-    _get_current_state,
-    _get_state_machine,
-    _get_label_metadata,
+    lock_label,
+    choose_next_state,
+    context_for_label,
+    get_current_state,
+    get_state_machine,
+    get_label_metadata,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -25,11 +25,11 @@ def transactional_process_gate(app: App, label: LabelRef) -> bool:
 
     Raises a TypeError when the current state is not a gate.
     """
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
-        _lock_label(label, conn)
-        current_state = _get_current_state(label, state_machine, conn)
+        lock_label(label, conn)
+        current_state = get_current_state(label, state_machine, conn)
         if not isinstance(current_state, Gate):
             raise TypeError("Label not in a gate")
         return process_gate(app, current_state, label, conn)
@@ -46,18 +46,18 @@ def process_gate(app: App, gate: Gate, label: LabelRef, conn) -> bool:
     implies further progression should be attempted.
     """
 
-    state_machine = _get_state_machine(app, label)
-    metadata, deleted = _get_label_metadata(label, state_machine, conn)
+    state_machine = get_state_machine(app, label)
+    metadata, deleted = get_label_metadata(label, state_machine, conn)
     if deleted:
         raise DeletedLabel(label)
 
-    context = _context_for_label(label, metadata, state_machine, gate)
+    context = context_for_label(label, metadata, state_machine, gate)
     can_exit = gate.exit_condition.run(context)
 
     if not can_exit:
         return False
 
-    destination = _choose_next_state(state_machine, gate, context)
+    destination = choose_next_state(state_machine, gate, context)
 
     conn.execute(history.insert().values(
         label_name=label.name,

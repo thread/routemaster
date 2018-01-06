@@ -16,12 +16,12 @@ from routemaster.state_machine.gates import (
 )
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import (
-    _lock_label,
-    _get_current_state,
-    _get_state_machine,
-    _get_label_metadata,
-    _start_state_machine,
-    _needs_gate_evaluation_for_metadata_change,
+    lock_label,
+    get_current_state,
+    get_state_machine,
+    get_label_metadata,
+    start_state_machine,
+    needs_gate_evaluation_for_metadata_change,
 )
 from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import (
@@ -54,18 +54,18 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
 
 def get_label_state(app: App, label: LabelRef) -> State:
     """Finds the current state of a label."""
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
-        return _get_current_state(label, state_machine, conn)
+        return get_current_state(label, state_machine, conn)
 
 
 def get_label_metadata(app: App, label: LabelRef) -> Metadata:
     """Returns the metadata associated with a label."""
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
-        row = _get_label_metadata(label, state_machine, conn)
+        row = get_label_metadata(label, state_machine, conn)
 
         if row is None:
             raise UnknownLabel(label)
@@ -79,7 +79,7 @@ def get_label_metadata(app: App, label: LabelRef) -> Metadata:
 
 def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     """Creates a label and starts it in a state machine."""
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
         try:
@@ -91,7 +91,7 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
         except IntegrityError:
             raise LabelAlreadyExists(label)
 
-        _start_state_machine(app, label, conn)
+        start_state_machine(app, label, conn)
 
     # Outside transaction
     _process_transitions(app, label)
@@ -108,7 +108,7 @@ def update_metadata_for_label(
 
     Moves the label through the state machine as appropriate.
     """
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     label_filter = and_(
         labels.c.name == label.name,
@@ -131,7 +131,7 @@ def update_metadata_for_label(
         if deleted:
             raise DeletedLabel(label)
 
-        needs_gate_evaluation = _needs_gate_evaluation_for_metadata_change(
+        needs_gate_evaluation = needs_gate_evaluation_for_metadata_change(
             state_machine,
             label,
             update,
@@ -161,13 +161,13 @@ def update_metadata_for_label(
 
 
 def _process_transitions(app: App, label: LabelRef):
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
     could_progress = True
 
     while could_progress:
         with app.db.begin() as conn:
-            _lock_label(label, conn)
-            current_state = _get_current_state(label, state_machine, conn)
+            lock_label(label, conn)
+            current_state = get_current_state(label, state_machine, conn)
 
             if isinstance(current_state, Action):
                 could_progress = process_action(
@@ -196,7 +196,7 @@ def delete_label(app: App, label: LabelRef) -> None:
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
     """
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     label_filter = and_(
         labels.c.name == label.name,
