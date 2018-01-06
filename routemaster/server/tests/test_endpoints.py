@@ -224,13 +224,15 @@ def test_list_labels_when_many(client, create_label):
     assert response.json['labels'] == [{'name': 'foo'}, {'name': 'quox'}]
 
 
-def test_update_label_moves_label(client, create_label, app_config):
+def test_update_label_moves_label(client, create_label, app_config, mock_webhook):
     create_label('foo', 'test_machine', {})
-    response = client.patch(
-        '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'metadata': {'should_progress': True}}),
-        content_type='application/json',
-    )
+    with mock_webhook() as webhook:
+        response = client.patch(
+            '/state-machines/test_machine/labels/foo',
+            data=json.dumps({'metadata': {'should_progress': True}}),
+            content_type='application/json',
+        )
+        webhook.assert_called_once()
     assert response.status_code == 200
     assert response.json['metadata'] == {'should_progress': True}
 

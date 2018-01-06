@@ -1,8 +1,10 @@
 """Global test setup and fixtures."""
 
 import os
+import contextlib
 from typing import Any, Dict
 
+import mock
 import pytest
 from sqlalchemy import create_engine
 
@@ -179,3 +181,17 @@ def create_deleted_label(create_label, delete_label):
         delete_label(name, state_machine_name)
 
     return _create_and_delete
+
+
+@pytest.fixture()
+def mock_webhook():
+    """Mock the test config's webhook call."""
+    @contextlib.contextmanager
+    def _mock(result=WebhookResult.SUCCESS):
+        runner = mock.Mock(return_value=result)
+        with mock.patch(
+            'routemaster.webhooks.RequestsWebhookRunner',
+            return_value=runner,
+        ):
+            yield runner
+    return _mock

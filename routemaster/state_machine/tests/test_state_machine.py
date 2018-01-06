@@ -69,7 +69,7 @@ def test_update_metadata_for_label_raises_for_unknown_state_machine(app_config):
         state_machine.update_metadata_for_label(app_config, label, {})
 
 
-def test_state_machine_progresses_on_update(app_config):
+def test_state_machine_progresses_on_update(app_config, mock_webhook):
     label = LabelRef('foo', 'test_machine')
 
     state_machine.create_label(
@@ -80,23 +80,27 @@ def test_state_machine_progresses_on_update(app_config):
 
     assert current_state(app_config, label) == 'start'
 
-    state_machine.update_metadata_for_label(
-        app_config,
-        label,
-        {'should_progress': True},
-    )
+    with mock_webhook() as webhook:
+        state_machine.update_metadata_for_label(
+            app_config,
+            label,
+            {'should_progress': True},
+        )
+        webhook.assert_called_once()
 
     assert current_state(app_config, label) == 'end'
 
 
-def test_state_machine_progresses_automatically(app_config):
+def test_state_machine_progresses_automatically(app_config, mock_webhook):
     label = LabelRef('foo', 'test_machine')
 
-    state_machine.create_label(
-        app_config,
-        label,
-        {'should_progress': True},
-    )
+    with mock_webhook() as webhook:
+        state_machine.create_label(
+            app_config,
+            label,
+            {'should_progress': True},
+        )
+        webhook.assert_called_once()
 
     assert current_state(app_config, label) == 'end'
 
