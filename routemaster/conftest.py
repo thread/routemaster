@@ -1,6 +1,7 @@
 """Global test setup and fixtures."""
 
 import os
+import re
 import contextlib
 from typing import Any, Dict
 
@@ -15,6 +16,7 @@ from routemaster.config import (
     Gate,
     Action,
     Config,
+    Webhook,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -39,7 +41,14 @@ TEST_STATE_MACHINES = {
     'test_machine': StateMachine(
         name='test_machine',
         feeds=[],
-        webhooks=[],
+        webhooks=[
+            Webhook(
+                match=re.compile('.+\\.?example\\.com'),
+                headers={
+                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                },
+            ),
+        ],
         states=[
             Gate(
                 name='start',

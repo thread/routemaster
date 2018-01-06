@@ -2,7 +2,11 @@ import pytest
 import requests
 import httpretty
 
-from routemaster.webhooks import WebhookResult, RequestsWebhookRunner
+from routemaster.webhooks import (
+    WebhookResult,
+    RequestsWebhookRunner,
+    webhook_runner_for_state_machine,
+)
 
 
 @httpretty.activate
@@ -82,4 +86,24 @@ def test_requests_webhook_runner_passes_post_data_through():
     runner('http://example.com', 'application/test-data', b'\0\xff')
     last_request = httpretty.last_request()
     assert last_request.headers['Content-Type'] == 'application/test-data'
+    assert last_request.body == b'\0\xff'
+
+
+@httpretty.activate
+def test_requests_webhook_runner_for_state_machine_uses_webhook_config(app_config):
+    httpretty.register_uri(
+        httpretty.POST,
+        'http://example.com/',
+        body='{}',
+        content_type='application/json',
+    )
+
+    (state_machine,) = app_config.config.state_machines.values()
+    runner = webhook_runner_for_state_machine(state_machine)
+    runner('http://example.com', 'application/test-data', b'\0\xff')
+
+    last_request = httpretty.last_request()
+    assert last_request.headers['Content-Type'] == 'application/test-data'
+    assert last_request.headers['x-api-key'] == \
+        'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei'
     assert last_request.body == b'\0\xff'

@@ -1,11 +1,11 @@
 """Action invocation."""
 
 import enum
-from typing import Callable
+from typing import Any, Dict, List, Callable
 
 import requests
 
-from routemaster.config import StateMachine
+from routemaster.config import Webhook, StateMachine
 
 
 @enum.unique
@@ -20,10 +20,15 @@ WebhookRunner = Callable[[str, str, bytes], WebhookResult]
 
 
 class RequestsWebhookRunner(object):
-    """Webhook runner which uses `requests` to actually hit webhooks."""
+    """
+    Webhook runner which uses `requests` to actually hit webhooks.
 
-    def __init__(self) -> None:
+    Optionally takes a list of webhook configs to modify how requests are made.
+    """
+
+    def __init__(self, webhook_configs: List[Webhook]) -> None:
         self.session = requests.Session()
+        self.webhook_configs = webhook_configs
 
     def __call__(
         self,
@@ -32,11 +37,14 @@ class RequestsWebhookRunner(object):
         data: bytes,
     ) -> WebhookResult:
         """Run a POST on the given webhook."""
+        headers = {'Content-Type': content_type}
+        headers.update(self._headers_for_url(url))
+
         try:
             result = self.session.post(
                 url,
                 data=data,
-                headers={'Content-Type': content_type},
+                headers=headers,
                 timeout=10,
             )
         except requests.exceptions.RequestException:
@@ -49,6 +57,16 @@ class RequestsWebhookRunner(object):
         else:
             return WebhookResult.RETRY
 
+    def _headers_for_url(self, url: str) -> Dict[str, Any]:
+        headers = {}
+        for config in self.webhook_configs:
+            if config.match.search(url):
+                print("matched!", config.headers)
+                headers.update(config.headers)
+            else:
+                print("did not match", config.match, url)
+        return headers
+
 
 def webhook_runner_for_state_machine(
     state_machine: StateMachine,
@@ -58,4 +76,4 @@ def webhook_runner_for_state_machine(
 
     Applies any state machine configuration to the runner.
     """
-    return RequestsWebhookRunner()
+    return RequestsWebhookRunner(state_machine.webhooks)
