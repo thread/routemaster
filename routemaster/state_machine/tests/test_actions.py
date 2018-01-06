@@ -5,7 +5,7 @@ from sqlalchemy import select
 from routemaster.db import history
 from routemaster.config import Action
 from routemaster.webhooks import WebhookResult
-from routemaster.state_machine.actions import run_action
+from routemaster.state_machine.actions import process_retries
 
 
 def test_actions_are_run_and_states_advanced(app_config, create_label):
@@ -21,11 +21,10 @@ def test_actions_are_run_and_states_advanced(app_config, create_label):
 
     run_webhook = Mock(return_value=WebhookResult.SUCCESS)
 
-    run_action(
+    process_retries(
         app_config,
         state_machine,
         state_machine.states[0],
-        run_webhook,
     )
 
     run_webhook.assert_called_once_with(
@@ -64,11 +63,10 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label):
 
     run_webhook = Mock(return_value=WebhookResult.FAIL)
 
-    run_action(
+    process_retries(
         app_config,
         state_machine,
         state_machine.states[0],
-        run_webhook,
     )
 
     run_webhook.assert_called_once_with(
