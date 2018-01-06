@@ -4,6 +4,7 @@ import enum
 from typing import Callable
 
 import requests
+
 from routemaster.config import StateMachine
 
 
@@ -49,7 +50,12 @@ class RequestsWebhookRunner(object):
             return WebhookResult.RETRY
 
 
-def _webhook_runner_for_state_machine(
+def webhook_runner_for_state_machine(
     state_machine: StateMachine,
 ) -> WebhookRunner:
+    """
+    Create the webhook runner for a given state machine.
+
+    Applies any state machine configuration to the runner.
+    """
     return RequestsWebhookRunner()
