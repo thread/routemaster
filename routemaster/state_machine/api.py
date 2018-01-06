@@ -23,6 +23,7 @@ from routemaster.state_machine.utils import (
     _start_state_machine,
     _needs_gate_evaluation_for_metadata_change,
 )
+from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
@@ -169,7 +170,12 @@ def _process_transitions(app: App, label: LabelRef):
             current_state = _get_current_state(label, state_machine, conn)
 
             if isinstance(current_state, Action):
-                pass
+                could_progress = process_action(
+                    app,
+                    current_state,
+                    label,
+                    conn,
+                )
 
             elif isinstance(current_state, Gate):
                 if not current_state.trigger_on_entry:

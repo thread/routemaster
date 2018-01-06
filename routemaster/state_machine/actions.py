@@ -2,29 +2,25 @@
 
 import json
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import func
 
-from routemaster.db import labels, history
+from routemaster.db import history
 from routemaster.app import App
-from routemaster.feeds import feeds_for_state_machine
 from routemaster.config import Gate, Action, StateMachine
-from routemaster.context import Context
 from routemaster.webhooks import (
     WebhookResult,
-    WebhookRunner,
-    _webhook_runner_for_state_machine,
+    webhook_runner_for_state_machine,
 )
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
-    _utcnow,
     _lock_label,
     _choose_next_state,
+    _context_for_label,
     _get_current_state,
     _get_state_machine,
     _get_label_metadata,
     _labels_to_retry_for_action,
 )
-from routemaster.state_machine.exceptions import DeletedLabel
 
 
 def transactional_process_action(app: App, label: LabelRef) -> bool:
@@ -35,6 +31,14 @@ def transactional_process_action(app: App, label: LabelRef) -> bool:
 
     Raises a TypeError when the current state is not an action.
     """
+    state_machine = _get_state_machine(app, label)
+
+    with app.db.begin() as conn:
+        _lock_label(label, conn)
+        current_state = _get_current_state(label, state_machine, conn)
+        if not isinstance(current_state, Gate):
+            raise TypeError("Label not in an action state")
+        return process_action(app, current_state, label, conn)
 
 
 def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
@@ -48,11 +52,14 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
     implies further progression should be attempted.
     """
     state_machine = _get_state_machine(app, label)
+    metadata = _get_label_metadata(label, state_machine, conn)
 
     webhook_data = json.dumps({
         'metadata': metadata,
-        'label': label_name,
+        'label': label.name,
     }, sort_keys=True).encode('utf-8')
+
+    run_webhook = webhook_runner_for_state_machine(state_machine)
 
     result = run_webhook(
         action.webhook,
@@ -60,33 +67,31 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
         webhook_data,
     )
 
-    if result == WebhookResult.SUCCESS:
-        next_state = _choose_next_state(state_machine, action, context)
+    if result != WebhookResult.SUCCESS:
+        return False
 
-        conn.execute(history.insert().values(
-            label_state_machine=state_machine.name,
-            label_name=label.name,
-            created=func.now(),
-            old_state=action.name,
-            new_state=next_state,
-        ))
+    context = _context_for_label(label, metadata, state_machine, action)
+    next_state = _choose_next_state(state_machine, action, context)
 
-        return True
+    conn.execute(history.insert().values(
+        label_state_machine=state_machine.name,
+        label_name=label.name,
+        created=func.now(),
+        old_state=action.name,
+        new_state=next_state,
+    ))
 
-
-def process_retries(action: Action):
-    """
-    Cron retry entrypoint. This will retry all labels in a given action.
-    """
+    return True
 
 
-def run_action(
+def process_retries(
     app: App,
     state_machine: StateMachine,
     action: Action,
-    run_webhook: WebhookRunner,
 ) -> None:
-    """Run `action` for all outstanding users."""
+    """
+    Cron retry entrypoint. This will retry all labels in a given action.
+    """
     with app.db.begin() as conn:
         relevant_labels = _labels_to_retry_for_action(
             state_machine,
@@ -95,9 +100,12 @@ def run_action(
         )
 
         for label_name, metadata in relevant_labels.items():
-            process_action(
-                app,
-                action,
-                LabelRef(name=label_name, state_machine=state_machine.name),
-                conn,
-            )
+            label = LabelRef(name=label_name, state_machine=state_machine.name)
+
+            with conn.begin() as savepoint:
+                process_action(
+                    app,
+                    action,
+                    label,
+                    savepoint,
+                )
