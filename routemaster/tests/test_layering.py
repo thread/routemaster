@@ -51,6 +51,8 @@ DEPENDENCIES = (
     ('record_states', 'config'),
 
     ('feeds', 'config'),
+
+    ('webhooks', 'config'),
 )
 
 EXCLUDED_MODULES = (
