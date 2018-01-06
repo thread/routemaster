@@ -123,8 +123,10 @@ def lock_label(label: LabelRef, conn):
         ).with_for_update()
     ).fetchone()
 
-    if not row:
+    if row is None:
         raise UnknownLabel(label)
+
+    return row
 
 
 def labels_to_retry_for_action(

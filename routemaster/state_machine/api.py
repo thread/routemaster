@@ -109,25 +109,12 @@ def update_metadata_for_label(
     Moves the label through the state machine as appropriate.
     """
     state_machine = get_state_machine(app, label)
-
-    label_filter = and_(
-        labels.c.name == label.name,
-        labels.c.state_machine == label.state_machine,
-    )
-
     needs_gate_evaluation = False
 
     with app.db.begin() as conn:
-        row = conn.execute(
-            select([
-                labels.c.metadata,
-                labels.c.deleted,
-            ]).where(label_filter),
-        ).fetchone()
-        if row is None:
-            raise UnknownLabel(label)
+        row = lock_label(label, conn)
 
-        existing_metadata, deleted = row
+        existing_metadata, deleted = row.metadata, row.deleted
         if deleted:
             raise DeletedLabel(label)
 
@@ -140,7 +127,10 @@ def update_metadata_for_label(
 
         new_metadata = dict_merge(existing_metadata, update)
 
-        conn.execute(labels.update().where(label_filter).values(
+        conn.execute(labels.update().where(and_(
+            labels.c.name == label.name,
+            labels.c.state_machine == label.state_machine,
+        )).values(
             metadata=new_metadata,
             metadata_triggers_processed=not needs_gate_evaluation,
         ))
