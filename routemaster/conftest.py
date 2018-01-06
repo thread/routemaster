@@ -43,7 +43,7 @@ TEST_STATE_MACHINES = {
         feeds=[],
         webhooks=[
             Webhook(
-                match=re.compile('.+\\.?example\\.com'),
+                match=re.compile('//(.+\\.)?example\\.com'),
                 headers={
                     'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
                 },
