@@ -11,14 +11,17 @@ from routemaster.db import metadata
 from routemaster.app import App
 from routemaster.config import (
     Gate,
+    Action,
     Config,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    OnEntryTrigger,
     MetadataTrigger,
     ConstantNextState,
 )
 from routemaster.server import server
+from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -39,11 +42,17 @@ TEST_STATE_MACHINES = {
                 name='start',
                 triggers=[
                     MetadataTrigger(metadata_path='should_progress'),
+                    OnEntryTrigger(),
                 ],
-                next_states=ConstantNextState(state='end'),
+                next_states=ConstantNextState(state='perform_action'),
                 exit_condition=ExitConditionProgram(
                     'metadata.should_progress = true',
                 ),
+            ),
+            Action(
+                name='perform_action',
+                webhook='http://localhost/hook',
+                next_states=ConstantNextState(state='end'),
             ),
             Gate(
                 name='end',
