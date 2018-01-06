@@ -99,7 +99,7 @@ def _process_action_with_metadata(
         label_name=label.name,
         created=func.now(),
         old_state=action.name,
-        new_state=next_state,
+        new_state=next_state.name,
     ))
 
     return True
