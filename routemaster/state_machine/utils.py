@@ -99,6 +99,7 @@ def needs_gate_evaluation_for_metadata_change(
     """
 
     current_state = get_current_state(label, state_machine, conn)
+
     if not isinstance(current_state, Gate):
         # Label is not a gate state so there's no trigger to resolve.
         return False

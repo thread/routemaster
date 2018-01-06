@@ -41,7 +41,7 @@ def test_enumerate_state_machines(client, app_config):
 
 def test_create_label(client, app_config):
     label_name = 'foo'
-    state_machine = list(app_config.config.state_machines.values())[0]
+    (state_machine,) = app_config.config.state_machines.values()
     label_metadata = {'bar': 'baz'}
 
     response = client.post(
@@ -248,7 +248,7 @@ def test_update_label_moves_label(client, create_label, app_config):
 
 def test_delete_existing_label(client, app_config, create_label):
     label_name = 'foo'
-    state_machine = list(app_config.config.state_machines.values())[0]
+    (state_machine,) = app_config.config.state_machines.values()
 
     create_label(label_name, state_machine.name, {'bar': 'baz'})
 
