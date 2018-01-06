@@ -168,7 +168,7 @@ def _process_transitions(app: App, label: LabelRef):
                     conn,
                 )
 
-            elif isinstance(current_state, Gate):
+            elif isinstance(current_state, Gate):  # pragma: no branch
                 if not current_state.trigger_on_entry:
                     return
 
@@ -177,6 +177,11 @@ def _process_transitions(app: App, label: LabelRef):
                     current_state,
                     label,
                     conn,
+                )
+
+            else:
+                raise RuntimeError(  # pragma: no cover
+                    "Unsupported state type {0}".format(current_state),
                 )
 
 
