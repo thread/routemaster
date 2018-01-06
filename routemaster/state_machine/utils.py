@@ -9,7 +9,13 @@ from sqlalchemy import and_, func, select
 from routemaster.db import labels, history
 from routemaster.app import App
 from routemaster.feeds import feeds_for_state_machine
-from routemaster.config import Gate, State, Action, StateMachine, ContextNextStates
+from routemaster.config import (
+    Gate,
+    State,
+    Action,
+    StateMachine,
+    ContextNextStates,
+)
 from routemaster.context import Context
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (

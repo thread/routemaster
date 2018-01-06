@@ -4,12 +4,9 @@ from sqlalchemy import and_
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.feeds import feeds_for_state_machine
 from routemaster.config import Gate
-from routemaster.context import Context
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
-    _utcnow,
     _lock_label,
     _choose_next_state,
     _context_for_label,

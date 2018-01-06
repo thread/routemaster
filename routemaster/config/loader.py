@@ -3,7 +3,7 @@
 import os
 import re
 import datetime
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 import jsonschema
@@ -22,8 +22,8 @@ from routemaster.config.model import (
     TimeTrigger,
     NoNextStates,
     StateMachine,
-    OnEntryTrigger,
     DatabaseConfig,
+    OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
