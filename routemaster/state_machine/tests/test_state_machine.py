@@ -1,9 +1,10 @@
+import mock
 import pytest
-
 from sqlalchemy import and_, select
+from requests.exceptions import RequestException
 
 from routemaster import state_machine
-from routemaster.db import history
+from routemaster.db import labels, history
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -21,6 +22,10 @@ def current_state(app_config, label):
                 history.c.created.desc(),
             ).limit(1)
         )
+
+def metadata_triggers_processed(app_config, label):
+    with app_config.db.begin() as conn:
+        return conn.scalar(select([labels.c.metadata_triggers_processed]))
 
 
 def test_label_get_state(app_config):
@@ -88,6 +93,7 @@ def test_state_machine_progresses_on_update(app_config, mock_webhook):
         )
         webhook.assert_called_once()
 
+    assert metadata_triggers_processed(app_config, label) is True
     assert current_state(app_config, label) == 'end'
 
 
@@ -122,4 +128,29 @@ def test_state_machine_does_not_progress_when_not_eligible(app_config):
         {'should_progress': False},
     )
 
+    assert current_state(app_config, label) == 'start'
+
+
+def test_stays_in_gate_if_gate_processing_fails(app_config):
+    label = LabelRef('foo', 'test_machine')
+
+    state_machine.create_label(
+        app_config,
+        label,
+        {},
+    )
+
+    assert current_state(app_config, label) == 'start'
+
+    with mock.patch(
+        'routemaster.context.Context._pre_warm_feeds',
+        side_effect=RequestException,
+    ):
+        state_machine.update_metadata_for_label(
+            app_config,
+            label,
+            {'should_progress': True},
+        )
+
+    assert metadata_triggers_processed(app_config, label) is False
     assert current_state(app_config, label) == 'start'
