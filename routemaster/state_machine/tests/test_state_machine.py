@@ -63,7 +63,7 @@ def test_state_machine_simple(app_config):
     assert state_machine.get_label_metadata(app_config, label) == {'foo': 'bar'}
 
 
-def test_update_metadata_for_label_raises_foc_unknown_state_machine(app_config):
+def test_update_metadata_for_label_raises_for_unknown_state_machine(app_config):
     label = LabelRef('foo', 'nonexistent_machine')
     with pytest.raises(UnknownStateMachine):
         state_machine.update_metadata_for_label(app_config, label, {})
