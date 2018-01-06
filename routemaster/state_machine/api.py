@@ -15,11 +15,12 @@ from routemaster.state_machine.gates import (
     transactional_process_gate,
 )
 from routemaster.state_machine.types import LabelRef, Metadata
+from routemaster.state_machine.utils import \
+    get_label_metadata as get_label_metadata_internal
 from routemaster.state_machine.utils import (
     lock_label,
     get_current_state,
     get_state_machine,
-    get_label_metadata,
     start_state_machine,
     needs_gate_evaluation_for_metadata_change,
 )
@@ -65,7 +66,7 @@ def get_label_metadata(app: App, label: LabelRef) -> Metadata:
     state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
-        row = get_label_metadata(label, state_machine, conn)
+        row = get_label_metadata_internal(label, state_machine, conn)
 
         if row is None:
             raise UnknownLabel(label)
