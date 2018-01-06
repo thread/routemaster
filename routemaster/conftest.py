@@ -39,6 +39,7 @@ TEST_STATE_MACHINES = {
     'test_machine': StateMachine(
         name='test_machine',
         feeds=[],
+        webhooks=[],
         states=[
             Gate(
                 name='start',
@@ -104,7 +105,6 @@ def app_config(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
-        webhooks=[],
     ))
 
 

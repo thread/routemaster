@@ -48,6 +48,7 @@ def test_trivial_config():
             'example': StateMachine(
                 name='example',
                 feeds=[],
+                webhooks=[],
                 states=[
                     Gate(
                         name='start',
@@ -65,7 +66,6 @@ def test_trivial_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -78,6 +78,14 @@ def test_realistic_config():
                 name='example',
                 feeds=[
                     Feed(name='data_feed', url='http://localhost/<label>'),
+                ],
+                webhooks=[
+                    Webhook(
+                        match=re.compile('.+\\.example\\.com'),
+                        headers={
+                            'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                        },
+                    ),
                 ],
                 states=[
                     Gate(
@@ -134,14 +142,6 @@ def test_realistic_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[
-            Webhook(
-                match=re.compile('.+\\.example\\.com'),
-                headers={
-                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
-                },
-            ),
-        ],
     )
     assert load_config(data) == expected
 
@@ -198,6 +198,7 @@ def test_next_states_shorthand_results_in_constant_config():
             'example': StateMachine(
                 name='example',
                 feeds=[],
+                webhooks=[],
                 states=[
                     Gate(
                         name='start',
@@ -221,7 +222,6 @@ def test_next_states_shorthand_results_in_constant_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -234,6 +234,14 @@ def test_environment_variables_override_config_file_for_database_config():
                 name='example',
                 feeds=[
                     Feed(name='data_feed', url='http://localhost/<label>'),
+                ],
+                webhooks=[
+                    Webhook(
+                        match=re.compile('.+\\.example\\.com'),
+                        headers={
+                            'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                        },
+                    ),
                 ],
                 states=[
                     Gate(
@@ -290,14 +298,6 @@ def test_environment_variables_override_config_file_for_database_config():
             username='username',
             password='password',
         ),
-        webhooks=[
-            Webhook(
-                match=re.compile('.+\\.example\\.com'),
-                headers={
-                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
-                },
-            ),
-        ],
     )
 
     with mock.patch.dict(os.environ, {

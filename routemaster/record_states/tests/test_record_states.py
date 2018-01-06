@@ -26,6 +26,8 @@ def test_record_single_trivial_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+
+            webhooks=[],
             states=[
                 Gate(
                     name='state',
@@ -60,6 +62,8 @@ def test_record_single_trivial_machine_twice(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+
+            webhooks=[],
             states=[
                 Gate(
                     name='state',
@@ -100,6 +104,7 @@ def test_delete_single_trivial_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state',
@@ -123,6 +128,7 @@ def test_deprecate_state_in_state_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state_old',
@@ -138,6 +144,7 @@ def test_deprecate_state_in_state_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state_new',
@@ -171,6 +178,7 @@ def test_undeprecate_state_in_state_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state_old',
@@ -186,6 +194,7 @@ def test_undeprecate_state_in_state_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state_new',
@@ -201,6 +210,7 @@ def test_undeprecate_state_in_state_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state_old',
@@ -234,6 +244,7 @@ def test_record_edges(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state1',
@@ -269,6 +280,7 @@ def test_edges_are_deprecated_when_removed(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state1',
@@ -290,6 +302,7 @@ def test_edges_are_deprecated_when_removed(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state1',
@@ -334,6 +347,7 @@ def test_edges_are_undeprecated_when_readded(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state1',
@@ -355,6 +369,7 @@ def test_edges_are_undeprecated_when_readded(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state1',
@@ -370,6 +385,7 @@ def test_edges_are_undeprecated_when_readded(app_config):
         StateMachine(
             name='machine',
             feeds=[],
+            webhooks=[],
             states=[
                 Gate(
                     name='state1',

@@ -58,7 +58,6 @@ def load_config(yaml: Yaml) -> Config:
             for name, yaml_state_machine in yaml_state_machines.items()
         },
         database=load_database_config(),
-        webhooks=[_load_webhook(x) for x in yaml.get('webhooks', [])],
     )
 
 
@@ -96,13 +95,6 @@ def load_database_config() -> DatabaseConfig:
     )
 
 
-def _load_webhook(yaml: Yaml) -> Webhook:
-    return Webhook(
-        match=re.compile(yaml['match']),
-        headers=yaml['headers'],
-    )
-
-
 def _load_state_machine(
     path: Path,
     name: str,
@@ -122,6 +114,17 @@ def _load_state_machine(
             for idx, yaml_state in enumerate(yaml_state_machine['states'])
         ],
         feeds=feeds,
+        webhooks=[
+            _load_webhook(x)
+            for x in yaml_state_machine.get('webhooks', [])
+        ],
+    )
+
+
+def _load_webhook(yaml: Yaml) -> Webhook:
+    return Webhook(
+        match=re.compile(yaml['match']),
+        headers=yaml['headers'],
     )
 
 

@@ -14,6 +14,7 @@ def test_feeds_for_state_machine():
         feeds=[
             FeedConfig(name='test_feed', url='http://localhost/<label>'),
         ],
+        webhooks=[],
         states=[
             Gate(
                 name='start',
