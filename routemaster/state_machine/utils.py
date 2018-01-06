@@ -8,7 +8,8 @@ from sqlalchemy import and_, func, select
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.config import Gate, State, Action, StateMachine
+from routemaster.feeds import feeds_for_state_machine
+from routemaster.config import Gate, State, Action, StateMachine, ContextNextStates
 from routemaster.context import Context
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (
@@ -146,3 +147,26 @@ def _labels_to_retry_for_action(
         x.label_name: x.metadata
         for x in conn.execute(active_participants)
     }
+
+
+def _context_for_label(
+    label: LabelRef,
+    metadata: Metadata,
+    state_machine: StateMachine,
+    state: State,
+) -> Context:
+    feeds = feeds_for_state_machine(state_machine)
+
+    accessed_variables = []
+    if isinstance(state, Gate):
+        accessed_variables.extend(state.exit_condition.accessed_variables())
+    if isinstance(state.next_states, ContextNextStates):
+        accessed_variables.append(state.next_states.path)
+
+    return Context(
+        label.name,
+        metadata,
+        _utcnow(),
+        feeds,
+        accessed_variables,
+    )

@@ -12,6 +12,7 @@ from routemaster.state_machine.utils import (
     _utcnow,
     _lock_label,
     _choose_next_state,
+    _context_for_label,
     _get_current_state,
     _get_state_machine,
     _get_label_metadata,
@@ -53,24 +54,13 @@ def process_gate(app: App, gate: Gate, label: LabelRef, conn) -> bool:
     if deleted:
         raise DeletedLabel(label)
 
-    feeds = feeds_for_state_machine(state_machine)
-    exit_condition_context = Context(
-        label.name,
-        metadata,
-        _utcnow(),
-        feeds,
-        gate.exit_condition.accessed_variables(),
-    )
-    can_exit = gate.exit_condition.run(exit_condition_context)
+    context = _context_for_label(label, metadata, state_machine, gate)
+    can_exit = gate.exit_condition.run(context)
 
     if not can_exit:
         return False
 
-    destination = _choose_next_state(
-        state_machine,
-        gate,
-        exit_condition_context,
-    )
+    destination = _choose_next_state(state_machine, gate, context)
 
     conn.execute(history.insert().values(
         label_name=label.name,
