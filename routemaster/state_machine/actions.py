@@ -6,7 +6,7 @@ from sqlalchemy import func
 
 from routemaster.db import history
 from routemaster.app import App
-from routemaster.config import Gate, Action, StateMachine
+from routemaster.config import Action, StateMachine
 from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
@@ -21,6 +21,7 @@ from routemaster.state_machine.utils import (
     _get_label_metadata,
     _labels_to_retry_for_action,
 )
+from routemaster.state_machine.exceptions import DeletedLabel
 
 
 def transactional_process_action(app: App, label: LabelRef) -> bool:
@@ -36,7 +37,7 @@ def transactional_process_action(app: App, label: LabelRef) -> bool:
     with app.db.begin() as conn:
         _lock_label(label, conn)
         current_state = _get_current_state(label, state_machine, conn)
-        if not isinstance(current_state, Gate):
+        if not isinstance(current_state, Action):
             raise TypeError("Label not in an action state")
         return process_action(app, current_state, label, conn)
 
@@ -52,7 +53,9 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
     implies further progression should be attempted.
     """
     state_machine = _get_state_machine(app, label)
-    metadata = _get_label_metadata(label, state_machine, conn)
+    metadata, deleted = _get_label_metadata(label, state_machine, conn)
+    if deleted:
+        raise DeletedLabel(label)
 
     webhook_data = json.dumps({
         'metadata': metadata,

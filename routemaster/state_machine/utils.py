@@ -1,7 +1,7 @@
 """Utilities for state machine execution."""
 
 import datetime
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import dateutil.tz
 from sqlalchemy import and_, func, select
@@ -163,7 +163,7 @@ def _context_for_label(
 ) -> Context:
     feeds = feeds_for_state_machine(state_machine)
 
-    accessed_variables = []
+    accessed_variables: List[str] = []
     if isinstance(state, Gate):
         accessed_variables.extend(state.exit_condition.accessed_variables())
     if isinstance(state.next_states, ContextNextStates):
