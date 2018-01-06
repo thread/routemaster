@@ -13,33 +13,13 @@ from routemaster.webhooks import (
 )
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import (
-    lock_label,
     choose_next_state,
     context_for_label,
-    get_current_state,
     get_state_machine,
     get_label_metadata,
     labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
-
-
-def transactional_process_action(app: App, label: LabelRef) -> bool:
-    """
-    Process the action for a label.
-
-    Transactional wrapper with required locking, around `process_action`.
-
-    Raises a TypeError when the current state is not an action.
-    """
-    state_machine = get_state_machine(app, label)
-
-    with app.db.begin() as conn:
-        lock_label(label, conn)
-        current_state = get_current_state(label, state_machine, conn)
-        if not isinstance(current_state, Action):
-            raise TypeError("Label not in an action state")
-        return process_action(app, current_state, label, conn)
 
 
 def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:

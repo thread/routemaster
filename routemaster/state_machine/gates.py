@@ -7,32 +7,12 @@ from routemaster.app import App
 from routemaster.config import Gate
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
-    lock_label,
     choose_next_state,
     context_for_label,
-    get_current_state,
     get_state_machine,
     get_label_metadata,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
-
-
-def transactional_process_gate(app: App, label: LabelRef) -> bool:
-    """
-    Process a label in a gate, continuing if necessary, in transactions.
-
-    Transactional wrapper with required locking, around `process_gate`.
-
-    Raises a TypeError when the current state is not a gate.
-    """
-    state_machine = get_state_machine(app, label)
-
-    with app.db.begin() as conn:
-        lock_label(label, conn)
-        current_state = get_current_state(label, state_machine, conn)
-        if not isinstance(current_state, Gate):
-            raise TypeError("Label not in a gate")
-        return process_gate(app, current_state, label, conn)
 
 
 def process_gate(app: App, gate: Gate, label: LabelRef, conn) -> bool:

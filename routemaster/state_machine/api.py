@@ -10,10 +10,7 @@ from routemaster.db import labels, history
 from routemaster.app import App
 from routemaster.utils import dict_merge
 from routemaster.config import Gate, State, Action, StateMachine
-from routemaster.state_machine.gates import (
-    process_gate,
-    transactional_process_gate,
-)
+from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import \
     get_label_metadata as get_label_metadata_internal
@@ -139,7 +136,13 @@ def update_metadata_for_label(
     # Outside transaction
     if needs_gate_evaluation:
         try:
-            could_progress = transactional_process_gate(app, label)
+            with app.db.begin() as conn:
+                lock_label(label, conn)
+                current_state = get_current_state(label, state_machine, conn)
+                if not isinstance(current_state, Gate):
+                    raise TypeError("Label not in a gate")
+                could_progress = process_gate(app, current_state, label, conn)
+
             if could_progress:
                 _process_transitions(app, label)
         except Exception:
