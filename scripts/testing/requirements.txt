@@ -3,8 +3,7 @@ pytest
 pytest-cov
 pytest-flask
 pytest-faulthandler
-pytest-libfaketime
-libfaketime
+freezegun
 mypy
 mock
 httpretty

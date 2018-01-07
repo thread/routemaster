@@ -3,7 +3,7 @@ import datetime
 import mock
 import pytest
 import dateutil
-from libfaketime import fake_time
+import freezegun
 
 from routemaster.feeds import Feed
 from routemaster.webhooks import WebhookResult
@@ -60,7 +60,7 @@ def test_needs_gate_evaluation_for_metadata_change_with_action(app_config, creat
         ) is False
 
 
-@fake_time('2018-01-07 00:00:01')
+@freezegun.freeze_time('2018-01-07 00:00:01')
 def test_context_for_label_in_gate_created_with_correct_variables(app_config):
     label = LabelRef('foo', 'test_machine')
     metadata = {'should_progress': True}
@@ -85,7 +85,7 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
         )
 
 
-@fake_time('2018-01-07 00:00:01')
+@freezegun.freeze_time('2018-01-07 00:00:01')
 def test_context_for_label_in_action_created_with_correct_variables(app_config):
     label = LabelRef('foo', 'test_machine')
     metadata = {'should_progress': True}
