@@ -117,3 +117,59 @@ def test_process_action(app_config, create_label, mock_webhook):
         ('start', 'perform_action'),
         ('perform_action', 'end'),
     ])
+
+
+def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, create_label, mock_webhook):
+    (state_machine,) = app_config.config.state_machines.values()
+    action = state_machine.states[1]
+
+    # First get the label into the action state by failing the automatic
+    # progression through the machine.
+    with mock_webhook(WebhookResult.FAIL):
+        label = create_label(
+            'foo',
+            state_machine.name,
+            {'should_progress': True},
+        )
+
+    with mock_webhook(WebhookResult.FAIL) as webhook:
+        with app_config.db.begin() as conn:
+            process_action(app_config, action, label, conn)
+
+        webhook.assert_called_once()
+
+    assert_history(app_config, [
+        (None, 'start'),
+        ('start', 'perform_action'),
+    ])
+
+
+def test_process_action_fails_retry_works(app_config, create_label, mock_webhook):
+    (state_machine,) = app_config.config.state_machines.values()
+    action = state_machine.states[1]
+
+    # First get the label into the action state by failing the automatic
+    # progression through the machine.
+    with mock_webhook(WebhookResult.FAIL):
+        create_label(
+            'foo',
+            state_machine.name,
+            {'should_progress': True},
+        )
+
+    # State machine should not have progressed
+    assert_history(app_config, [
+        (None, 'start'),
+        ('start', 'perform_action'),
+    ])
+
+    # Now retry with succeeding webhook
+    with mock_webhook(WebhookResult.SUCCESS) as webhook:
+        process_retries(app_config, state_machine, action)
+        webhook.assert_called_once()
+
+    assert_history(app_config, [
+        (None, 'start'),
+        ('start', 'perform_action'),
+        ('perform_action', 'end'),
+    ])
