@@ -25,9 +25,8 @@ def test_get_state_machine_not_found(app_config):
 
 
 def test_needs_gate_evaluation_for_metadata_change(app_config, create_label):
-    label = LabelRef(name='foo', state_machine='test_machine')
+    label = create_label('foo', 'test_machine', {})
     (state_machine,) = app_config.config.state_machines.values()
-    create_label(label.name, state_machine.name, {})
 
     with app_config.db.begin() as conn:
         assert utils.needs_gate_evaluation_for_metadata_change(
@@ -45,11 +44,10 @@ def test_needs_gate_evaluation_for_metadata_change(app_config, create_label):
 
 
 def test_needs_gate_evaluation_for_metadata_change_with_action(app_config, create_label, mock_webhook):
-    label = LabelRef('foo', 'test_machine')
     (state_machine,) = app_config.config.state_machines.values()
 
     with mock_webhook(WebhookResult.FAIL):
-        create_label(label.name, state_machine.name, {'should_progress': True})
+        label = create_label('foo', 'test_machine', {'should_progress': True})
 
     with app_config.db.begin() as conn:
         assert utils.needs_gate_evaluation_for_metadata_change(
