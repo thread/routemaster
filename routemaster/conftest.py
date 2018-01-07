@@ -2,17 +2,20 @@
 
 import os
 import re
+import json
 import contextlib
 from typing import Any, Dict
 
 import mock
 import pytest
+import httpretty
 from sqlalchemy import create_engine
 
 from routemaster import state_machine
 from routemaster.db import metadata
 from routemaster.app import App
 from routemaster.config import (
+    Feed,
     Gate,
     Action,
     Config,
@@ -23,6 +26,8 @@ from routemaster.config import (
     OnEntryTrigger,
     MetadataTrigger,
     ConstantNextState,
+    ContextNextStates,
+    ContextNextStatesOption,
 )
 from routemaster.server import server
 from routemaster.webhooks import WebhookResult
@@ -40,7 +45,9 @@ TEST_DATABASE_CONFIG = DatabaseConfig(
 TEST_STATE_MACHINES = {
     'test_machine': StateMachine(
         name='test_machine',
-        feeds=[],
+        feeds=[
+            Feed(name='tests', url='http://localhost/tests'),
+        ],
         webhooks=[
             Webhook(
                 match=re.compile('//(.+\\.)?example\\.com'),
@@ -56,13 +63,34 @@ TEST_STATE_MACHINES = {
                     MetadataTrigger(metadata_path='should_progress'),
                     OnEntryTrigger(),
                 ],
-                next_states=ConstantNextState(state='perform_action'),
+                next_states=ContextNextStates(
+                    path='feeds.tests.should_do_alternate_action',
+                    destinations=[
+                        ContextNextStatesOption(
+                            state='perform_action',
+                            value=None,
+                        ),
+                        ContextNextStatesOption(
+                            state='perform_action',
+                            value=False,
+                        ),
+                        ContextNextStatesOption(
+                            state='perform_alternate_action',
+                            value=True,
+                        ),
+                    ],
+                ),
                 exit_condition=ExitConditionProgram(
                     'metadata.should_progress = true',
                 ),
             ),
             Action(
                 name='perform_action',
+                webhook='http://localhost/hook',
+                next_states=ConstantNextState(state='end'),
+            ),
+            Action(
+                name='perform_alternate_action',
                 webhook='http://localhost/hook',
                 next_states=ConstantNextState(state='end'),
             ),
@@ -151,15 +179,16 @@ def database_clear(app_config):
 
 
 @pytest.fixture()
-def create_label(app_config):
+def create_label(app_config, mock_test_feed):
     """Create a label in the database."""
 
     def _create(name: str, state_machine_name: str, metadata: Dict[str, Any]):
-        return state_machine.create_label(
-            app_config,
-            LabelRef(name, state_machine_name),
-            metadata,
-        )
+        with mock_test_feed():
+            return state_machine.create_label(
+                app_config,
+                LabelRef(name, state_machine_name),
+                metadata,
+            )
 
     return _create
 
@@ -203,4 +232,25 @@ def mock_webhook():
             return_value=runner,
         ):
             yield runner
+    return _mock
+
+
+@pytest.fixture()
+def mock_test_feed():
+    """Mock out the test feed."""
+    @contextlib.contextmanager
+    def _mock(data={'should_do_alternate_action': False}):
+        httpretty.enable()
+        httpretty.register_uri(
+            httpretty.GET,
+            'http://localhost/tests',
+            body=json.dumps(data),
+            content_type='application/json',
+        )
+
+        yield
+
+        httpretty.disable()
+        httpretty.reset()
+
     return _mock

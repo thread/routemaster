@@ -39,16 +39,17 @@ def test_enumerate_state_machines(client, app_config):
     ]}
 
 
-def test_create_label(client, app_config):
+def test_create_label(client, app_config, mock_test_feed):
     label_name = 'foo'
     (state_machine,) = app_config.config.state_machines.values()
     label_metadata = {'bar': 'baz'}
 
-    response = client.post(
-        f'/state-machines/{state_machine.name}/labels/{label_name}',
-        data=json.dumps({'metadata': label_metadata}),
-        content_type='application/json',
-    )
+    with mock_test_feed():
+        response = client.post(
+            f'/state-machines/{state_machine.name}/labels/{label_name}',
+            data=json.dumps({'metadata': label_metadata}),
+            content_type='application/json',
+        )
 
     assert response.status_code == 201
     assert response.json['metadata'] == {'bar': 'baz'}
@@ -224,9 +225,9 @@ def test_list_labels_when_many(client, create_label):
     assert response.json['labels'] == [{'name': 'foo'}, {'name': 'quox'}]
 
 
-def test_update_label_moves_label(client, create_label, app_config, mock_webhook):
+def test_update_label_moves_label(client, create_label, app_config, mock_webhook, mock_test_feed):
     create_label('foo', 'test_machine', {})
-    with mock_webhook() as webhook:
+    with mock_webhook() as webhook, mock_test_feed():
         response = client.patch(
             '/state-machines/test_machine/labels/foo',
             data=json.dumps({'metadata': {'should_progress': True}}),
