@@ -28,6 +28,15 @@ class Feed:
         self.data = None
         self.state_machine = state_machine
 
+    def __eq__(self, other):
+        if not isinstance(other, Feed):
+            return False
+        return (
+            self.url == other.url and
+            self.state_machine == other.state_machine and
+            self.data == other.data
+        )
+
     def prefetch(self, label: str):
         """Trigger the fetching of a feed's data."""
         if self.data is not None:

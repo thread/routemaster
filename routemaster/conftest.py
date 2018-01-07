@@ -92,7 +92,23 @@ TEST_STATE_MACHINES = {
             Action(
                 name='perform_alternate_action',
                 webhook='http://localhost/hook',
-                next_states=ConstantNextState(state='end'),
+                next_states=ContextNextStates(
+                    path='feeds.tests.should_loop',
+                    destinations=[
+                        ContextNextStatesOption(
+                            state='end',
+                            value=None,
+                        ),
+                        ContextNextStatesOption(
+                            state='end',
+                            value=False,
+                        ),
+                        ContextNextStatesOption(
+                            state='start',
+                            value=True,
+                        ),
+                    ],
+                ),
             ),
             Gate(
                 name='end',

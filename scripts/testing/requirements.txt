@@ -3,6 +3,8 @@ pytest
 pytest-cov
 pytest-flask
 pytest-faulthandler
+pytest-libfaketime
+libfaketime
 mypy
 mock
 httpretty

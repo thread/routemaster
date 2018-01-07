@@ -1,5 +1,11 @@
-import pytest
+import datetime
 
+import mock
+import pytest
+import dateutil
+from libfaketime import fake_time
+
+from routemaster.feeds import Feed
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import utils
 from routemaster.state_machine.types import LabelRef
@@ -52,3 +58,50 @@ def test_needs_gate_evaluation_for_metadata_change_with_action(app_config, creat
             {},
             conn,
         ) is False
+
+
+@fake_time('2018-01-07 00:00:01')
+def test_context_for_label_in_gate_created_with_correct_variables(app_config):
+    label = LabelRef('foo', 'test_machine')
+    metadata = {'should_progress': True}
+    (state_machine,) = app_config.config.state_machines.values()
+    state = state_machine.states[0]
+    dt = datetime.datetime.now(dateutil.tz.tzutc())
+
+    with mock.patch(
+        'routemaster.state_machine.utils.Context',
+    ) as mock_constructor:
+
+        utils.context_for_label(label, metadata, state_machine, state)
+        mock_constructor.assert_called_once_with(
+            label.name,
+            metadata,
+            dt,
+            {'tests': Feed('http://localhost/tests', 'test_machine')},
+            [
+                'metadata.should_progress',
+                'feeds.tests.should_do_alternate_action',
+            ],
+        )
+
+
+@fake_time('2018-01-07 00:00:01')
+def test_context_for_label_in_action_created_with_correct_variables(app_config):
+    label = LabelRef('foo', 'test_machine')
+    metadata = {'should_progress': True}
+    (state_machine,) = app_config.config.state_machines.values()
+    state = state_machine.states[2]
+    dt = datetime.datetime.now(dateutil.tz.tzutc())
+
+    with mock.patch(
+        'routemaster.state_machine.utils.Context',
+    ) as mock_constructor:
+
+        utils.context_for_label(label, metadata, state_machine, state)
+        mock_constructor.assert_called_once_with(
+            label.name,
+            metadata,
+            dt,
+            {'tests': Feed('http://localhost/tests', 'test_machine')},
+            ['feeds.tests.should_loop'],
+        )
