@@ -198,13 +198,14 @@ def database_clear(app_config):
 def create_label(app_config, mock_test_feed):
     """Create a label in the database."""
 
-    def _create(name: str, state_machine_name: str, metadata: Dict[str, Any]):
+    def _create(name: str, state_machine_name: str, metadata: Dict[str, Any]) -> LabelRef:
         with mock_test_feed():
-            return state_machine.create_label(
+            state_machine.create_label(
                 app_config,
                 LabelRef(name, state_machine_name),
                 metadata,
             )
+            return LabelRef(name, state_machine_name)
 
     return _create
 
@@ -233,6 +234,7 @@ def create_deleted_label(create_label, delete_label):
     def _create_and_delete(name: str, state_machine_name: str) -> None:
         create_label(name, state_machine_name, {})
         delete_label(name, state_machine_name)
+        return LabelRef(name, state_machine_name)
 
     return _create_and_delete
 
