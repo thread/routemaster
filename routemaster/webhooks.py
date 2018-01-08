@@ -1,4 +1,4 @@
-"""Action invocation."""
+"""Webhook invocation."""
 
 import enum
 from typing import Any, Dict, Callable, Iterable
