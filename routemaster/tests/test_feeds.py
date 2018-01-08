@@ -80,4 +80,4 @@ def test_equality():
     f1 = Feed('a', 'b')
     f1.data = {'foo': 'bar'}
     f2 = Feed('a', 'b')
-    assert f1 != f2
+    assert f1 == f2
