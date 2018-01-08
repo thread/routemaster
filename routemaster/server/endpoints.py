@@ -40,7 +40,12 @@ def status():
 
 @server.route('/state-machines', methods=['GET'])
 def get_state_machines():
-    """Status check endpoint."""
+    """
+    List the state machines known to this server.
+
+    Successful return codes return a list of dictionaries containing at least
+    the name of each state machine.
+    """
     return jsonify({
         'state-machines': [
             {
