@@ -62,7 +62,6 @@ class RequestsWebhookRunner(object):
         for config in self.webhook_configs:
             if config.match.search(url):
                 headers.update(config.headers)
-            else:
         return headers
 
 
