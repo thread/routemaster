@@ -198,9 +198,14 @@ def delete_label(app: App, label: LabelRef) -> None:
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
     """
+    get_state_machine(app, label)  # Raises UnknownStateMachine
 
     with app.db.begin() as conn:
-        row = lock_label(label, conn)
+        try:
+            row = lock_label(label, conn)
+        except UnknownLabel:
+            return
+
         if row is None or row.deleted:
             return
 
