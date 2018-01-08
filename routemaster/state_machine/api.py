@@ -198,22 +198,17 @@ def delete_label(app: App, label: LabelRef) -> None:
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
     """
-    state_machine = get_state_machine(app, label)
-
-    label_filter = and_(
-        labels.c.name == label.name,
-        labels.c.state_machine == state_machine.name,
-    )
 
     with app.db.begin() as conn:
-        existing_metadata = conn.scalar(
-            select([labels.c.metadata]).where(label_filter),
-        )
-        if existing_metadata is None:
+        row = lock_label(label, conn)
+        if row is None or row.deleted:
             return
 
         # Record the label as having been deleted and remove its metadata
-        conn.execute(labels.update().where(label_filter).values(
+        conn.execute(labels.update().where(and_(
+            labels.c.name == label.name,
+            labels.c.state_machine == label.state_machine,
+        )).values(
             metadata={},
             deleted=True,
         ))
