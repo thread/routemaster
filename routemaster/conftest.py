@@ -270,9 +270,10 @@ def mock_test_feed():
             content_type='application/json',
         )
 
-        yield
-
-        httpretty.disable()
-        httpretty.reset()
+        try:
+            yield
+        finally:
+            httpretty.disable()
+            httpretty.reset()
 
     return _mock
