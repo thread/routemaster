@@ -26,7 +26,6 @@ def test_record_single_trivial_machine(app_config):
         StateMachine(
             name='machine',
             feeds=[],
-
             webhooks=[],
             states=[
                 Gate(
@@ -62,7 +61,6 @@ def test_record_single_trivial_machine_twice(app_config):
         StateMachine(
             name='machine',
             feeds=[],
-
             webhooks=[],
             states=[
                 Gate(
