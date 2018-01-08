@@ -116,12 +116,13 @@ def update_metadata_for_label(
         if deleted:
             raise DeletedLabel(label)
 
-        needs_gate_evaluation = needs_gate_evaluation_for_metadata_change(
-            state_machine,
-            label,
-            update,
-            conn,
-        )
+        needs_gate_evaluation, current_state = \
+            needs_gate_evaluation_for_metadata_change(
+                state_machine,
+                label,
+                update,
+                conn,
+            )
 
         new_metadata = dict_merge(existing_metadata, update)
 
@@ -134,29 +135,16 @@ def update_metadata_for_label(
         ))
 
     # Outside transaction
+    # Try to move the label forward, but this is not a hard requirement as
+    # the cron will come back around to progress the label later.
     if needs_gate_evaluation:
         try:
-            with app.db.begin() as conn:
-                lock_label(label, conn)
-                current_state = get_current_state(label, state_machine, conn)
-
-                if not isinstance(current_state, Gate):  # pragma: no branch
-                    # Cannot be hit because of the semantics of
-                    # `needs_gate_evaluation_for_metadata_change`. Here to
-                    # appease mypy.
-                    raise RuntimeError(  # pragma: no cover
-                        "Label not in a gate",
-                    )
-
-                could_progress = process_gate(app, current_state, label, conn)
-
-            if could_progress:
-                _process_transitions(app, label)
-
-        except RuntimeError:
-            # Catch the error from the invariant check above. Note this
-            # shouldn't be possible, but we re-raise anyway just in case.
-            raise
+            _process_transitions_for_metadata_update(
+                app,
+                label,
+                state_machine,
+                current_state,
+            )
         except Exception:
             # This is allowed to fail here. We have successfully saved the new
             # metadata, and it has a metadata_triggers_processed=False flag so
@@ -164,6 +152,36 @@ def update_metadata_for_label(
             pass
 
     return new_metadata
+
+
+def _process_transitions_for_metadata_update(
+    app: App,
+    label: LabelRef,
+    state_machine: StateMachine,
+    state_pending_update: State,
+):
+    with app.db.begin() as conn:
+        lock_label(label, conn)
+        current_state = get_current_state(label, state_machine, conn)
+
+        if state_pending_update != current_state:
+            # We have raced with another update, and are no longer in
+            # the state for which we needed an update, so we should
+            # stop.
+            return
+
+        if not isinstance(current_state, Gate):  # pragma: no branch
+            # Cannot be hit because of the semantics of
+            # `needs_gate_evaluation_for_metadata_change`. Here to
+            # appease mypy.
+            raise RuntimeError(  # pragma: no cover
+                "Label not in a gate",
+            )
+
+        could_progress = process_gate(app, current_state, label, conn)
+
+    if could_progress:
+        _process_transitions(app, label)
 
 
 def _process_transitions(app: App, label: LabelRef):

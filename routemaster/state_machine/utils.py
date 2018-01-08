@@ -93,7 +93,7 @@ def needs_gate_evaluation_for_metadata_change(
     label: LabelRef,
     update: Metadata,
     conn,
-) -> bool:
+) -> Tuple[bool, State]:
     """
     Given a change to the metadata, should the gate evaluation be triggered.
     """
@@ -102,15 +102,15 @@ def needs_gate_evaluation_for_metadata_change(
 
     if not isinstance(current_state, Gate):
         # Label is not a gate state so there's no trigger to resolve.
-        return False
+        return False, current_state
 
     if any(
         trigger.should_trigger_for_update(update)
         for trigger in current_state.metadata_triggers
     ):
-        return True
+        return True, current_state
 
-    return False
+    return False, current_state
 
 
 def lock_label(label: LabelRef, conn):

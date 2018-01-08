@@ -29,18 +29,21 @@ def test_needs_gate_evaluation_for_metadata_change(app_config, create_label):
     state_machine, = app_config.config.state_machines.values()
 
     with app_config.db.begin() as conn:
+        current_state = utils.get_current_state(label, state_machine, conn)
+
         assert utils.needs_gate_evaluation_for_metadata_change(
             state_machine,
             label,
             {'foo': 'bar'},
             conn,
-        ) is False
+        ) == (False, current_state)
+
         assert utils.needs_gate_evaluation_for_metadata_change(
             state_machine,
             label,
             {'should_progress': 'bar'},
             conn,
-        ) is True
+        ) == (True, current_state)
 
 
 def test_does_not_need_gate_evaluation_for_metadata_change_with_action(app_config, create_label, mock_webhook):
@@ -55,13 +58,12 @@ def test_does_not_need_gate_evaluation_for_metadata_change_with_action(app_confi
         current_state = utils.get_current_state(label, state_machine, conn)
         assert current_state.name == 'perform_action'
 
-    with app_config.db.begin() as conn:
         assert utils.needs_gate_evaluation_for_metadata_change(
             state_machine,
             label,
             {},
             conn,
-        ) is False
+        ) == (False, current_state)
 
 
 @freezegun.freeze_time('2018-01-07 00:00:01')
