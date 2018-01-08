@@ -207,11 +207,7 @@ def delete_label(app: App, label: LabelRef) -> None:
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
     """
-    get_state_machine(app, label)  # Raises UnknownStateMachine
-    label_filter = and_(
-        history.c.label_name == label.name,
-        history.c.label_state_machine == label.state_machine,
-    )
+    state_machine = get_state_machine(app, label)  # Raises UnknownStateMachine
 
     with app.db.begin() as conn:
         try:
@@ -223,17 +219,16 @@ def delete_label(app: App, label: LabelRef) -> None:
             return
 
         # Record the label as having been deleted and remove its metadata
-        conn.execute(labels.update().where(label_filter).values(
+        conn.execute(labels.update().where(and_(
+            history.c.label_name == label.name,
+            history.c.label_state_machine == label.state_machine,
+        )).values(
             metadata={},
             deleted=True,
         ))
 
         # Add a history entry for the deletion
-        current_state_name = conn.scalar(
-            select([history.c.new_state]).where(label_filter).order_by(
-                history.c.created.desc(),
-            ).limit(1)
-        )
+        current_state_name = get_current_state(label, state_machine, conn)
         conn.execute(history.insert().values(
             label_name=label.name,
             label_state_machine=label.state_machine,
