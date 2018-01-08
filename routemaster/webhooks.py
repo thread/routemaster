@@ -52,7 +52,7 @@ class RequestsWebhookRunner(object):
 
         if result.status_code == 410:
             return WebhookResult.FAIL
-        elif str(result.status_code)[0] == '2':
+        elif 200 <= result.status_code < 300:
             return WebhookResult.SUCCESS
         else:
             return WebhookResult.RETRY
