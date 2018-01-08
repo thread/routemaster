@@ -98,7 +98,7 @@ def test_requests_webhook_runner_for_state_machine_uses_webhook_config(app_confi
         content_type='application/json',
     )
 
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
     runner = webhook_runner_for_state_machine(state_machine)
     runner('http://example.com', 'application/test-data', b'\0\xff')
 
@@ -116,7 +116,7 @@ def test_requests_webhook_runner_for_state_machine_does_not_apply_headers_for_no
         content_type='application/json',
     )
 
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
     runner = webhook_runner_for_state_machine(state_machine)
     runner('http://not-example.com', 'application/test-data', b'\0\xff')
 

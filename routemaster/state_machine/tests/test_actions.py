@@ -6,7 +6,7 @@ from routemaster.state_machine.exceptions import DeletedLabel
 
 
 def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webhook, assert_history):
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
 
     # First get the label into the action state by failing the automatic
     # progression through the machine.
@@ -35,7 +35,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
 
 
 def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_webhook, assert_history):
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
 
     # First get the label into the action state by failing the automatic
     # progression through the machine.
@@ -63,7 +63,7 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
 
 def test_process_action_does_not_work_for_deleted_label(app_config, create_deleted_label, assert_history):
     deleted_label = create_deleted_label('foo', 'test_machine')
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
     action = state_machine.states[1]
 
     with pytest.raises(DeletedLabel):
@@ -77,7 +77,7 @@ def test_process_action_does_not_work_for_deleted_label(app_config, create_delet
 
 
 def test_process_action(app_config, create_label, mock_webhook, assert_history):
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
     action = state_machine.states[1]
 
     # First get the label into the action state by failing the automatic
@@ -103,7 +103,7 @@ def test_process_action(app_config, create_label, mock_webhook, assert_history):
 
 
 def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, create_label, mock_webhook, assert_history):
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
     action = state_machine.states[1]
 
     # First get the label into the action state by failing the automatic
@@ -128,7 +128,7 @@ def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, crea
 
 
 def test_process_action_fails_retry_works(app_config, create_label, mock_webhook, assert_history):
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
     action = state_machine.states[1]
 
     # First get the label into the action state by failing the automatic

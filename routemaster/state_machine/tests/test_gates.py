@@ -8,7 +8,7 @@ from routemaster.state_machine.exceptions import DeletedLabel
 
 def test_wont_process_deleted_label(app_config, create_deleted_label, assert_history):
     deleted_label = create_deleted_label('foo', 'test_machine')
-    (state_machine,) = app_config.config.state_machines.values()
+    state_machine, = app_config.config.state_machines.values()
     gate = state_machine.states[0]
 
     with pytest.raises(DeletedLabel):
