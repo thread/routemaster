@@ -139,8 +139,11 @@ def update_metadata_for_label(
             with app.db.begin() as conn:
                 lock_label(label, conn)
                 current_state = get_current_state(label, state_machine, conn)
-                if not isinstance(current_state, Gate):
-                    raise TypeError("Label not in a gate")
+                if not isinstance(current_state, Gate):  # pragma: no branch
+                    # Cannot be hit because of the semantics of
+                    # `needs_gate_evaluation_for_metadata_change`. Here to
+                    # appease mypy.
+                    raise TypeError("Label not in a gate")  # pragma: no cover
                 could_progress = process_gate(app, current_state, label, conn)
 
             if could_progress:
