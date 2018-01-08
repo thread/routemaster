@@ -208,6 +208,10 @@ def delete_label(app: App, label: LabelRef) -> None:
     analysis of the path the label took through the state machine).
     """
     get_state_machine(app, label)  # Raises UnknownStateMachine
+    label_filter = and_(
+        history.c.label_name == label.name,
+        history.c.label_state_machine == label.state_machine,
+    )
 
     with app.db.begin() as conn:
         try:
@@ -219,20 +223,14 @@ def delete_label(app: App, label: LabelRef) -> None:
             return
 
         # Record the label as having been deleted and remove its metadata
-        conn.execute(labels.update().where(and_(
-            labels.c.name == label.name,
-            labels.c.state_machine == label.state_machine,
-        )).values(
+        conn.execute(labels.update().where(label_filter).values(
             metadata={},
             deleted=True,
         ))
 
         # Add a history entry for the deletion
         current_state_name = conn.scalar(
-            select([history.c.new_state]).where(and_(
-                history.c.label_name == label.name,
-                history.c.label_state_machine == label.state_machine,
-            )).order_by(
+            select([history.c.new_state]).where(label_filter).order_by(
                 history.c.created.desc(),
             ).limit(1)
         )
