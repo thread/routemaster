@@ -9,10 +9,10 @@ from typing import Any, Dict
 import mock
 import pytest
 import httpretty
-from sqlalchemy import create_engine
+from sqlalchemy import select, create_engine
 
 from routemaster import state_machine
-from routemaster.db import metadata
+from routemaster.db import history, metadata
 from routemaster.app import App
 from routemaster.config import (
     Feed,
@@ -277,3 +277,22 @@ def mock_test_feed():
             httpretty.reset()
 
     return _mock
+
+
+@pytest.fixture()
+def assert_history():
+    """Assert that the database history matches what is expected."""
+    def _assert(app_config, entries):
+        with app_config.db.begin() as conn:
+            history_entries = [
+                tuple(x)
+                for x in conn.execute(
+                    select((
+                        history.c.old_state,
+                        history.c.new_state,
+                    )).order_by(history.c.id.asc()),
+                )
+            ]
+
+            assert history_entries == entries
+    return _assert
