@@ -13,6 +13,8 @@ from typing import (
     NamedTuple,
 )
 
+from dataclasses import dataclass
+
 from routemaster.exit_conditions import ExitConditionProgram
 
 if False:  # typing
@@ -45,10 +47,9 @@ class MetadataTrigger(NamedTuple):
         return applies(self.metadata_path.split('.'), update)
 
 
+@dataclass
 class OnEntryTrigger:
     """Trigger on entry to a given gate."""
-    def __eq__(self, other):
-        return isinstance(other, OnEntryTrigger)
 
 
 Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
