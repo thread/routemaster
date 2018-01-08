@@ -228,10 +228,10 @@ def delete_label(app: App, label: LabelRef) -> None:
         ))
 
         # Add a history entry for the deletion
-        current_state_name = get_current_state(label, state_machine, conn)
+        current_state = get_current_state(label, state_machine, conn)
         conn.execute(history.insert().values(
             label_name=label.name,
             label_state_machine=label.state_machine,
-            old_state=current_state_name,
+            old_state=current_state.name,
             new_state=None,
         ))
