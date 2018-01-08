@@ -1,7 +1,7 @@
 """Action invocation."""
 
 import enum
-from typing import Any, Dict, List, Callable
+from typing import Any, Dict, Callable, Iterable
 
 import requests
 
@@ -26,7 +26,7 @@ class RequestsWebhookRunner(object):
     Optionally takes a list of webhook configs to modify how requests are made.
     """
 
-    def __init__(self, webhook_configs: List[Webhook]=[]) -> None:
+    def __init__(self, webhook_configs: Iterable[Webhook]=()) -> None:
         self.session = requests.Session()
         self.webhook_configs = webhook_configs
 
