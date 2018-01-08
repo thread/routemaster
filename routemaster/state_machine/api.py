@@ -139,15 +139,24 @@ def update_metadata_for_label(
             with app.db.begin() as conn:
                 lock_label(label, conn)
                 current_state = get_current_state(label, state_machine, conn)
+
                 if not isinstance(current_state, Gate):  # pragma: no branch
                     # Cannot be hit because of the semantics of
                     # `needs_gate_evaluation_for_metadata_change`. Here to
                     # appease mypy.
-                    raise TypeError("Label not in a gate")  # pragma: no cover
+                    raise RuntimeError(  # pragma: no cover
+                        "Label not in a gate",
+                    )
+
                 could_progress = process_gate(app, current_state, label, conn)
 
             if could_progress:
                 _process_transitions(app, label)
+
+        except RuntimeError:
+            # Catch the error from the invariant check above. Note this
+            # shouldn't be possible, but we re-raise anyway just in case.
+            raise
         except Exception:
             # This is allowed to fail here. We have successfully saved the new
             # metadata, and it has a metadata_triggers_processed=False flag so
