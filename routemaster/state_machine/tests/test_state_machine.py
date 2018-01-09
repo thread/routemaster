@@ -160,3 +160,79 @@ def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed):
 
     assert metadata_triggers_processed(app_config, label) is False
     assert current_state(app_config, label) == 'start'
+
+
+def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app_config, assert_history):
+    test_machine_2 = app_config.config.state_machines['test_machine_2']
+    gate_1 = test_machine_2.states[0]
+
+    label = create_label('foo', 'test_machine_2', {})
+
+    state_machine.update_metadata_for_label(
+        app_config,
+        label,
+        {'should_progress': True},
+    )
+    assert current_state(app_config, label) == 'gate_2'
+
+    with mock.patch(
+        'routemaster.state_machine.api.needs_gate_evaluation_for_metadata_change',
+        return_value=(True, gate_1),
+    ):
+        state_machine.update_metadata_for_label(
+            app_config,
+            label,
+            {'should_progress': True},
+        )
+
+    assert_history([
+        (None, 'gate_1'),
+        ('gate_1', 'gate_2'),
+    ])
+
+
+def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_triggered_gate(create_label, app_config, assert_history):
+    label = create_label('foo', 'test_machine_2', {})
+
+    state_machine.update_metadata_for_label(
+        app_config,
+        label,
+        {'should_progress': True},
+    )
+
+    assert current_state(app_config, label) == 'gate_2'
+    assert_history([
+        (None, 'gate_1'),
+        ('gate_1', 'gate_2'),
+        # Note: has not progressed to end because there is no on entry trigger
+        # on gate 2 and we were not processing a metadata trigger on gate 2,
+        # only gate 1.
+    ])
+
+
+def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metadata_triggered_gate(create_label, app_config, assert_history):
+    test_machine_2 = app_config.config.state_machines['test_machine_2']
+    gate_1 = test_machine_2.states[0]
+    gate_2 = test_machine_2.states[1]
+
+    label = create_label('foo', 'test_machine_2', {})
+
+    with mock.patch(
+        'routemaster.state_machine.api.needs_gate_evaluation_for_metadata_change',
+        return_value=(True, gate_1),
+    ), mock.patch(
+        'routemaster.state_machine.api.get_current_state',
+        return_value=gate_2,
+    ):
+
+        state_machine.update_metadata_for_label(
+            app_config,
+            label,
+            {'should_progress': True},
+        )
+
+    # We should have no history entry 1->2 (as we mocked out the current state)
+    # so the state machine should have considered us up-to-date and not moved.
+    assert_history([
+        (None, 'gate_1'),
+    ])

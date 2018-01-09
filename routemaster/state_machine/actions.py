@@ -13,10 +13,13 @@ from routemaster.webhooks import (
 )
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import (
+    lock_label,
     choose_next_state,
     context_for_label,
+    get_current_state,
     get_state_machine,
     get_label_metadata,
+    process_transitions,
     labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
@@ -100,11 +103,19 @@ def process_retries(
             conn,
         )
 
-        for label_name, metadata in relevant_labels.items():
-            label = LabelRef(name=label_name, state_machine=state_machine.name)
+    for label_name, metadata in relevant_labels.items():
+        label = LabelRef(name=label_name, state_machine=state_machine.name)
+        could_progress = False
 
-            with conn.begin():
-                _process_action_with_metadata(
+        with app.db.begin() as conn:
+            try:
+                lock_label(label, conn)
+                current_state = get_current_state(label, state_machine, conn)
+
+                if current_state != action:
+                    continue
+
+                could_progress = _process_action_with_metadata(
                     app,
                     action,
                     label,
@@ -112,3 +123,9 @@ def process_retries(
                     state_machine,
                     conn,
                 )
+            except Exception:
+                # This is allowed to error, we will retry again later.
+                pass
+
+        if could_progress:
+            process_transitions(app, label)

@@ -9,7 +9,7 @@ from sqlalchemy.sql import select
 from routemaster.db import labels, history
 from routemaster.app import App
 from routemaster.utils import dict_merge
-from routemaster.config import Gate, State, Action, StateMachine
+from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import \
@@ -18,10 +18,10 @@ from routemaster.state_machine.utils import (
     lock_label,
     get_current_state,
     get_state_machine,
+    process_transitions,
     start_state_machine,
     needs_gate_evaluation_for_metadata_change,
 )
-from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
@@ -92,7 +92,7 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
         start_state_machine(app, label, conn)
 
     # Outside transaction
-    _process_transitions(app, label)
+    process_transitions(app, label)
     return metadata
 
 
@@ -181,41 +181,7 @@ def _process_transitions_for_metadata_update(
         could_progress = process_gate(app, current_state, label, conn)
 
     if could_progress:
-        _process_transitions(app, label)
-
-
-def _process_transitions(app: App, label: LabelRef):
-    state_machine = get_state_machine(app, label)
-    could_progress = True
-
-    while could_progress:
-        with app.db.begin() as conn:
-            lock_label(label, conn)
-            current_state = get_current_state(label, state_machine, conn)
-
-            if isinstance(current_state, Action):
-                could_progress = process_action(
-                    app,
-                    current_state,
-                    label,
-                    conn,
-                )
-
-            elif isinstance(current_state, Gate):  # pragma: no branch
-                if not current_state.trigger_on_entry:
-                    return
-
-                could_progress = process_gate(
-                    app,
-                    current_state,
-                    label,
-                    conn,
-                )
-
-            else:
-                raise RuntimeError(  # pragma: no cover
-                    "Unsupported state type {0}".format(current_state),
-                )
+        process_transitions(app, label)
 
 
 def delete_label(app: App, label: LabelRef) -> None:

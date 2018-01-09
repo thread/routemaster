@@ -41,7 +41,7 @@ def test_enumerate_state_machines(client, app_config):
 
 def test_create_label(client, app_config, mock_test_feed):
     label_name = 'foo'
-    state_machine, = app_config.config.state_machines.values()
+    state_machine = app_config.config.state_machines['test_machine']
     label_metadata = {'bar': 'baz'}
 
     with mock_test_feed():
@@ -251,7 +251,7 @@ def test_update_label_moves_label(client, create_label, app_config, mock_webhook
 
 def test_delete_existing_label(client, app_config, create_label):
     label_name = 'foo'
-    state_machine, = app_config.config.state_machines.values()
+    state_machine = app_config.config.state_machines['test_machine']
 
     create_label(label_name, state_machine.name, {'bar': 'baz'})
 

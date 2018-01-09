@@ -118,6 +118,42 @@ TEST_STATE_MACHINES = {
             ),
         ],
     ),
+    # This state machine is used for exercising race conditions in tests and is
+    # purposefully not realistic.
+    'test_machine_2': StateMachine(
+        name='test_machine_2',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='gate_1',
+                triggers=[
+                    OnEntryTrigger(),
+                    MetadataTrigger(metadata_path='should_progress'),
+                ],
+                next_states=ConstantNextState('gate_2'),
+                exit_condition=ExitConditionProgram(
+                    'metadata.should_progress = true',
+                ),
+            ),
+            Gate(
+                name='gate_2',
+                triggers=[
+                    MetadataTrigger(metadata_path='should_progress'),
+                ],
+                next_states=ConstantNextState('end'),
+                exit_condition=ExitConditionProgram(
+                    'metadata.should_progress = true',
+                ),
+            ),
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    ),
 }
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
@@ -280,9 +316,9 @@ def mock_test_feed():
 
 
 @pytest.fixture()
-def assert_history():
+def assert_history(app_config):
     """Assert that the database history matches what is expected."""
-    def _assert(app_config, entries):
+    def _assert(entries):
         with app_config.db.begin() as conn:
             history_entries = [
                 tuple(x)
