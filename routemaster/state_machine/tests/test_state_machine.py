@@ -168,13 +168,12 @@ def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app
 
     label = create_label('foo', 'test_machine_2', {})
 
-    with mock_test_feed():
-        state_machine.update_metadata_for_label(
-            app_config,
-            label,
-            {'should_progress': True},
-        )
-        assert current_state(app_config, label) == 'gate_2'
+    state_machine.update_metadata_for_label(
+        app_config,
+        label,
+        {'should_progress': True},
+    )
+    assert current_state(app_config, label) == 'gate_2'
 
     with mock.patch(
         'routemaster.state_machine.api.needs_gate_evaluation_for_metadata_change',
