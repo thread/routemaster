@@ -118,6 +118,8 @@ TEST_STATE_MACHINES = {
             ),
         ],
     ),
+    # This state machine is used for exercising race conditions in tests and is
+    # purposefully not realistic.
     'test_machine_2': StateMachine(
         name='test_machine_2',
         feeds=[],
