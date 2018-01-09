@@ -118,6 +118,40 @@ TEST_STATE_MACHINES = {
             ),
         ],
     ),
+    'test_machine_2': StateMachine(
+        name='test_machine_2',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='gate_1',
+                triggers=[
+                    OnEntryTrigger(),
+                    MetadataTrigger(metadata_path='should_progress'),
+                ],
+                next_states=ConstantNextState('gate_2'),
+                exit_condition=ExitConditionProgram(
+                    'metadata.should_progress = true',
+                ),
+            ),
+            Gate(
+                name='gate_2',
+                triggers=[
+                    MetadataTrigger(metadata_path='should_progress'),
+                ],
+                next_states=ConstantNextState('end'),
+                exit_condition=ExitConditionProgram(
+                    'metadata.should_progress = true',
+                ),
+            ),
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    ),
 }
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
