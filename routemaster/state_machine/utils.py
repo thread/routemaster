@@ -188,7 +188,7 @@ def context_for_label(
     )
 
 
-def process_transitions(app: App, label: LabelRef):
+def process_transitions(app: App, label: LabelRef) -> None:
     """
     Process each transition for a label until it cannot move any further.
     """
