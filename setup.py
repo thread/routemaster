@@ -46,6 +46,7 @@ setup(
         'gunicorn >=19.7',
         'requests',
         'networkx',
+        'dataclasses',
     ),
 
     setup_requires=(

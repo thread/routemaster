@@ -45,11 +45,14 @@ DEPENDENCIES = (
     ('state_machine', 'config'),
     ('state_machine', 'feeds'),
     ('state_machine', 'context'),
+    ('state_machine', 'webhooks'),
 
     ('record_states', 'app'),
     ('record_states', 'config'),
 
     ('feeds', 'config'),
+
+    ('webhooks', 'config'),
 )
 
 EXCLUDED_MODULES = (

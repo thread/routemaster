@@ -1,40 +1,35 @@
 """The core of the state machine logic."""
-import datetime
-from typing import Any, Dict, Iterable, NamedTuple
 
-import dateutil.tz
+from typing import Iterable
+
 from sqlalchemy import and_, not_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.feeds import feeds_for_state_machine
 from routemaster.utils import dict_merge
-from routemaster.config import State, Action, StateMachine
-from routemaster.context import Context
+from routemaster.config import Gate, State, StateMachine
+from routemaster.state_machine.gates import process_gate
+from routemaster.state_machine.types import LabelRef, Metadata
+from routemaster.state_machine.utils import \
+    get_label_metadata as get_label_metadata_internal
+from routemaster.state_machine.utils import (
+    lock_label,
+    get_current_state,
+    get_state_machine,
+    process_transitions,
+    start_state_machine,
+    needs_gate_evaluation_for_metadata_change,
+)
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
     LabelAlreadyExists,
-    UnknownStateMachine,
 )
 
 
-class Label(NamedTuple):
-    """API representation of a label for the state machine."""
-    name: str
-    state_machine: str
-
-
-Metadata = Dict[str, Any]
-
-
-def _utcnow():
-    return datetime.datetime.now(dateutil.tz.tzutc())
-
-
-def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
+def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
     """
     Returns a sorted iterable of labels associated with a state machine.
 
@@ -52,42 +47,23 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[Label]:
             ),
         )
         for row in label_names:
-            yield Label(row[labels.c.name], state_machine.name)
+            yield LabelRef(row[labels.c.name], state_machine.name)
 
 
-def get_label_state(app: App, label: Label) -> State:
+def get_label_state(app: App, label: LabelRef) -> State:
     """Finds the current state of a label."""
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
-        history_entry = conn.execute(
-            select([history]).where(and_(
-                history.c.label_name == label.name,
-                history.c.label_state_machine == state_machine.name,
-            )).order_by(
-                history.c.created.desc(),
-            ).limit(1)
-        ).fetchone()
-
-    if history_entry is None:
-        raise UnknownLabel(label)
-
-    current_state = state_machine.get_state(history_entry.new_state)
-
-    return current_state
+        return get_current_state(label, state_machine, conn)
 
 
-def get_label_metadata(app: App, label: Label) -> Metadata:
+def get_label_metadata(app: App, label: LabelRef) -> Metadata:
     """Returns the metadata associated with a label."""
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
-        row = conn.execute(
-            select([labels.c.metadata, labels.c.deleted]).where(and_(
-                labels.c.name == label.name,
-                labels.c.state_machine == state_machine.name,
-            )),
-        ).fetchone()
+        row = get_label_metadata_internal(label, state_machine, conn)
 
         if row is None:
             raise UnknownLabel(label)
@@ -99,9 +75,9 @@ def get_label_metadata(app: App, label: Label) -> Metadata:
         return metadata
 
 
-def create_label(app: App, label: Label, metadata: Metadata) -> Metadata:
+def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     """Creates a label and starts it in a state machine."""
-    state_machine = _get_state_machine(app, label)
+    state_machine = get_state_machine(app, label)
 
     with app.db.begin() as conn:
         try:
@@ -113,26 +89,16 @@ def create_label(app: App, label: Label, metadata: Metadata) -> Metadata:
         except IntegrityError:
             raise LabelAlreadyExists(label)
 
-        _start_state_machine(state_machine, label, conn)
-        return metadata
+        start_state_machine(app, label, conn)
 
-
-def _start_state_machine(
-    state_machine: StateMachine,
-    label: Label,
-    conn,
-) -> None:
-    conn.execute(history.insert().values(
-        label_name=label.name,
-        label_state_machine=label.state_machine,
-        old_state=None,
-        new_state=state_machine.states[0].name,
-    ))
+    # Outside transaction
+    process_transitions(app, label)
+    return metadata
 
 
 def update_metadata_for_label(
     app: App,
-    label: Label,
+    label: LabelRef,
     update: Metadata,
 ) -> Metadata:
     """
@@ -140,159 +106,116 @@ def update_metadata_for_label(
 
     Moves the label through the state machine as appropriate.
     """
-    state_machine = _get_state_machine(app, label)
-
-    metadata_field = labels.c.metadata
-    deleted_field = labels.c.deleted
-    label_filter = and_(
-        labels.c.name == label.name,
-        labels.c.state_machine == label.state_machine,
-    )
+    state_machine = get_state_machine(app, label)
+    needs_gate_evaluation = False
 
     with app.db.begin() as conn:
-        row = conn.execute(
-            select([metadata_field, deleted_field]).where(label_filter),
-        ).fetchone()
-        if row is None:
-            raise UnknownLabel(label)
+        row = lock_label(label, conn)
 
-        existing_metadata, deleted = row
+        existing_metadata, deleted = row.metadata, row.deleted
         if deleted:
             raise DeletedLabel(label)
 
+        needs_gate_evaluation, current_state = \
+            needs_gate_evaluation_for_metadata_change(
+                state_machine,
+                label,
+                update,
+                conn,
+            )
+
         new_metadata = dict_merge(existing_metadata, update)
 
-        conn.execute(labels.update().where(label_filter).values(
+        conn.execute(labels.update().where(and_(
+            labels.c.name == label.name,
+            labels.c.state_machine == label.state_machine,
+        )).values(
             metadata=new_metadata,
+            metadata_triggers_processed=not needs_gate_evaluation,
         ))
 
-        _move_label_for_metadata_change(
-            state_machine,
-            label,
-            update,
-            new_metadata,
-            conn,
-        )
+    # Outside transaction
+    # Try to move the label forward, but this is not a hard requirement as
+    # the cron will come back around to progress the label later.
+    if needs_gate_evaluation:
+        try:
+            _process_transitions_for_metadata_update(
+                app,
+                label,
+                state_machine,
+                current_state,
+            )
+        except Exception:
+            # This is allowed to fail here. We have successfully saved the new
+            # metadata, and it has a metadata_triggers_processed=False flag so
+            # will be picked up again for processing later.
+            pass
 
-        return new_metadata
+    return new_metadata
 
 
-def _move_label_for_metadata_change(
+def _process_transitions_for_metadata_update(
+    app: App,
+    label: LabelRef,
     state_machine: StateMachine,
-    label: Label,
-    update: Metadata,
-    metadata: Metadata,
-    conn,
-) -> None:
-    history_entry = conn.execute(
-        select([history]).where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
-        )).order_by(
-            history.c.created.desc(),
-        ).limit(1)
-    ).fetchone()
+    state_pending_update: State,
+):
+    with app.db.begin() as conn:
+        lock_label(label, conn)
+        current_state = get_current_state(label, state_machine, conn)
 
-    current_state = state_machine.get_state(history_entry.new_state)
-    if isinstance(current_state, Action):
-        # Label is in an Action state so there's no trigger to resolve.
-        return
+        if state_pending_update != current_state:
+            # We have raced with another update, and are no longer in
+            # the state for which we needed an update, so we should
+            # stop.
+            return
 
-    if not any(
-        trigger.should_trigger_for_update(update)
-        for trigger in current_state.metadata_triggers
-    ):
-        return
+        if not isinstance(current_state, Gate):  # pragma: no branch
+            # Cannot be hit because of the semantics of
+            # `needs_gate_evaluation_for_metadata_change`. Here to
+            # appease mypy.
+            raise RuntimeError(  # pragma: no cover
+                "Label not in a gate",
+            )
 
-    feeds = feeds_for_state_machine(state_machine)
-    exit_condition_context = Context(
-        label.name,
-        metadata,
-        _utcnow(),
-        feeds,
-        current_state.exit_condition.accessed_variables(),
-    )
-    can_exit = current_state.exit_condition.run(exit_condition_context)
+        could_progress = process_gate(app, current_state, label, conn)
 
-    if not can_exit:
-        return
-
-    destination = _choose_destination(
-        state_machine,
-        current_state,
-        exit_condition_context,
-    )
-
-    conn.execute(history.insert().values(
-        label_name=label.name,
-        label_state_machine=state_machine.name,
-        old_state=current_state.name,
-        new_state=destination.name,
-    ))
+    if could_progress:
+        process_transitions(app, label)
 
 
-def _choose_destination(
-    state_machine: StateMachine,
-    current_state: State,
-    context: Context,
-) -> State:
-    next_state_name = current_state.next_states.next_state_for_label(context)
-    return state_machine.get_state(next_state_name)
-
-
-def delete_label(app: App, label: Label) -> None:
+def delete_label(app: App, label: LabelRef) -> None:
     """
     Deletes the metadata for a label and marks the label as deleted.
 
     The history for the label is not changed (in order to allow post-hoc
     analysis of the path the label took through the state machine).
     """
-    state_machine = _get_state_machine(app, label)
-
-    metadata_field = labels.c.metadata
-    label_filter = and_(
-        labels.c.name == label.name,
-        labels.c.state_machine == state_machine.name,
-    )
+    state_machine = get_state_machine(app, label)  # Raises UnknownStateMachine
 
     with app.db.begin() as conn:
-        existing_metadata = conn.scalar(
-            select([metadata_field]).where(label_filter),
-        )
-        if existing_metadata is None:
+        try:
+            row = lock_label(label, conn)
+        except UnknownLabel:
             return
 
-        conn.execute(labels.update().where(label_filter).values(
+        if row is None or row.deleted:
+            return
+
+        # Record the label as having been deleted and remove its metadata
+        conn.execute(labels.update().where(and_(
+            history.c.label_name == label.name,
+            history.c.label_state_machine == label.state_machine,
+        )).values(
             metadata={},
             deleted=True,
         ))
 
-        _exit_state_machine(label, conn)
-
-
-def _exit_state_machine(
-    label: Label,
-    conn,
-) -> None:
-    current_state_name = conn.scalar(
-        select([history.c.new_state]).where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
-        )).order_by(
-            history.c.created.desc(),
-        ).limit(1)
-    )
-
-    conn.execute(history.insert().values(
-        label_name=label.name,
-        label_state_machine=label.state_machine,
-        old_state=current_state_name,
-        new_state=None,
-    ))
-
-
-def _get_state_machine(app: App, label: Label) -> StateMachine:
-    try:
-        return app.config.state_machines[label.state_machine]
-    except KeyError as k:
-        raise UnknownStateMachine(label.state_machine)
+        # Add a history entry for the deletion
+        current_state = get_current_state(label, state_machine, conn)
+        conn.execute(history.insert().values(
+            label_name=label.name,
+            label_state_machine=label.state_machine,
+            old_state=current_state.name,
+            new_state=None,
+        ))

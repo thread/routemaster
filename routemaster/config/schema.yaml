@@ -2,18 +2,6 @@ $schema: http://json-schema.org/draft-06/schema#
 title: Configuration
 type: object
 properties:
-  webhooks:
-    type: array
-    uniqueItems: true
-    items:
-      title: Webhook
-      type: object
-      properties:
-        match:
-          type: string
-        headers:
-          type: object
-      additionalProperties: false
   state_machines:
     type: object
     additionalProperties:
@@ -34,6 +22,18 @@ properties:
             required:
               - name
               - url
+            additionalProperties: false
+        webhooks:
+          type: array
+          uniqueItems: true
+          items:
+            title: Webhook
+            type: object
+            properties:
+              match:
+                type: string
+              headers:
+                type: object
             additionalProperties: false
         states:
           title: States
@@ -78,6 +78,13 @@ properties:
                               pattern: '^[0-9]*d?[0-9]*h?[0-9]*m?$'
                           required:
                             - interval
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            event:
+                              const: entry
+                          required:
+                            - event
                           additionalProperties: false
                   exit_condition:
                     title: Exit condition

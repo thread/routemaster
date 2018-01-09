@@ -18,6 +18,7 @@ from routemaster.config import (
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
@@ -47,6 +48,7 @@ def test_trivial_config():
             'example': StateMachine(
                 name='example',
                 feeds=[],
+                webhooks=[],
                 states=[
                     Gate(
                         name='start',
@@ -64,7 +66,6 @@ def test_trivial_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -78,6 +79,14 @@ def test_realistic_config():
                 feeds=[
                     Feed(name='data_feed', url='http://localhost/<label>'),
                 ],
+                webhooks=[
+                    Webhook(
+                        match=re.compile('.+\\.example\\.com'),
+                        headers={
+                            'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                        },
+                    ),
+                ],
                 states=[
                     Gate(
                         name='start',
@@ -87,6 +96,7 @@ def test_realistic_config():
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
                             ),
+                            OnEntryTrigger(),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),
@@ -132,14 +142,6 @@ def test_realistic_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[
-            Webhook(
-                match=re.compile('.+\\.example\\.com'),
-                headers={
-                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
-                },
-            ),
-        ],
     )
     assert load_config(data) == expected
 
@@ -196,6 +198,7 @@ def test_next_states_shorthand_results_in_constant_config():
             'example': StateMachine(
                 name='example',
                 feeds=[],
+                webhooks=[],
                 states=[
                     Gate(
                         name='start',
@@ -219,7 +222,6 @@ def test_next_states_shorthand_results_in_constant_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -233,6 +235,14 @@ def test_environment_variables_override_config_file_for_database_config():
                 feeds=[
                     Feed(name='data_feed', url='http://localhost/<label>'),
                 ],
+                webhooks=[
+                    Webhook(
+                        match=re.compile('.+\\.example\\.com'),
+                        headers={
+                            'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                        },
+                    ),
+                ],
                 states=[
                     Gate(
                         name='start',
@@ -242,6 +252,7 @@ def test_environment_variables_override_config_file_for_database_config():
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
                             ),
+                            OnEntryTrigger(),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),
@@ -287,14 +298,6 @@ def test_environment_variables_override_config_file_for_database_config():
             username='username',
             password='password',
         ),
-        webhooks=[
-            Webhook(
-                match=re.compile('.+\\.example\\.com'),
-                headers={
-                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
-                },
-            ),
-        ],
     )
 
     with mock.patch.dict(os.environ, {

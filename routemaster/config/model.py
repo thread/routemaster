@@ -13,6 +13,8 @@ from typing import (
     NamedTuple,
 )
 
+from dataclasses import dataclass
+
 from routemaster.exit_conditions import ExitConditionProgram
 
 if False:  # typing
@@ -45,7 +47,12 @@ class MetadataTrigger(NamedTuple):
         return applies(self.metadata_path.split('.'), update)
 
 
-Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger]
+@dataclass
+class OnEntryTrigger:
+    """Trigger on entry to a given gate."""
+
+
+Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
 
 
 class ConstantNextState(NamedTuple):
@@ -119,6 +126,11 @@ class Gate(NamedTuple):
         """Return a list of the metadata triggers for this state."""
         return [x for x in self.triggers if isinstance(x, MetadataTrigger)]
 
+    @property
+    def trigger_on_entry(self) -> bool:
+        """Util to check if this gate should be triggered on entry."""
+        return any(isinstance(x, OnEntryTrigger) for x in self.triggers)
+
 
 class Action(NamedTuple):
     """
@@ -144,11 +156,18 @@ class Feed(NamedTuple):
     url: str
 
 
+class Webhook(NamedTuple):
+    """Configuration for webdook requests."""
+    match: Pattern
+    headers: Dict[str, str]
+
+
 class StateMachine(NamedTuple):
     """A state machine."""
     name: str
     states: List[State]
     feeds: List[Feed]
+    webhooks: List[Webhook]
 
     def get_state(self, state_name: str) -> State:
         """Get the state object for a given state name."""
@@ -178,12 +197,6 @@ class DatabaseConfig(NamedTuple):
         return f'postgresql://{auth}{self.host}:{self.port}/{self.name}'
 
 
-class Webhook(NamedTuple):
-    """Configuration for webdook requests."""
-    match: Pattern
-    headers: Dict[str, str]
-
-
 class Config(NamedTuple):
     """
     The top-level configuration object.
@@ -192,4 +205,3 @@ class Config(NamedTuple):
     """
     state_machines: Mapping[str, StateMachine]
     database: DatabaseConfig
-    webhooks: List[Webhook]

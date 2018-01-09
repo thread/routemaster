@@ -14,6 +14,7 @@ def test_feeds_for_state_machine():
         feeds=[
             FeedConfig(name='test_feed', url='http://localhost/<label>'),
         ],
+        webhooks=[],
         states=[
             Gate(
                 name='start',
@@ -70,3 +71,13 @@ def test_lookup_fails_on_unfetched_feed():
     feed = Feed('http://example.com/<state_machine>/<label>', 'test_machine')
     with pytest.raises(FeedNotFetched):
         feed.lookup(('foo',))
+
+
+def test_equality():
+    assert Feed('a', 'b') == Feed('a', 'b')
+    assert Feed('a', 'b') != 'not a feed'
+    assert Feed('a', 'b') != Feed('a', 'c')
+    f1 = Feed('a', 'b')
+    f1.data = {'foo': 'bar'}
+    f2 = Feed('a', 'b')
+    assert f1 == f2

@@ -3,12 +3,17 @@ state_machines:
     feeds:
       - name: data_feed
         url: http://localhost/<label>
+    webhooks:
+      - match: ".+\\.example\\.com"
+        headers:
+          x-api-key: Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei
     states:
       - gate: start
         triggers:
           - time: 18h30m
           - metadata: foo.bar
           - interval: 1h
+          - event: entry
         exit_condition: true
         next:
           type: constant
@@ -35,8 +40,3 @@ state_machines:
 
       - gate: end
         exit_condition: false
-
-webhooks:
-  - match: ".+\\.example\\.com"
-    headers:
-      x-api-key: Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei

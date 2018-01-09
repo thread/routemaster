@@ -23,6 +23,7 @@ from routemaster.config.model import (
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
@@ -57,7 +58,6 @@ def load_config(yaml: Yaml) -> Config:
             for name, yaml_state_machine in yaml_state_machines.items()
         },
         database=load_database_config(),
-        webhooks=[_load_webhook(x) for x in yaml.get('webhooks', [])],
     )
 
 
@@ -95,13 +95,6 @@ def load_database_config() -> DatabaseConfig:
     )
 
 
-def _load_webhook(yaml: Yaml) -> Webhook:
-    return Webhook(
-        match=re.compile(yaml['match']),
-        headers=yaml['headers'],
-    )
-
-
 def _load_state_machine(
     path: Path,
     name: str,
@@ -121,6 +114,17 @@ def _load_state_machine(
             for idx, yaml_state in enumerate(yaml_state_machine['states'])
         ],
         feeds=feeds,
+        webhooks=[
+            _load_webhook(x)
+            for x in yaml_state_machine.get('webhooks', [])
+        ],
+    )
+
+
+def _load_webhook(yaml: Yaml) -> Webhook:
+    return Webhook(
+        match=re.compile(yaml['match']),
+        headers=yaml['headers'],
     )
 
 
@@ -190,6 +194,8 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
         return _load_metadata_trigger(path, yaml_trigger)
     elif 'interval' in yaml_trigger:  # pragma: no branch
         return _load_interval_trigger(path, yaml_trigger)
+    elif yaml_trigger.get('event') == 'entry':
+        return OnEntryTrigger()
     else:
         raise ConfigError(  # pragma: no cover
             f"Trigger at path {'.'.join(path)} must be a time, interval, or "
