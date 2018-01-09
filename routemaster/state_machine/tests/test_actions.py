@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from routemaster.webhooks import WebhookResult
@@ -13,7 +14,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
     with mock_webhook(WebhookResult.FAIL):
         create_label('foo', state_machine.name, {'should_progress': True})
 
-    # Now attepmt to process the retry of the action, succeeding.
+    # Now attempt to process the retry of the action, succeeding.
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         process_retries(
             app_config,
@@ -58,6 +59,47 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
     assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
+    ])
+
+
+def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_label, mock_webhook, assert_history):
+    state_machine = app_config.config.state_machines['test_machine']
+
+    # First get the label into the action state by failing the automatic
+    # progression through the machine.
+    with mock_webhook(WebhookResult.FAIL):
+        label = create_label(
+            'foo',
+            state_machine.name,
+            {'should_progress': True},
+        )
+
+    # Now attempt to process the retry of the action, succeeding.
+    with mock_webhook(WebhookResult.SUCCESS) as webhook:
+        with mock.patch(
+            'routemaster.state_machine.actions.process_transitions',
+        ) as mock_process_transitions:
+            process_retries(
+                app_config,
+                state_machine,
+                state_machine.states[1],
+            )
+
+    mock_process_transitions.assert_called_once_with(
+        app_config,
+        label,
+    )
+
+    webhook.assert_called_once_with(
+        'http://localhost/hook',
+        'application/json',
+        b'{"label": "foo", "metadata": {"should_progress": true}}',
+    )
+
+    assert_history([
+        (None, 'start'),
+        ('start', 'perform_action'),
+        ('perform_action', 'end'),
     ])
 
 
