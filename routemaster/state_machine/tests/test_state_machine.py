@@ -162,7 +162,7 @@ def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed):
     assert current_state(app_config, label) == 'start'
 
 
-def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, mock_test_feed, app_config, assert_history):
+def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app_config, assert_history):
     test_machine_2 = app_config.config.state_machines['test_machine_2']
     gate_1 = test_machine_2.states[0]
 
@@ -176,7 +176,7 @@ def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, moc
         )
         assert current_state(app_config, label) == 'gate_2'
 
-    with mock_test_feed(), mock.patch(
+    with mock.patch(
         'routemaster.state_machine.api.needs_gate_evaluation_for_metadata_change',
         return_value=(True, gate_1),
     ):
@@ -192,15 +192,14 @@ def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, moc
     ])
 
 
-def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_triggered_gate(create_label, mock_test_feed, app_config, assert_history):
+def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_triggered_gate(create_label, app_config, assert_history):
     label = create_label('foo', 'test_machine_2', {})
 
-    with mock_test_feed():
-        state_machine.update_metadata_for_label(
-            app_config,
-            label,
-            {'should_progress': True},
-        )
+    state_machine.update_metadata_for_label(
+        app_config,
+        label,
+        {'should_progress': True},
+    )
 
     assert current_state(app_config, label) == 'gate_2'
     assert_history([
@@ -212,14 +211,14 @@ def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_trigg
     ])
 
 
-def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metadata_triggered_gate(create_label, mock_test_feed, app_config, assert_history):
+def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metadata_triggered_gate(create_label, app_config, assert_history):
     test_machine_2 = app_config.config.state_machines['test_machine_2']
     gate_1 = test_machine_2.states[0]
     gate_2 = test_machine_2.states[1]
 
     label = create_label('foo', 'test_machine_2', {})
 
-    with mock_test_feed(), mock.patch(
+    with mock.patch(
         'routemaster.state_machine.api.needs_gate_evaluation_for_metadata_change',
         return_value=(True, gate_1),
     ), mock.patch(
