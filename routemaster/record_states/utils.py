@@ -37,7 +37,7 @@ def resync_state_machine_names(
                     'name': new_machine,
                 }
                 for new_machine in insertions
-            ]
+            ],
         )
 
     return updates | insertions
@@ -60,7 +60,7 @@ def resync_states_on_state_machine(conn, machine: StateMachine) -> bool:
                     states.c.state_machine == machine.name,
                     not_(states.c.deprecated),
                 ),
-            )
+            ),
         )
     )
     new_states = set(
@@ -131,7 +131,7 @@ def resync_links(
                 edges.c.deprecated,
             )).where(
                 edges.c.state_machine == machine.name,
-            )
+            ),
         )
     }
     new_inserts = links - set(previous_data)
@@ -233,5 +233,5 @@ def deprecate_states(
         ).values(
             deprecated=True,
             updated=func.now(),
-        )
+        ),
     )

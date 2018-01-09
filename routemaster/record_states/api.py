@@ -59,5 +59,5 @@ def record_state_machines(
                     state_machines.c.name.in_(updated_state_machine_names),
                 ).values(
                     updated=func.now(),
-                )
+                ),
             )

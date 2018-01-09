@@ -79,7 +79,7 @@ def get_current_state(
             history.c.label_state_machine == state_machine.name,
         )).order_by(
             history.c.created.desc(),
-        ).limit(1)
+        ).limit(1),
     ).fetchone()
 
     if history_entry is None:
@@ -121,7 +121,7 @@ def lock_label(label: LabelRef, conn):
                 labels.c.name == label.name,
                 labels.c.state_machine == label.state_machine,
             ),
-        ).with_for_update()
+        ).with_for_update(),
     ).fetchone()
 
     if row is None:

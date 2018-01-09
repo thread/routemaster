@@ -83,7 +83,7 @@ def load_database_config() -> DatabaseConfig:
         port = int(port_string)
     except ValueError:
         raise ConfigError(
-            f"Could not parse DB_PORT as an integer: '{port_string}'."
+            f"Could not parse DB_PORT as an integer: '{port_string}'.",
         )
 
     return DatabaseConfig(
@@ -204,14 +204,14 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
 
 
 def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
-    format = '%Hh%Mm'
+    format_ = '%Hh%Mm'
     try:
-        dt = datetime.datetime.strptime(str(yaml_trigger['time']), format)
+        dt = datetime.datetime.strptime(str(yaml_trigger['time']), format_)
         trigger = dt.time()
     except ValueError:  # pragma: no cover
         raise ConfigError(
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
-            f"does not meet expected format: {format}.",
+            f"does not meet expected format: {format_}.",
         ) from None
     return TimeTrigger(time=trigger)
 
