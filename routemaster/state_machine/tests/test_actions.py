@@ -27,7 +27,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
         b'{"label": "foo", "metadata": {"should_progress": true}}',
     )
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
         ('perform_action', 'end'),
@@ -55,7 +55,7 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
         b'{"label": "foo", "metadata": {"should_progress": true}}',
     )
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
     ])
@@ -70,7 +70,7 @@ def test_process_action_does_not_work_for_deleted_label(app_config, create_delet
         with app_config.db.begin() as conn:
             process_action(app_config, action, deleted_label, conn)
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', None),
     ])
@@ -95,7 +95,7 @@ def test_process_action(app_config, create_label, mock_webhook, assert_history):
 
         webhook.assert_called_once()
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
         ('perform_action', 'end'),
@@ -121,7 +121,7 @@ def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, crea
 
         webhook.assert_called_once()
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
     ])
@@ -141,7 +141,7 @@ def test_process_action_fails_retry_works(app_config, create_label, mock_webhook
         )
 
     # State machine should not have progressed
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
     ])
@@ -151,7 +151,7 @@ def test_process_action_fails_retry_works(app_config, create_label, mock_webhook
         process_retries(app_config, state_machine, action)
         webhook.assert_called_once()
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
         ('perform_action', 'end'),

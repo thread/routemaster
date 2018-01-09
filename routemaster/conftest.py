@@ -280,9 +280,9 @@ def mock_test_feed():
 
 
 @pytest.fixture()
-def assert_history():
+def assert_history(app_config):
     """Assert that the database history matches what is expected."""
-    def _assert(app_config, entries):
+    def _assert(entries):
         with app_config.db.begin() as conn:
             history_entries = [
                 tuple(x)

@@ -15,7 +15,7 @@ def test_wont_process_deleted_label(app_config, create_deleted_label, assert_his
         with app_config.db.begin() as conn:
             process_gate(app_config, gate, deleted_label, conn)
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', None),
     ])
@@ -29,7 +29,7 @@ def test_process_gate_eligible(app_config, mock_test_feed, assert_history):
             {'should_progress': True},
         )
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
     ])
@@ -43,6 +43,6 @@ def test_process_gate_not_eligible(app_config, mock_test_feed, assert_history):
             {'should_progress': False},
         )
 
-    assert_history(app_config, [
+    assert_history([
         (None, 'start'),
     ])
