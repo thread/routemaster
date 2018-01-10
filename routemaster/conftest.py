@@ -198,6 +198,12 @@ def app_config(**kwargs):
 
 
 @pytest.fixture()
+def custom_app_config():
+    """Return the app config fixture directly so that we can modify config."""
+    return app_config
+
+
+@pytest.fixture()
 def app_env():
     """
     Create a dict of environment variables.

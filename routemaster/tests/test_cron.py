@@ -13,21 +13,24 @@ from routemaster.config import (
     StateMachine,
     IntervalTrigger,
 )
-# TODO: there must be a better way do this than importing from conftest
-from routemaster.conftest import app_config
 from routemaster.exit_conditions import ExitConditionProgram
 
 
-def create_app(states):
-    return app_config(state_machines={
-        'test_machine': StateMachine('test_machine', states=states),
+def create_app(custom_app_config, states):
+    return custom_app_config(state_machines={
+        'test_machine': StateMachine(
+            name='test_machine',
+            states=states,
+            feeds=[],
+            webhooks=[],
+        ),
     })
 
 
 @freezegun.freeze_time('2018-01-01 12:00')
-def test_action_once_per_minute():
+def test_action_once_per_minute(custom_app_config):
     action = Action('noop_action', next_states=NoNextStates(), webhook='')
-    app = create_app([action])
+    app = create_app(custom_app_config, [action])
 
     scheduler = schedule.Scheduler()
     with mock.patch('routemaster.cron._trigger_action') as mock_trigger_action:
@@ -49,14 +52,14 @@ def test_action_once_per_minute():
 
 
 @freezegun.freeze_time('2018-01-01 12:00')
-def test_gate_at_fixed_time():
+def test_gate_at_fixed_time(custom_app_config):
     gate = Gate(
         'fixed_time_gate',
         next_states=NoNextStates(),
         exit_condition=ExitConditionProgram('false'),
         triggers=[TimeTrigger(datetime.time(18, 30))],
     )
-    app = create_app([gate])
+    app = create_app(custom_app_config, [gate])
 
     scheduler = schedule.Scheduler()
     with mock.patch('routemaster.cron._trigger_gate') as mock_trigger_gate:
@@ -78,14 +81,14 @@ def test_gate_at_fixed_time():
 
 
 @freezegun.freeze_time('2018-01-01 12:00')
-def test_gate_at_interval():
+def test_gate_at_interval(custom_app_config):
     gate = Gate(
         'fixed_time_gate',
         next_states=NoNextStates(),
         exit_condition=ExitConditionProgram('false'),
         triggers=[IntervalTrigger(datetime.timedelta(minutes=20))],
     )
-    app = create_app([gate])
+    app = create_app(custom_app_config, [gate])
 
     scheduler = schedule.Scheduler()
     with mock.patch('routemaster.cron._trigger_gate') as mock_trigger_gate:
