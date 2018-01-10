@@ -12,6 +12,7 @@ from routemaster.config import (
     NoNextStates,
     StateMachine,
     IntervalTrigger,
+    MetadataTrigger,
 )
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -33,7 +34,7 @@ def test_action_once_per_minute(custom_app_config):
     app = create_app(custom_app_config, [action])
 
     scheduler = schedule.Scheduler()
-    with mock.patch('routemaster.cron._trigger_action') as mock_trigger_action:
+    with mock.patch('routemaster.cron._retry_action') as mock_retry_action:
         configure_schedule(app, scheduler, lambda: False)
 
     assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
@@ -41,12 +42,12 @@ def test_action_once_per_minute(custom_app_config):
 
     assert job.next_run == datetime.datetime(2018, 1, 1, 12, 1)
 
-    mock_trigger_action.assert_not_called()
+    mock_retry_action.assert_not_called()
 
     with freezegun.freeze_time(job.next_run):
         job.run()
 
-    mock_trigger_action.assert_called_with(app, action, mock.ANY)
+    mock_retry_action.assert_called_with(app, action, mock.ANY)
 
     assert job.next_run == datetime.datetime(2018, 1, 1, 12, 2)
 
@@ -107,6 +108,37 @@ def test_gate_at_interval(custom_app_config):
     mock_trigger_gate.assert_called_with(app, gate, mock.ANY)
 
     assert job.next_run == datetime.datetime(2018, 1, 1, 12, 40)
+
+
+@freezegun.freeze_time('2018-01-01 12:00')
+def test_gate_metadata_retry(custom_app_config):
+    gate = Gate(
+        'fixed_time_gate',
+        next_states=NoNextStates(),
+        exit_condition=ExitConditionProgram('false'),
+        triggers=[MetadataTrigger(metadata_path='foo.bar')],
+    )
+    app = create_app(custom_app_config, [gate])
+
+    scheduler = schedule.Scheduler()
+    with mock.patch(
+        'routemaster.cron._retry_metadata_updates',
+    ) as mock_retry_metadata_updates:
+        configure_schedule(app, scheduler, lambda: False)
+
+    assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
+    job, = scheduler.jobs
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 1)
+
+    mock_retry_metadata_updates.assert_not_called()
+
+    with freezegun.freeze_time(job.next_run):
+        job.run()
+
+    mock_retry_metadata_updates.assert_called_with(app, gate, mock.ANY)
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 2)
 
 
 @freezegun.freeze_time('2018-01-01 12:00')

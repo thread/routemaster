@@ -15,6 +15,7 @@ from routemaster.config import (
     TimeTrigger,
     StateMachine,
     IntervalTrigger,
+    MetadataTrigger,
 )
 
 
@@ -48,12 +49,6 @@ def _configure_schedule_for_state_machine(
             )
 
         elif isinstance(state, Gate):
-            scheduler.every(60).seconds.do(
-                _process,
-                _retry_metadata_updates,
-                state,
-            )
-
             for trigger in state.triggers:
                 if isinstance(trigger, TimeTrigger):
                     scheduler.every().day.at(
@@ -69,6 +64,12 @@ def _configure_schedule_for_state_machine(
                     ).seconds.do(
                         _process,
                         _trigger_gate,
+                        state,
+                    )
+                elif isinstance(trigger, MetadataTrigger):
+                    scheduler.every(60).seconds.do(
+                        _process,
+                        _retry_metadata_updates,
                         state,
                     )
 
