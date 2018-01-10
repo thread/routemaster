@@ -11,6 +11,7 @@ import pkg_resources
 import jsonschema.exceptions
 
 from routemaster.config.model import (
+    Feed,
     Gate,
     State,
     Action,
@@ -22,6 +23,7 @@ from routemaster.config.model import (
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
@@ -56,7 +58,6 @@ def load_config(yaml: Yaml) -> Config:
             for name, yaml_state_machine in yaml_state_machines.items()
         },
         database=load_database_config(),
-        webhooks=[_load_webhook(x) for x in yaml.get('webhooks', [])],
     )
 
 
@@ -82,7 +83,7 @@ def load_database_config() -> DatabaseConfig:
         port = int(port_string)
     except ValueError:
         raise ConfigError(
-            f"Could not parse DB_PORT as an integer: '{port_string}'."
+            f"Could not parse DB_PORT as an integer: '{port_string}'.",
         )
 
     return DatabaseConfig(
@@ -94,6 +95,32 @@ def load_database_config() -> DatabaseConfig:
     )
 
 
+def _load_state_machine(
+    path: Path,
+    name: str,
+    yaml_state_machine: Yaml,
+) -> StateMachine:
+    feeds = [_load_feed(x) for x in yaml_state_machine.get('feeds', [])]
+
+    if len(set(x.name for x in feeds)) < len(feeds):
+        raise ConfigError(
+            f"Feeds must have unique names at {'.'.join(path + ['feeds'])}",
+        )
+
+    return StateMachine(
+        name=name,
+        states=[
+            _load_state(path + ['states', str(idx)], yaml_state)
+            for idx, yaml_state in enumerate(yaml_state_machine['states'])
+        ],
+        feeds=feeds,
+        webhooks=[
+            _load_webhook(x)
+            for x in yaml_state_machine.get('webhooks', [])
+        ],
+    )
+
+
 def _load_webhook(yaml: Yaml) -> Webhook:
     return Webhook(
         match=re.compile(yaml['match']),
@@ -101,18 +128,8 @@ def _load_webhook(yaml: Yaml) -> Webhook:
     )
 
 
-def _load_state_machine(
-    path: Path,
-    name: str,
-    yaml_state_machine: Yaml,
-) -> StateMachine:
-    return StateMachine(
-        name=name,
-        states=[
-            _load_state(path + ['states', str(idx)], yaml_state)
-            for idx, yaml_state in enumerate(yaml_state_machine['states'])
-        ],
-    )
+def _load_feed(yaml: Yaml) -> Feed:
+    return Feed(name=yaml['name'], url=yaml['url'])
 
 
 def _load_state(path: Path, yaml_state: Yaml) -> State:
@@ -177,6 +194,8 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
         return _load_metadata_trigger(path, yaml_trigger)
     elif 'interval' in yaml_trigger:  # pragma: no branch
         return _load_interval_trigger(path, yaml_trigger)
+    elif yaml_trigger.get('event') == 'entry':
+        return OnEntryTrigger()
     else:
         raise ConfigError(  # pragma: no cover
             f"Trigger at path {'.'.join(path)} must be a time, interval, or "
@@ -185,14 +204,14 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
 
 
 def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
-    format = '%Hh%Mm'
+    format_ = '%Hh%Mm'
     try:
-        dt = datetime.datetime.strptime(str(yaml_trigger['time']), format)
+        dt = datetime.datetime.strptime(str(yaml_trigger['time']), format_)
         trigger = dt.time()
     except ValueError:  # pragma: no cover
         raise ConfigError(
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
-            f"does not meet expected format: {format}.",
+            f"does not meet expected format: {format_}.",
         ) from None
     return TimeTrigger(time=trigger)
 

@@ -1,0 +1,10 @@
+state_machines:
+  example:
+    feeds:
+      - name: foo
+        url: http://localhost:8001
+      - name: foo
+        url: http://localhost:8002
+    states:
+      - gate: start
+        exit_condition: false

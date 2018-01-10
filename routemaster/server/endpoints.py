@@ -4,7 +4,7 @@ from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
 from routemaster.state_machine import (
-    Label,
+    LabelRef,
     UnknownLabel,
     LabelAlreadyExists,
     UnknownStateMachine,
@@ -40,7 +40,12 @@ def status():
 
 @server.route('/state-machines', methods=['GET'])
 def get_state_machines():
-    """Status check endpoint."""
+    """
+    List the state machines known to this server.
+
+    Successful return codes return a list of dictionaries containing at least
+    the name of each state machine.
+    """
     return jsonify({
         'state-machines': [
             {
@@ -98,7 +103,7 @@ def get_label(state_machine_name, label_name):
     Successful return codes return the full metadata for the label.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
 
     try:
         metadata = state_machine.get_label_metadata(app, label)
@@ -132,7 +137,7 @@ def create_label(state_machine_name, label_name):
     Successful return codes return the full created metadata for the label.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
     data = request.get_json()
 
     try:
@@ -173,7 +178,7 @@ def update_label(state_machine_name, label_name):
     Successful return codes return the full new metadata for a label.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
 
     try:
         patch_metadata = request.get_json()['metadata']
@@ -215,7 +220,7 @@ def delete_label(state_machine_name, label_name):
     - 404 Not Found: if the state machine does not exist.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
 
     try:
         state_machine.delete_label(app, label)

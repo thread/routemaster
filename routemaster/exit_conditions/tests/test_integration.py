@@ -4,7 +4,8 @@ import textwrap
 import pytest
 import dateutil.tz
 
-from routemaster.exit_conditions import Context, ExitConditionProgram
+from routemaster.context import Context
+from routemaster.exit_conditions import ExitConditionProgram
 
 PROGRAMS = [
     ("true", True, ()),
@@ -39,7 +40,14 @@ VARIABLES = {
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
 def test_evaluate(program, expected, variables):
     program = ExitConditionProgram(program)
-    assert program.run(Context(VARIABLES, NOW)) == expected
+    context = Context(
+        'label1',
+        VARIABLES,
+        NOW,
+        {},
+        program.accessed_variables(),
+    )
+    assert program.run(context) == expected
 
 
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
@@ -130,10 +138,18 @@ ERRORS = [
 ]
 
 
-@pytest.mark.parametrize("program, error", ERRORS)
-def test_errors(program, error):
+@pytest.mark.parametrize("source, error", ERRORS)
+def test_errors(source, error):
     with pytest.raises(ValueError) as compile_error:
-        ExitConditionProgram(program).run(Context(VARIABLES, NOW))
+        program = ExitConditionProgram(source)
+        context = Context(
+            'label1',
+            VARIABLES,
+            NOW,
+            {},
+            program.accessed_variables(),
+        )
+        program.run(context)
 
     message = str(compile_error.value)
 

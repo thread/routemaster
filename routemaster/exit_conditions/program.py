@@ -3,7 +3,6 @@
 import typing
 
 from routemaster.exit_conditions.parser import parse
-from routemaster.exit_conditions.context import Context
 from routemaster.exit_conditions.analysis import find_accessed_keys
 from routemaster.exit_conditions.peephole import peephole_optimise
 from routemaster.exit_conditions.evaluator import evaluate
@@ -11,6 +10,9 @@ from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.error_display import (
     format_parse_error_message,
 )
+
+if False:  # typing
+    from routemaster.context import Context  # noqa
 
 
 class ExitConditionProgram(object):
@@ -39,7 +41,7 @@ class ExitConditionProgram(object):
         for accessed_key in find_accessed_keys(self._instructions):
             yield '.'.join(accessed_key)
 
-    def run(self, context: Context) -> bool:
+    def run(self, context: 'Context') -> bool:
         """Evaluate this program with a given context."""
         return evaluate(
             self._instructions,

@@ -52,7 +52,7 @@ def _validate_all_states_exist(state_machine):
 
 def _validate_no_labels_in_nonexistent_states(state_machine, app):
     states = [x.name for x in state_machine.states]
-    print(app.db)
+
     with app.db.begin() as conn:
 
         latest_states = select([

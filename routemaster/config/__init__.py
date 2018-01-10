@@ -1,6 +1,7 @@
 """Loading of application configuration."""
 
 from routemaster.config.model import (
+    Feed,
     Gate,
     State,
     Action,
@@ -12,6 +13,7 @@ from routemaster.config.model import (
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
@@ -24,6 +26,7 @@ from routemaster.config.exceptions import ConfigError
 __all__ = (
     'load_config',
     'load_database_config',
+    'Feed',
     'Gate',
     'State',
     'Action',
@@ -35,9 +38,10 @@ __all__ = (
     'TimeTrigger',
     'NoNextStates',
     'StateMachine',
+    'DatabaseConfig',
+    'OnEntryTrigger',
     'IntervalTrigger',
     'MetadataTrigger',
-    'DatabaseConfig',
     'ConstantNextState',
     'ContextNextStates',
     'ContextNextStatesOption',

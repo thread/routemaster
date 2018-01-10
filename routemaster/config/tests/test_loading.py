@@ -8,6 +8,7 @@ import yaml
 import pytest
 
 from routemaster.config import (
+    Feed,
     Gate,
     Action,
     Config,
@@ -17,6 +18,7 @@ from routemaster.config import (
     NoNextStates,
     StateMachine,
     DatabaseConfig,
+    OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
     ConstantNextState,
@@ -45,6 +47,8 @@ def test_trivial_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[],
+                webhooks=[],
                 states=[
                     Gate(
                         name='start',
@@ -62,7 +66,6 @@ def test_trivial_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -73,6 +76,17 @@ def test_realistic_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[
+                    Feed(name='data_feed', url='http://localhost/<label>'),
+                ],
+                webhooks=[
+                    Webhook(
+                        match=re.compile('.+\\.example\\.com'),
+                        headers={
+                            'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                        },
+                    ),
+                ],
                 states=[
                     Gate(
                         name='start',
@@ -82,6 +96,7 @@ def test_realistic_config():
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
                             ),
+                            OnEntryTrigger(),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),
@@ -127,14 +142,6 @@ def test_realistic_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[
-            Webhook(
-                match=re.compile('.+\\.example\\.com'),
-                headers={
-                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
-                },
-            ),
-        ],
     )
     assert load_config(data) == expected
 
@@ -190,6 +197,8 @@ def test_next_states_shorthand_results_in_constant_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[],
+                webhooks=[],
                 states=[
                     Gate(
                         name='start',
@@ -213,7 +222,6 @@ def test_next_states_shorthand_results_in_constant_config():
             username='routemaster',
             password='',
         ),
-        webhooks=[],
     )
     assert load_config(data) == expected
 
@@ -224,6 +232,17 @@ def test_environment_variables_override_config_file_for_database_config():
         state_machines={
             'example': StateMachine(
                 name='example',
+                feeds=[
+                    Feed(name='data_feed', url='http://localhost/<label>'),
+                ],
+                webhooks=[
+                    Webhook(
+                        match=re.compile('.+\\.example\\.com'),
+                        headers={
+                            'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
+                        },
+                    ),
+                ],
                 states=[
                     Gate(
                         name='start',
@@ -233,6 +252,7 @@ def test_environment_variables_override_config_file_for_database_config():
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
                             ),
+                            OnEntryTrigger(),
                         ],
                         next_states=ConstantNextState(state='stage2'),
                         exit_condition=ExitConditionProgram('true'),
@@ -278,14 +298,6 @@ def test_environment_variables_override_config_file_for_database_config():
             username='username',
             password='password',
         ),
-        webhooks=[
-            Webhook(
-                match=re.compile('.+\\.example\\.com'),
-                headers={
-                    'x-api-key': 'Rahfew7eed1ierae0moa2sho3ieB1et3ohhum0Ei',
-                },
-            ),
-        ],
     )
 
     with mock.patch.dict(os.environ, {
@@ -300,5 +312,10 @@ def test_environment_variables_override_config_file_for_database_config():
 
 def test_raises_for_unparseable_database_port_in_environment_variable():
     with mock.patch.dict(os.environ, {'DB_PORT': 'not an int'}):
-        with assert_config_error(f"Could not parse DB_PORT as an integer: 'not an int'."):
+        with assert_config_error("Could not parse DB_PORT as an integer: 'not an int'."):
             load_config(yaml_data('realistic'))
+
+
+def test_multiple_feeds_same_name_invalid():
+    with assert_config_error("Feeds must have unique names at state_machines.example.feeds"):
+        load_config(yaml_data('multiple_feeds_same_name_invalid'))

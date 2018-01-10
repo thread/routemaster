@@ -13,7 +13,12 @@ from typing import (
     NamedTuple,
 )
 
-from routemaster.exit_conditions import Context, ExitConditionProgram
+from dataclasses import dataclass
+
+from routemaster.exit_conditions import ExitConditionProgram
+
+if False:  # typing
+    from routemaster.context import Context  # noqa
 
 
 class TimeTrigger(NamedTuple):
@@ -42,7 +47,12 @@ class MetadataTrigger(NamedTuple):
         return applies(self.metadata_path.split('.'), update)
 
 
-Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger]
+@dataclass
+class OnEntryTrigger:
+    """Trigger on entry to a given gate."""
+
+
+Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
 
 
 class ConstantNextState(NamedTuple):
@@ -69,7 +79,7 @@ class ContextNextStates(NamedTuple):
     path: str
     destinations: Iterable[ContextNextStatesOption]
 
-    def next_state_for_label(self, label_context: Context) -> str:
+    def next_state_for_label(self, label_context: 'Context') -> str:
         """Returns next state based on context value at `self.path`."""
         val = label_context.lookup(self.path.split('.'))
         for destination in self.destinations:
@@ -116,6 +126,11 @@ class Gate(NamedTuple):
         """Return a list of the metadata triggers for this state."""
         return [x for x in self.triggers if isinstance(x, MetadataTrigger)]
 
+    @property
+    def trigger_on_entry(self) -> bool:
+        """Util to check if this gate should be triggered on entry."""
+        return any(isinstance(x, OnEntryTrigger) for x in self.triggers)
+
 
 class Action(NamedTuple):
     """
@@ -133,10 +148,26 @@ class Action(NamedTuple):
 State = Union[Action, Gate]
 
 
+class Feed(NamedTuple):
+    """
+    The definition of a feed of dynamic data to be included in a context.
+    """
+    name: str
+    url: str
+
+
+class Webhook(NamedTuple):
+    """Configuration for webdook requests."""
+    match: Pattern
+    headers: Dict[str, str]
+
+
 class StateMachine(NamedTuple):
     """A state machine."""
     name: str
     states: List[State]
+    feeds: List[Feed]
+    webhooks: List[Webhook]
 
     def get_state(self, state_name: str) -> State:
         """Get the state object for a given state name."""
@@ -166,12 +197,6 @@ class DatabaseConfig(NamedTuple):
         return f'postgresql://{auth}{self.host}:{self.port}/{self.name}'
 
 
-class Webhook(NamedTuple):
-    """Configuration for webdook requests."""
-    match: Pattern
-    headers: Dict[str, str]
-
-
 class Config(NamedTuple):
     """
     The top-level configuration object.
@@ -180,4 +205,3 @@ class Config(NamedTuple):
     """
     state_machines: Mapping[str, StateMachine]
     database: DatabaseConfig
-    webhooks: List[Webhook]

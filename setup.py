@@ -46,7 +46,9 @@ setup(
         'gunicorn >=19.7',
         'schedule',
         'freezegun',
+        'requests',
         'networkx',
+        'dataclasses',
     ),
 
     setup_requires=(
