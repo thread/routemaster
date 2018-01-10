@@ -19,15 +19,15 @@ from routemaster.config import (
 )
 
 
-def _retry_action(app, state, process_part) -> None:
+def _retry_action(app, state, state_machine, process_part) -> None:
     print(f"Processing action retries for {state.name}")
 
 
-def _trigger_gate(app, state, process_part) -> None:
+def _trigger_gate(app, state, state_machine, process_part) -> None:
     print(f"Processing interval/time trigger for {state.name}")
 
 
-def _retry_metadata_updates(app, state, process_part) -> None:
+def _retry_metadata_updates(app, state, state_machine, process_part) -> None:
     print(f"Processing metadata update trigger for {state.name}")
 
 
@@ -38,7 +38,7 @@ def _configure_schedule_for_state_machine(
     is_terminating: Callable[[], bool],
 ) -> None:
     def _process(fn: CronProcessor, state: State) -> None:
-        return _process_cron_job(is_terminating, fn, app, state)
+        return _process_cron_job(is_terminating, fn, app, state_machine, state)
 
     for state in state_machine.states:
         if isinstance(state, Action):
@@ -131,6 +131,7 @@ def _process_cron_job(
     is_terminating: Callable[[], bool],
     fn: CronProcessor,
     app: App,
+    state_machine: StateMachine,
     state: State,
 ) -> None:
 
@@ -148,6 +149,6 @@ def _process_cron_job(
             raise StopCronProcessing()
 
     try:
-        fn(app, state, _inner)
+        fn(app, state, state_machine, _inner)
     except StopCronProcessing:
         return
