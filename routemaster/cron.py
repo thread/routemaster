@@ -126,7 +126,10 @@ ProcessItemContextManager = Callable[
     [],
     contextlib.AbstractContextManager,
 ]
-CronProcessor = Callable[[App, State, ProcessItemContextManager], None]
+CronProcessor = Callable[
+    [App, State, StateMachine, ProcessItemContextManager],
+    None,
+]
 
 
 def _process_cron_job(
