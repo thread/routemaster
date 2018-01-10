@@ -66,8 +66,11 @@ def serve(ctx, bind, debug):  # pragma: no cover
     cron_thread = CronThread(app)
     cron_thread.start()
 
-    instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
-    instance.run()
+    try:
+        instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
+        instance.run()
+    finally:
+        cron_thread.stop()
 
 
 def _validate_config(app: App):

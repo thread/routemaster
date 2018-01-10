@@ -98,7 +98,7 @@ class CronThread(threading.Thread):  # pragma: no cover
         self._terminating = False
         self.app = app
         self.scheduler = schedule.Scheduler()
-        super().__init__(name="cron", daemon=True)
+        super().__init__(name="cron")
 
     def run(self) -> None:
         """Run main scheduling loop."""
