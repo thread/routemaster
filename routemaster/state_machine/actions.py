@@ -126,5 +126,5 @@ def process_retries(
                     conn,
                 )
 
-        if could_progress:
-            process_transitions(app, label)
+            if could_progress:
+                process_transitions(app, label)
