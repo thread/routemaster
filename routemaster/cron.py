@@ -18,12 +18,16 @@ from routemaster.config import (
 )
 
 
-def _trigger_action(app, state, process_part) -> None:
-    print(f"Processing action {state.name}")
+def _retry_action(app, state, process_part) -> None:
+    print(f"Processing action retries for {state.name}")
 
 
 def _trigger_gate(app, state, process_part) -> None:
-    print(f"Processing gate {state.name}")
+    print(f"Processing interval/time trigger for {state.name}")
+
+
+def _retry_metadata_updates(app, state, process_part) -> None:
+    print(f"Processing metadata update trigger for {state.name}")
 
 
 def _configure_schedule_for_state_machine(
@@ -39,11 +43,17 @@ def _configure_schedule_for_state_machine(
         if isinstance(state, Action):
             scheduler.every().minute.do(
                 _process,
-                _trigger_action,
+                _retry_action,
                 state,
             )
-            pass
+
         elif isinstance(state, Gate):
+            scheduler.every(60).seconds.do(
+                _process,
+                _retry_metadata_updates,
+                state,
+            )
+
             for trigger in state.triggers:
                 if isinstance(trigger, TimeTrigger):
                     scheduler.every().day.at(
