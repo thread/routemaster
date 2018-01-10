@@ -9,6 +9,8 @@ from routemaster.state_machine.api import (
     get_label_metadata,
     update_metadata_for_label,
 )
+from routemaster.state_machine.actions import \
+    process_retries as process_action_retries
 from routemaster.state_machine.exceptions import (
     UnknownLabel,
     LabelAlreadyExists,
@@ -25,5 +27,6 @@ __all__ = (
     'get_label_metadata',
     'LabelAlreadyExists',
     'UnknownStateMachine',
+    'process_action_retries',
     'update_metadata_for_label',
 )

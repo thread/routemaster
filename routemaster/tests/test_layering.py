@@ -30,8 +30,10 @@ DEPENDENCIES = (
 
     ('config', 'exit_conditions'),
     ('config', 'utils'),
-    ('cron', 'app'),
     ('db', 'config'),
+
+    ('cron', 'app'),
+    ('cron', 'state_machine'),
 
     ('validation', 'app'),
     ('validation', 'config'),

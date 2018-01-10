@@ -1,6 +1,7 @@
 """Action (webhook invocation) evaluator."""
 
 import json
+from typing import Callable
 
 from sqlalchemy import func
 
@@ -92,6 +93,7 @@ def process_retries(
     app: App,
     state_machine: StateMachine,
     action: Action,
+    process_one_job: Callable,
 ) -> None:
     """
     Cron retry entrypoint. This will retry all labels in a given action.
@@ -104,16 +106,16 @@ def process_retries(
         )
 
     for label_name, metadata in relevant_labels.items():
-        label = LabelRef(name=label_name, state_machine=state_machine.name)
-        could_progress = False
+        with process_one_job():
+            label = LabelRef(name=label_name, state_machine=state_machine.name)
+            could_progress = False
 
-        with app.db.begin() as conn:
-            try:
+            with app.db.begin() as conn:
                 lock_label(label, conn)
                 current_state = get_current_state(label, state_machine, conn)
 
                 if current_state != action:
-                    continue
+                    return
 
                 could_progress = _process_action_with_metadata(
                     app,
@@ -123,9 +125,6 @@ def process_retries(
                     state_machine,
                     conn,
                 )
-            except Exception:
-                # This is allowed to error, we will retry again later.
-                pass
 
         if could_progress:
             process_transitions(app, label)

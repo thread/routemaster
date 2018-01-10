@@ -17,10 +17,12 @@ from routemaster.config import (
     IntervalTrigger,
     MetadataTrigger,
 )
+from routemaster.state_machine import process_action_retries
 
 
 def _retry_action(app, state, state_machine, process_part) -> None:
     print(f"Processing action retries for {state.name}")
+    process_action_retries(app, state, state_machine, process_part)
 
 
 def _trigger_gate(app, state, state_machine, process_part) -> None:
