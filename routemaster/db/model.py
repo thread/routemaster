@@ -26,6 +26,7 @@ labels = Table(
     Column('metadata', JSONB),
     Column('metadata_triggers_processed', Boolean, default=True),
     Column('deleted', Boolean, default=False),
+    Column('updated', DateTime, nullable=False),
 )
 
 
@@ -50,7 +51,7 @@ history = Table(
 
     # Null indicates starting a state machine
     Column('old_state', String, nullable=True),
-    Column('new_state', String),
+    Column('new_state', String, nullable=True),
 
     # Can we get foreign key constraints on these as well?
     # Currently: no, because those columns are not unique themselves, however
@@ -79,8 +80,10 @@ state_machines = Table(
     'state_machines',
     metadata,
 
-    Column('name', String, primary_key=True),
-    Column('updated', DateTime),
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('name', String, nullable=False),
+    Column('deleted', Boolean, nullable=False, default=False),
+    Column('updated', DateTime, nullable=False),
 )
 
 
@@ -88,18 +91,21 @@ state_machines = Table(
 states = Table(
     'states',
     metadata,
-    Column('name', String, primary_key=True),
+    Column('id', Integer, primary_key=True, autoincrement=True),
+
+    Column('name', String),
     Column(
-        'state_machine',
-        String,
-        ForeignKey('state_machines.name'),
-        primary_key=True,
+        'state_machine_id',
+        Integer,
+        ForeignKey('state_machines.id'),
+        nullable=False,
     ),
 
-    # `deprecated = True` represents a state that is no longer accessible.
-    Column('deprecated', Boolean, default=False),
+    Column('exit_condition', String, nullable=True),
+    Column('webhook', String, nullable=True),
 
-    Column('updated', DateTime),
+    Column('deleted', Boolean, nullable=False, default=False),
+    Column('updated', DateTime, nullable=False),
 )
 
 
@@ -107,17 +113,12 @@ states = Table(
 edges = Table(
     'edges',
     metadata,
-    Column('state_machine', String, primary_key=True, nullable=False),
-    Column('from_state', String, primary_key=True, nullable=False),
-    Column('to_state', String, primary_key=True, nullable=False),
-    Column('deprecated', Boolean, default=False, nullable=False),
+    Column('id', Integer, primary_key=True, autoincrement=True),
+
+    Column('state_machine_id', ForeignKey('states.id'), nullable=False),
+    Column('from_state_id', ForeignKey('states.id'), nullable=False),
+    Column('to_state_id', Integer, nullable=False),
+
+    Column('deleted', Boolean, nullable=False, default=False),
     Column('updated', DateTime, nullable=False),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'from_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'to_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
 )
