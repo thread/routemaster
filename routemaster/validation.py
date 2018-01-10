@@ -17,8 +17,6 @@ def validate_config(app: App, config: Config):
     for state_machine in config.state_machines.values():
         _validate_state_machine(app, state_machine)
 
-    _validate_no_deleted_state_machines(app, config)
-
 
 def _validate_state_machine(app: App, state_machine: StateMachine):
     """Validate that a given state machine is internally consistent."""
@@ -102,30 +100,4 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
             raise ValidationError(
                 f"Labels currently in states that no longer exist: "
                 f"{', '.join(inhabited)}",
-            )
-
-
-def _validate_no_deleted_state_machines(app: App, config: Config):
-    """
-    Validate that no state machines already recorded in the DB are gone.
-
-    Currently we do not support deleting a state machine. This validation check
-    should be removed once we do safely support deletion.
-    """
-    new_machine_names = set(config.state_machines.keys())
-    with app.db.begin() as conn:
-        old_machine_names = set(
-            x.name
-            for x in conn.execute(
-                select((
-                    state_machines.c.name,
-                )),
-            ).fetchall()
-        )
-        deleted_machine_names = old_machine_names - new_machine_names
-        if deleted_machine_names:
-            raise ValidationError(
-                f"State machines '{', '.join(deleted_machine_names)}' have "
-                f"been removed from the config, but state machine deletion is "
-                f"not yet supported.",
             )
