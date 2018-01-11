@@ -16,7 +16,7 @@ class WebhookResult(enum.Enum):
     FAIL = 'fail'
 
 
-WebhookRunner = Callable[[str, str, bytes], WebhookResult]
+WebhookRunner = Callable[[str, str, bytes, str], WebhookResult]
 
 
 class RequestsWebhookRunner(object):
