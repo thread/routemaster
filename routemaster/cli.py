@@ -3,7 +3,6 @@ import logging
 
 import yaml
 import click
-import click_log
 
 from routemaster.app import App
 from routemaster.cron import CronThread
@@ -24,7 +23,6 @@ logger = logging.getLogger(__name__)
     type=click.File(encoding='utf-8'),
     required=True,
 )
-@click_log.simple_verbosity_option(logger)
 @click.pass_context
 def main(ctx, config_file):
     """Shared entrypoint configuration."""
