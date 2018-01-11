@@ -68,7 +68,7 @@ def _process_action_with_metadata(
     run_webhook = webhook_runner_for_state_machine(state_machine)
 
     latest_history_id = get_current_history_id(label, state_machine, conn)
-    idempotency_token = calculate_idempotency_token(label, latest_history_id)
+    idempotency_token = _calculate_idempotency_token(label, latest_history_id)
 
     result = run_webhook(
         action.webhook,
@@ -94,7 +94,7 @@ def _process_action_with_metadata(
     return True
 
 
-def calculate_idempotency_token(label: LabelRef, history_id: int):
+def _calculate_idempotency_token(label: LabelRef, history_id: int):
     return hashlib.sha256(
         f"{label.name}:{history_id}".encode('ascii'),
     ).hexdigest()
