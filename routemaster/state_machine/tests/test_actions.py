@@ -1,6 +1,5 @@
 import mock
 import pytest
-import contextlib
 
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine.actions import process_action, process_retries
@@ -114,7 +113,13 @@ def test_process_action_does_not_work_for_deleted_label(app_config, create_delet
 
     with pytest.raises(DeletedLabel):
         with app_config.db.begin() as conn:
-            process_action(app_config, action, deleted_label, conn)
+            process_action(
+                app_config,
+                action,
+                state_machine,
+                deleted_label,
+                conn,
+            )
 
     assert_history([
         (None, 'start'),
@@ -137,7 +142,13 @@ def test_process_action(app_config, create_label, mock_webhook, assert_history):
 
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         with app_config.db.begin() as conn:
-            process_action(app_config, action, label, conn)
+            process_action(
+                app_config,
+                action,
+                state_machine,
+                label,
+                conn,
+            )
 
         webhook.assert_called_once()
 
@@ -163,7 +174,13 @@ def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, crea
 
     with mock_webhook(WebhookResult.FAIL) as webhook:
         with app_config.db.begin() as conn:
-            process_action(app_config, action, label, conn)
+            process_action(
+                app_config,
+                action,
+                state_machine,
+                label,
+                conn,
+            )
 
         webhook.assert_called_once()
 

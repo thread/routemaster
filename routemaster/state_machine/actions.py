@@ -14,14 +14,13 @@ from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
 )
-from routemaster.state_machine.types import LabelRef, Metadata
+from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
     lock_label,
     labels_in_state,
     choose_next_state,
     context_for_label,
     get_current_state,
-    get_state_machine,
     get_label_metadata,
     process_transitions,
 )
@@ -30,7 +29,13 @@ from routemaster.state_machine.exceptions import DeletedLabel
 logger = logging.getLogger(__name__)
 
 
-def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
+def process_action(
+    app: App,
+    action: Action,
+    state_machine: StateMachine,
+    label: LabelRef,
+    conn,
+) -> bool:
     """
     Process an action for a label.
 
@@ -40,29 +45,11 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
     Returns whether the label progressed in the state machine, for which `True`
     implies further progression should be attempted.
     """
-    state_machine = get_state_machine(app, label)
+
     metadata, deleted = get_label_metadata(label, state_machine, conn)
     if deleted:
         raise DeletedLabel(label)
 
-    return _process_action_with_metadata(
-        app,
-        action,
-        label,
-        metadata,
-        state_machine,
-        conn,
-    )
-
-
-def _process_action_with_metadata(
-    app: App,
-    action: Action,
-    label: LabelRef,
-    metadata: Metadata,
-    state_machine: StateMachine,
-    conn,
-) -> bool:
     webhook_data = json.dumps({
         'metadata': metadata,
         'label': label.name,
@@ -105,7 +92,7 @@ def process_retries(
     with app.db.begin() as conn:
         relevant_labels = labels_in_state(state_machine, action, conn)
 
-    for label_name, metadata in relevant_labels.items():
+    for label_name in relevant_labels:
         if should_terminate():
             break
 
@@ -120,12 +107,11 @@ def process_retries(
                 if current_state != action:
                     continue
 
-                could_progress = _process_action_with_metadata(
+                could_progress = process_action(
                     app,
                     action,
-                    label,
-                    metadata,
                     state_machine,
+                    label,
                     conn,
                 )
 

@@ -13,7 +13,7 @@ def test_wont_process_deleted_label(app_config, create_deleted_label, assert_his
 
     with pytest.raises(DeletedLabel):
         with app_config.db.begin() as conn:
-            process_gate(app_config, gate, deleted_label, conn)
+            process_gate(app_config, gate, state_machine, deleted_label, conn)
 
     assert_history([
         (None, 'start'),

@@ -1,7 +1,7 @@
 """Utilities for state machine execution."""
 
 import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Iterable
 
 import dateutil.tz
 from sqlalchemy import and_, func, select
@@ -135,7 +135,7 @@ def labels_in_state(
     state_machine: StateMachine,
     state: State,
     conn,
-) -> Dict[str, Metadata]:
+) -> Iterable[str]:
     """Util to get all the labels in an action state that need retrying."""
     ranked_transitions = select((
         history.c.label_name,
@@ -151,7 +151,6 @@ def labels_in_state(
 
     active_participants = select((
         ranked_transitions.c.label_name,
-        labels.c.metadata,
     )).where(and_(
         ranked_transitions.c.new_state == state.name,
         ranked_transitions.c.rank == 1,
@@ -159,10 +158,7 @@ def labels_in_state(
         labels.c.state_machine == state_machine.name,
     ))
 
-    return {
-        x.label_name: x.metadata
-        for x in conn.execute(active_participants)
-    }
+    return list(conn.execute(active_participants))
 
 
 def context_for_label(
@@ -210,6 +206,7 @@ def process_transitions(app: App, label: LabelRef) -> None:
                 return process_action(
                     app,
                     current_state,
+                    state_machine,
                     label,
                     conn,
                 )
@@ -222,6 +219,7 @@ def process_transitions(app: App, label: LabelRef) -> None:
                 return process_gate(
                     app,
                     current_state,
+                    state_machine,
                     label,
                     conn,
                 )
