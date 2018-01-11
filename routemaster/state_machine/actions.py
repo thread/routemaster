@@ -1,7 +1,6 @@
 """Action (webhook invocation) evaluator."""
 
 import json
-import logging
 
 from sqlalchemy import func
 
@@ -19,8 +18,6 @@ from routemaster.state_machine.utils import (
     get_label_metadata,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
-
-logger = logging.getLogger(__name__)
 
 
 def process_action(

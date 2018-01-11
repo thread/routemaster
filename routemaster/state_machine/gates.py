@@ -1,6 +1,4 @@
 """Processing for gate states."""
-import logging
-
 from sqlalchemy import and_
 
 from routemaster.db import labels, history
@@ -14,8 +12,6 @@ from routemaster.state_machine.utils import (
     get_label_metadata,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
-
-logger = logging.getLogger(__name__)
 
 
 def process_gate(
