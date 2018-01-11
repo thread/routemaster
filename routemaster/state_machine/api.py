@@ -1,6 +1,8 @@
 """The core of the state machine logic."""
 
-from typing import Iterable
+import logging
+import functools
+from typing import Any, Callable, Iterable
 
 from sqlalchemy import and_, not_
 from sqlalchemy.exc import IntegrityError
@@ -8,25 +10,35 @@ from sqlalchemy.sql import select
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.utils import dict_merge
+from routemaster.utils import dict_merge, suppress_exceptions
 from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.gates import process_gate
-from routemaster.state_machine.types import LabelRef, Metadata
+from routemaster.state_machine.types import (
+    LabelRef,
+    Metadata,
+    CronProcessor,
+    IsExitingCheck,
+)
 from routemaster.state_machine.utils import \
     get_label_metadata as get_label_metadata_internal
 from routemaster.state_machine.utils import (
     lock_label,
+    labels_in_state,
     get_current_state,
     get_state_machine,
-    process_transitions,
     start_state_machine,
     needs_gate_evaluation_for_metadata_change,
+    labels_needing_metadata_update_retry_in_gate,
 )
+from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
     LabelAlreadyExists,
 )
+from routemaster.state_machine.transitions import process_transitions
+
+logger = logging.getLogger(__name__)
 
 
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
@@ -225,3 +237,66 @@ def delete_label(app: App, label: LabelRef) -> None:
             old_state=current_state.name,
             new_state=None,
         ))
+
+
+EventProcessor = Callable[[App, State, StateMachine, LabelRef, Any], bool]
+
+
+def process_cron(
+    process: EventProcessor,
+    get_labels: Callable[[StateMachine, State, Any], Iterable[str]],
+    app: App,
+    state_machine: StateMachine,
+    state: State,
+    should_terminate: IsExitingCheck,
+):
+    """
+    Cron event entrypoint.
+    """
+    with app.db.begin() as conn:
+        relevant_labels = get_labels(state_machine, state, conn)
+
+    for label_name in relevant_labels:
+        if should_terminate():
+            break
+
+        with suppress_exceptions(logger):
+            label = LabelRef(name=label_name, state_machine=state_machine.name)
+            could_progress = False
+
+            with app.db.begin() as conn:
+                lock_label(label, conn)
+                current_state = get_current_state(label, state_machine, conn)
+
+                if current_state != state:
+                    continue
+
+                could_progress = process(
+                    app,
+                    state,
+                    state_machine,
+                    label,
+                    conn,
+                )
+
+            if could_progress:
+                process_transitions(app, label)
+
+
+process_action_retries: CronProcessor = functools.partial(
+    process_cron,
+    process_action,
+    labels_in_state,
+)
+
+process_gate_trigger: CronProcessor = functools.partial(
+    process_cron,
+    process_gate,
+    labels_in_state,
+)
+
+process_gate_metadata_retries: CronProcessor = functools.partial(
+    process_cron,
+    process_gate,
+    labels_needing_metadata_update_retry_in_gate,
+)

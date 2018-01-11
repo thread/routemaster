@@ -1,8 +1,16 @@
 """Shared types for state machine execution."""
 
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, Callable, NamedTuple
+
+from routemaster.app import App
+from routemaster.config import State, StateMachine
 
 Metadata = Dict[str, Any]
+IsExitingCheck = Callable[[], bool]
+CronProcessor = Callable[
+    [App, State, StateMachine, IsExitingCheck],
+    None,
+]
 
 
 class LabelRef(NamedTuple):

@@ -2,13 +2,11 @@
 
 import json
 import logging
-from typing import Callable
 
 from sqlalchemy import func
 
 from routemaster.db import history
 from routemaster.app import App
-from routemaster.utils import suppress_exceptions
 from routemaster.config import Action, StateMachine
 from routemaster.webhooks import (
     WebhookResult,
@@ -16,13 +14,9 @@ from routemaster.webhooks import (
 )
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
-    lock_label,
-    labels_in_state,
     choose_next_state,
     context_for_label,
-    get_current_state,
     get_label_metadata,
-    process_transitions,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -78,42 +72,3 @@ def process_action(
     ))
 
     return True
-
-
-def process_retries(
-    app: App,
-    state_machine: StateMachine,
-    action: Action,
-    should_terminate: Callable[[], bool],
-) -> None:
-    """
-    Cron retry entrypoint. This will retry all labels in a given action.
-    """
-    with app.db.begin() as conn:
-        relevant_labels = labels_in_state(state_machine, action, conn)
-
-    for label_name in relevant_labels:
-        if should_terminate():
-            break
-
-        with suppress_exceptions(logger):
-            label = LabelRef(name=label_name, state_machine=state_machine.name)
-            could_progress = False
-
-            with app.db.begin() as conn:
-                lock_label(label, conn)
-                current_state = get_current_state(label, state_machine, conn)
-
-                if current_state != action:
-                    continue
-
-                could_progress = process_action(
-                    app,
-                    action,
-                    state_machine,
-                    label,
-                    conn,
-                )
-
-            if could_progress:
-                process_transitions(app, label)

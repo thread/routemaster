@@ -9,17 +9,10 @@ from sqlalchemy import and_, func, false, select
 from routemaster.db import labels, history
 from routemaster.app import App
 from routemaster.feeds import feeds_for_state_machine
-from routemaster.config import (
-    Gate,
-    State,
-    Action,
-    StateMachine,
-    ContextNextStates,
-)
+from routemaster.config import Gate, State, StateMachine, ContextNextStates
 from routemaster.context import Context
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (
-    DeletedLabel,
     UnknownLabel,
     UnknownStateMachine,
 )
@@ -214,57 +207,3 @@ def context_for_label(
         feeds,
         accessed_variables,
     )
-
-
-def process_transitions(app: App, label: LabelRef) -> None:
-    """
-    Process each transition for a label until it cannot move any further.
-
-    Will silently accept DeletedLabel exceptions and end the processing of
-    transitions.
-    """
-
-    state_machine = get_state_machine(app, label)
-    could_progress = True
-
-    def _transition() -> bool:
-        with app.db.begin() as conn:
-            lock_label(label, conn)
-            current_state = get_current_state(label, state_machine, conn)
-
-            if isinstance(current_state, Action):
-                from routemaster.state_machine.actions import process_action
-                return process_action(
-                    app,
-                    current_state,
-                    state_machine,
-                    label,
-                    conn,
-                )
-
-            elif isinstance(current_state, Gate):  # pragma: no branch
-                if not current_state.trigger_on_entry:
-                    return False
-                from routemaster.state_machine.gates import process_gate
-
-                return process_gate(
-                    app,
-                    current_state,
-                    state_machine,
-                    label,
-                    conn,
-                )
-
-            else:
-                raise RuntimeError(  # pragma: no cover
-                    "Unsupported state type {0}".format(current_state),
-                )
-
-    while could_progress:
-        try:
-            could_progress = _transition()
-        except DeletedLabel:
-            # Label might have been deleted, that's a supported use-case,
-            # not even a warning, and we should allow the retry process to
-            # continue.
-            pass

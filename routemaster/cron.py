@@ -17,13 +17,11 @@ from routemaster.config import (
     IntervalTrigger,
     MetadataTrigger,
 )
-from routemaster.state_machine import process_action_retries
-
-IsExitingCheck = Callable[[], bool]
-CronProcessor = Callable[
-    [App, State, StateMachine, IsExitingCheck],
-    None,
-]
+from routemaster.state_machine import (
+    CronProcessor,
+    IsExitingCheck,
+    process_action_retries,
+)
 
 logger = logging.getLogger(__name__)
 
