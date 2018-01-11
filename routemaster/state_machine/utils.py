@@ -4,7 +4,7 @@ import datetime
 from typing import Any, Dict, List, Tuple, Iterable
 
 import dateutil.tz
-from sqlalchemy import and_, func, false, select
+from sqlalchemy import and_, func, not_, select
 
 from routemaster.db import labels, history
 from routemaster.app import App
@@ -179,7 +179,7 @@ def labels_needing_metadata_update_retry_in_gate(
         ranked_transitions.c.rank == 1,
         ranked_transitions.c.label_name == labels.c.name,
         labels.c.state_machine == state_machine.name,
-        labels.c.metadata_triggers_processed == false(),
+        not_(labels.c.metadata_triggers_processed),
     ))
 
     return [x for x, in conn.execute(active_participants)]
