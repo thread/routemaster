@@ -29,12 +29,10 @@ logger = logging.getLogger(__name__)
 
 
 def _retry_action(app, state, state_machine, should_terminate) -> None:
-    print(f"Processing action retries for {state.name}")
     process_action_retries(app, state, state_machine, should_terminate)
 
 
 def _trigger_gate(app, state, state_machine, should_terminate) -> None:
-    print(f"Processing interval/time trigger for {state.name}")
     process_gate_trigger(app, state, state_machine, should_terminate)
 
 
@@ -44,7 +42,6 @@ def _retry_metadata_updates(
     state_machine,
     should_terminate,
 ) -> None:
-    print(f"Processing metadata update trigger for {state.name}")
     process_gate_metadata_retries(app, state, state_machine, should_terminate)
 
 
