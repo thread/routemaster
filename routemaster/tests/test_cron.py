@@ -35,7 +35,9 @@ def test_action_once_per_minute(custom_app_config):
     state_machine = app.config.state_machines['test_machine']
 
     scheduler = schedule.Scheduler()
-    with mock.patch('routemaster.cron._retry_action') as mock_retry_action:
+    with mock.patch(
+        'routemaster.cron.process_action_retries',
+    ) as mock_retry_action:
         configure_schedule(app, scheduler, lambda: False)
 
     assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
@@ -65,7 +67,9 @@ def test_gate_at_fixed_time(custom_app_config):
     state_machine = app.config.state_machines['test_machine']
 
     scheduler = schedule.Scheduler()
-    with mock.patch('routemaster.cron._trigger_gate') as mock_trigger_gate:
+    with mock.patch(
+        'routemaster.cron.process_gate_trigger',
+    ) as mock_trigger_gate:
         configure_schedule(app, scheduler, lambda: False)
 
     assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
@@ -95,7 +99,9 @@ def test_gate_at_interval(custom_app_config):
     state_machine = app.config.state_machines['test_machine']
 
     scheduler = schedule.Scheduler()
-    with mock.patch('routemaster.cron._trigger_gate') as mock_trigger_gate:
+    with mock.patch(
+        'routemaster.cron.process_gate_trigger',
+    ) as mock_trigger_gate:
         configure_schedule(app, scheduler, lambda: False)
 
     assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
@@ -126,7 +132,7 @@ def test_gate_metadata_retry(custom_app_config):
 
     scheduler = schedule.Scheduler()
     with mock.patch(
-        'routemaster.cron._retry_metadata_updates',
+        'routemaster.cron.process_gate_metadata_retries',
     ) as mock_retry_metadata_updates:
         configure_schedule(app, scheduler, lambda: False)
 
@@ -174,7 +180,7 @@ def test_cron_job_gracefully_exit_signalling(custom_app_config):
 
     scheduler = schedule.Scheduler()
     with mock.patch(
-        'routemaster.cron._trigger_gate',
+        'routemaster.cron.process_gate_trigger',
         side_effect=processor,
     ) as mock_trigger_gate:
         configure_schedule(app, scheduler, is_terminating)

@@ -28,23 +28,6 @@ from routemaster.state_machine import (
 logger = logging.getLogger(__name__)
 
 
-def _retry_action(app, state, state_machine, should_terminate) -> None:
-    process_action_retries(app, state, state_machine, should_terminate)
-
-
-def _trigger_gate(app, state, state_machine, should_terminate) -> None:
-    process_gate_trigger(app, state, state_machine, should_terminate)
-
-
-def _retry_metadata_updates(
-    app,
-    state,
-    state_machine,
-    should_terminate,
-) -> None:
-    process_gate_metadata_retries(app, state, state_machine, should_terminate)
-
-
 class _Process(NamedTuple):
     fn: StateProcessor
     state: State
@@ -91,7 +74,7 @@ def _configure_schedule_for_state_machine(
     for state in state_machine.states:
         if isinstance(state, Action):
             scheduler.every().minute.do(
-                _Process(_retry_action, state, *process_args),
+                _Process(process_action_retries, state, *process_args),
             )
 
         elif isinstance(state, Gate):
@@ -100,18 +83,18 @@ def _configure_schedule_for_state_machine(
                     scheduler.every().day.at(
                         f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
                     ).do(
-                        _Process(_trigger_gate, state, *process_args),
+                        _Process(process_gate_trigger, state, *process_args),
                     )
                 elif isinstance(trigger, IntervalTrigger):
                     scheduler.every(
                         trigger.interval.total_seconds(),
                     ).seconds.do(
-                        _Process(_trigger_gate, state, *process_args),
+                        _Process(process_gate_trigger, state, *process_args),
                     )
                 elif isinstance(trigger, MetadataTrigger):
                     scheduler.every().minute.do(
                         _Process(
-                            _retry_metadata_updates,
+                            process_gate_metadata_retries,
                             state,
                             *process_args,
                         ),
