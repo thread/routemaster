@@ -16,8 +16,8 @@ from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.types import (
     LabelRef,
     Metadata,
-    CronProcessor,
     IsExitingCheck,
+    StateProcessor,
 )
 from routemaster.state_machine.utils import \
     get_label_metadata as get_label_metadata_internal
@@ -239,11 +239,11 @@ def delete_label(app: App, label: LabelRef) -> None:
         ))
 
 
-EventProcessor = Callable[[App, State, StateMachine, LabelRef, Any], bool]
+LabelStateProcessor = Callable[[App, State, StateMachine, LabelRef, Any], bool]
 
 
 def process_cron(
-    process: EventProcessor,
+    process: LabelStateProcessor,
     get_labels: Callable[[StateMachine, State, Any], Iterable[str]],
     app: App,
     state_machine: StateMachine,
@@ -283,19 +283,19 @@ def process_cron(
                 process_transitions(app, label)
 
 
-process_action_retries: CronProcessor = functools.partial(
+process_action_retries: StateProcessor = functools.partial(
     process_cron,
     process_action,
     labels_in_state,
 )
 
-process_gate_trigger: CronProcessor = functools.partial(
+process_gate_trigger: StateProcessor = functools.partial(
     process_cron,
     process_gate,
     labels_in_state,
 )
 
-process_gate_metadata_retries: CronProcessor = functools.partial(
+process_gate_metadata_retries: StateProcessor = functools.partial(
     process_cron,
     process_gate,
     labels_needing_metadata_update_retry_in_gate,

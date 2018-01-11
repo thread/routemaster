@@ -7,7 +7,7 @@ from routemaster.config import State, StateMachine
 
 Metadata = Dict[str, Any]
 IsExitingCheck = Callable[[], bool]
-CronProcessor = Callable[
+StateProcessor = Callable[
     [App, State, StateMachine, IsExitingCheck],
     None,
 ]

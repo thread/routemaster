@@ -18,8 +18,8 @@ from routemaster.config import (
     MetadataTrigger,
 )
 from routemaster.state_machine import (
-    CronProcessor,
     IsExitingCheck,
+    StateProcessor,
     process_gate_trigger,
     process_action_retries,
     process_gate_metadata_retries,
@@ -46,7 +46,7 @@ def _retry_metadata_updates(
 
 
 class _Process(NamedTuple):
-    fn: CronProcessor
+    fn: StateProcessor
     state: State
     app: App
     state_machine: StateMachine
