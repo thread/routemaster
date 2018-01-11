@@ -60,6 +60,6 @@ def process_transitions(app: App, label: LabelRef) -> None:
             could_progress = _transition()
         except DeletedLabel:
             # Label might have been deleted, that's a supported use-case,
-            # not even a warning, and we should allow the retry process to
+            # not even a warning, and we should allow the this process to
             # continue.
             pass
