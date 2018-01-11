@@ -1,6 +1,7 @@
 """Action (webhook invocation) evaluator."""
 
 import json
+import hashlib
 
 from sqlalchemy import func
 
@@ -20,6 +21,7 @@ from routemaster.state_machine.utils import (
     get_state_machine,
     get_label_metadata,
     process_transitions,
+    get_current_history_id,
     labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
@@ -65,10 +67,14 @@ def _process_action_with_metadata(
 
     run_webhook = webhook_runner_for_state_machine(state_machine)
 
+    latest_history_id = get_current_history_id(label, state_machine, conn)
+    idempotency_token = calculate_idempotency_token(label, latest_history_id)
+
     result = run_webhook(
         action.webhook,
         'application/json',
         webhook_data,
+        idempotency_token,
     )
 
     if result != WebhookResult.SUCCESS:
@@ -86,6 +92,12 @@ def _process_action_with_metadata(
     ))
 
     return True
+
+
+def calculate_idempotency_token(label: LabelRef, history_id: int):
+    return hashlib.sha256(
+        f"{label.name}:{history_id}".encode('ascii'),
+    ).hexdigest()
 
 
 def process_retries(
