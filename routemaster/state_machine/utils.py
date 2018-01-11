@@ -4,7 +4,7 @@ import datetime
 from typing import Any, Dict, List, Tuple, Iterable
 
 import dateutil.tz
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, false, select
 
 from routemaster.db import labels, history
 from routemaster.app import App
@@ -158,7 +158,38 @@ def labels_in_state(
         labels.c.state_machine == state_machine.name,
     ))
 
-    return list(conn.execute(active_participants))
+    return [x for x, in conn.execute(active_participants)]
+
+
+def labels_needing_metadata_update_retry_in_gate(
+    state_machine: StateMachine,
+    gate: Gate,
+    conn,
+) -> Iterable[str]:
+    """Util to get all the labels in an action state that need retrying."""
+    ranked_transitions = select((
+        history.c.label_name,
+        history.c.old_state,
+        history.c.new_state,
+        func.row_number().over(
+            order_by=history.c.created.desc(),
+            partition_by=history.c.label_name,
+        ).label('rank'),
+    )).where(
+        history.c.label_state_machine == state_machine.name,
+    ).alias('transitions')
+
+    active_participants = select((
+        ranked_transitions.c.label_name,
+    )).where(and_(
+        ranked_transitions.c.new_state == gate.name,
+        ranked_transitions.c.rank == 1,
+        ranked_transitions.c.label_name == labels.c.name,
+        labels.c.state_machine == state_machine.name,
+        labels.c.metadata_triggers_processed == false(),
+    ))
+
+    return [x for x, in conn.execute(active_participants)]
 
 
 def context_for_label(

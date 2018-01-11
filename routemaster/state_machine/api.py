@@ -178,7 +178,13 @@ def _process_transitions_for_metadata_update(
                 "Label not in a gate",
             )
 
-        could_progress = process_gate(app, current_state, label, conn)
+        could_progress = process_gate(
+            app,
+            current_state,
+            state_machine,
+            label,
+            conn,
+        )
 
     if could_progress:
         process_transitions(app, label)
