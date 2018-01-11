@@ -17,13 +17,13 @@ from routemaster.webhooks import (
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import (
     lock_label,
+    labels_in_state,
     choose_next_state,
     context_for_label,
     get_current_state,
     get_state_machine,
     get_label_metadata,
     process_transitions,
-    labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -103,11 +103,7 @@ def process_retries(
     Cron retry entrypoint. This will retry all labels in a given action.
     """
     with app.db.begin() as conn:
-        relevant_labels = labels_to_retry_for_action(
-            state_machine,
-            action,
-            conn,
-        )
+        relevant_labels = labels_in_state(state_machine, action, conn)
 
     for label_name, metadata in relevant_labels.items():
         if should_terminate():

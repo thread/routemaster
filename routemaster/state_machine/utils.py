@@ -131,9 +131,9 @@ def lock_label(label: LabelRef, conn):
     return row
 
 
-def labels_to_retry_for_action(
+def labels_in_state(
     state_machine: StateMachine,
-    action: Action,
+    state: State,
     conn,
 ) -> Dict[str, Metadata]:
     """Util to get all the labels in an action state that need retrying."""
@@ -153,7 +153,7 @@ def labels_to_retry_for_action(
         ranked_transitions.c.label_name,
         labels.c.metadata,
     )).where(and_(
-        ranked_transitions.c.new_state == action.name,
+        ranked_transitions.c.new_state == state.name,
         ranked_transitions.c.rank == 1,
         ranked_transitions.c.label_name == labels.c.name,
         labels.c.state_machine == state_machine.name,
