@@ -1,4 +1,5 @@
 """Shared utilities."""
+import contextlib
 from typing import Any, Dict, Sequence
 
 
@@ -32,3 +33,11 @@ def get_path(path: Sequence[str], d: Dict[str, Any]) -> Any:
     if rest:
         return get_path(rest, d.get(component, {}))
     return d.get(component)
+
+
+@contextlib.contextmanager
+def suppress_exceptions(logger):
+    try:
+        yield
+    except Exception:
+        logger.exception("Error suppressed")

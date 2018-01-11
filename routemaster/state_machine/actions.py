@@ -1,12 +1,14 @@
 """Action (webhook invocation) evaluator."""
 
 import json
+import logging
 from typing import Callable
 
 from sqlalchemy import func
 
 from routemaster.db import history
 from routemaster.app import App
+from routemaster.utils import suppress_exceptions
 from routemaster.config import Action, StateMachine
 from routemaster.webhooks import (
     WebhookResult,
@@ -24,6 +26,8 @@ from routemaster.state_machine.utils import (
     labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
+
+logger = logging.getLogger(__name__)
 
 
 def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
@@ -109,7 +113,7 @@ def process_retries(
         if should_terminate():
             break
 
-        try:
+        with suppress_exceptions(logger):
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
 
@@ -131,5 +135,3 @@ def process_retries(
 
             if could_progress:
                 process_transitions(app, label)
-        except Exception as e:
-            print(e)
