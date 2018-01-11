@@ -7,11 +7,6 @@ from routemaster.state_machine.actions import process_action, process_retries
 from routemaster.state_machine.exceptions import DeletedLabel
 
 
-@contextlib.contextmanager
-def noop_contextmanager():
-    yield
-
-
 def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webhook, assert_history):
     state_machine = app_config.config.state_machines['test_machine']
 
@@ -26,7 +21,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
             app_config,
             state_machine,
             state_machine.states[1],
-            noop_contextmanager,
+            lambda: False,
         )
 
     webhook.assert_called_once_with(
@@ -55,7 +50,7 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
             app_config,
             state_machine,
             state_machine.states[1],
-            noop_contextmanager,
+            lambda: False,
         )
 
     webhook.assert_called_once_with(
@@ -91,7 +86,7 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
                 app_config,
                 state_machine,
                 state_machine.states[1],
-                noop_contextmanager,
+                lambda: False,
             )
 
     mock_process_transitions.assert_called_once_with(
@@ -199,7 +194,7 @@ def test_process_action_fails_retry_works(app_config, create_label, mock_webhook
 
     # Now retry with succeeding webhook
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
-        process_retries(app_config, state_machine, action, noop_contextmanager)
+        process_retries(app_config, state_machine, action, lambda: False)
         webhook.assert_called_once()
 
     assert_history([

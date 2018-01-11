@@ -2,8 +2,7 @@
 
 import time
 import threading
-import contextlib
-from typing import Callable, Iterator
+from typing import Callable
 
 import schedule
 
@@ -19,18 +18,42 @@ from routemaster.config import (
 )
 from routemaster.state_machine import process_action_retries
 
+IsExitingCheck = Callable[[], bool]
+CronProcessor = Callable[
+    [App, State, StateMachine, IsExitingCheck],
+    None,
+]
 
-def _retry_action(app, state, state_machine, process_part) -> None:
+
+def _retry_action(app, state, state_machine, should_terminate) -> None:
     print(f"Processing action retries for {state.name}")
-    process_action_retries(app, state, state_machine, process_part)
+    process_action_retries(app, state, state_machine, should_terminate)
 
 
-def _trigger_gate(app, state, state_machine, process_part) -> None:
+def _trigger_gate(app, state, state_machine, should_terminate) -> None:
     print(f"Processing interval/time trigger for {state.name}")
 
 
-def _retry_metadata_updates(app, state, state_machine, process_part) -> None:
+def _retry_metadata_updates(
+    app,
+    state,
+    state_machine,
+    should_terminate,
+) -> None:
     print(f"Processing metadata update trigger for {state.name}")
+
+
+def _process(
+    fn: CronProcessor,
+    state: State,
+    app: App,
+    state_machine: StateMachine,
+    is_terminating: IsExitingCheck,
+) -> None:
+    try:
+        fn(app, state, state_machine, is_terminating)
+    except Exception as e:
+        print(e)
 
 
 def _configure_schedule_for_state_machine(
@@ -39,8 +62,7 @@ def _configure_schedule_for_state_machine(
     state_machine: StateMachine,
     is_terminating: Callable[[], bool],
 ) -> None:
-    def _process(fn: CronProcessor, state: State) -> None:
-        return _process_cron_job(is_terminating, fn, app, state_machine, state)
+    process_args = (app, state_machine, is_terminating)
 
     for state in state_machine.states:
         if isinstance(state, Action):
@@ -48,6 +70,7 @@ def _configure_schedule_for_state_machine(
                 _process,
                 _retry_action,
                 state,
+                *process_args,
             )
 
         elif isinstance(state, Gate):
@@ -59,6 +82,7 @@ def _configure_schedule_for_state_machine(
                         _process,
                         _trigger_gate,
                         state,
+                        *process_args,
                     )
                 elif isinstance(trigger, IntervalTrigger):
                     scheduler.every(
@@ -67,12 +91,14 @@ def _configure_schedule_for_state_machine(
                         _process,
                         _trigger_gate,
                         state,
+                        *process_args,
                     )
                 elif isinstance(trigger, MetadataTrigger):
                     scheduler.every(60).seconds.do(
                         _process,
                         _retry_metadata_updates,
                         state,
+                        *process_args,
                     )
 
 
@@ -115,45 +141,3 @@ class CronThread(threading.Thread):  # pragma: no cover
     def is_terminating(self) -> bool:
         """Dynamically access whether we are terminating."""
         return self._terminating
-
-
-class StopCronProcessing(Exception):
-    """Signal to exit the processing of a series of cron items."""
-    pass
-
-
-ProcessItemContextManager = Callable[
-    [],
-    contextlib.AbstractContextManager,
-]
-CronProcessor = Callable[
-    [App, State, StateMachine, ProcessItemContextManager],
-    None,
-]
-
-
-def _process_cron_job(
-    is_terminating: Callable[[], bool],
-    fn: CronProcessor,
-    app: App,
-    state_machine: StateMachine,
-    state: State,
-) -> None:
-
-    @contextlib.contextmanager
-    def _inner() -> Iterator[None]:
-        try:
-            yield
-        except Exception as e:
-            # Something went wrong in the processing of a single item in the
-            # cron queue, log it and allow the processor to continue.
-            print(e)
-            return
-
-        if is_terminating():
-            raise StopCronProcessing()
-
-    try:
-        fn(app, state, state_machine, _inner)
-    except StopCronProcessing:
-        return

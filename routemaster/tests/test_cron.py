@@ -151,7 +151,7 @@ def test_gate_metadata_retry(custom_app_config):
 
 
 @freezegun.freeze_time('2018-01-01 12:00')
-def test_cron_job_will_exit_gracefully_half_way_through(custom_app_config):
+def test_cron_job_gracefully_exit_signalling(custom_app_config):
     gate = Gate(
         'gate',
         next_states=NoNextStates(),
@@ -166,10 +166,11 @@ def test_cron_job_will_exit_gracefully_half_way_through(custom_app_config):
     def is_terminating():
         return len(items_to_process) == 1
 
-    def processor(_app, _state, state_machine, process_wrapper):
+    def processor(_app, _state, state_machine, should_terminate):
         for item in items_to_process:
-            with process_wrapper():
-                items_to_process.pop(0)
+            if should_terminate():
+                break
+            items_to_process.pop(0)
 
     scheduler = schedule.Scheduler()
     with mock.patch(
@@ -181,42 +182,11 @@ def test_cron_job_will_exit_gracefully_half_way_through(custom_app_config):
     job, = scheduler.jobs
     job.run()
 
-    mock_trigger_gate.assert_called_with(app, gate, state_machine, mock.ANY)
+    mock_trigger_gate.assert_called_with(
+        app,
+        gate,
+        state_machine,
+        is_terminating,
+    )
 
     assert items_to_process == ['should_not_process']
-
-
-@freezegun.freeze_time('2018-01-01 12:00')
-def test_cron_job_process_all_items_even_if_one_errors(custom_app_config):
-    gate = Gate(
-        'gate',
-        next_states=NoNextStates(),
-        exit_condition=ExitConditionProgram('false'),
-        triggers=[TimeTrigger(datetime.time(12, 0))],
-    )
-    app = create_app(custom_app_config, [gate])
-    state_machine = app.config.state_machines['test_machine']
-
-    items_to_capitalise = ['one', 2, 'three']
-
-    def processor(_app, _state, state_machine, process_wrapper):
-        while True:
-            with process_wrapper():
-                item = items_to_capitalise.pop(0)
-                item.upper()
-                if not items_to_capitalise:
-                    return
-
-    scheduler = schedule.Scheduler()
-    with mock.patch(
-        'routemaster.cron._trigger_gate',
-        side_effect=processor,
-    ) as mock_trigger_gate:
-        configure_schedule(app, scheduler, lambda: False)
-
-    job, = scheduler.jobs
-    job.run()
-
-    mock_trigger_gate.assert_called_with(app, gate, state_machine, mock.ANY)
-
-    assert items_to_capitalise == []

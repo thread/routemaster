@@ -93,7 +93,7 @@ def process_retries(
     app: App,
     state_machine: StateMachine,
     action: Action,
-    process_one_job: Callable,
+    should_terminate: Callable[[], bool],
 ) -> None:
     """
     Cron retry entrypoint. This will retry all labels in a given action.
@@ -106,7 +106,10 @@ def process_retries(
         )
 
     for label_name, metadata in relevant_labels.items():
-        with process_one_job():
+        if should_terminate():
+            break
+
+        try:
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
 
@@ -128,3 +131,5 @@ def process_retries(
 
             if could_progress:
                 process_transitions(app, label)
+        except Exception as e:
+            print(e)
