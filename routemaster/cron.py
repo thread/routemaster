@@ -54,8 +54,9 @@ class _Process(NamedTuple):
     is_terminating: IsExitingCheck
 
     def __call__(self):
+        name = getattr(self.fn, '__name__', 'process')
         logger.info(
-            f"Started cron {self.fn.__name__} for state {self.state.name} in "
+            f"Started cron {name} for state {self.state.name} in "
             f"{self.state_machine.name}",
         )
 
@@ -72,7 +73,7 @@ class _Process(NamedTuple):
             print(e)
 
         logger.info(
-            f"Completed cron {self.fn.__name__} for state {self.state.name} "
+            f"Completed cron {name} for state {self.state.name} "
             f"in {self.state_machine.name} in {duration:.2f} seconds",
         )
 
