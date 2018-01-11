@@ -7,8 +7,10 @@ from routemaster.state_machine.api import (
     delete_label,
     get_label_state,
     get_label_metadata,
+    process_gate_trigger,
     process_action_retries,
     update_metadata_for_label,
+    process_gate_metadata_retries,
 )
 from routemaster.state_machine.types import CronProcessor, IsExitingCheck
 from routemaster.state_machine.exceptions import (
@@ -29,6 +31,8 @@ __all__ = (
     'get_label_metadata',
     'LabelAlreadyExists',
     'UnknownStateMachine',
+    'process_gate_trigger',
     'process_action_retries',
     'update_metadata_for_label',
+    'process_gate_metadata_retries',
 )

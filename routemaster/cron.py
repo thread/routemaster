@@ -20,7 +20,9 @@ from routemaster.config import (
 from routemaster.state_machine import (
     CronProcessor,
     IsExitingCheck,
+    process_gate_trigger,
     process_action_retries,
+    process_gate_metadata_retries,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ def _retry_action(app, state, state_machine, should_terminate) -> None:
 
 def _trigger_gate(app, state, state_machine, should_terminate) -> None:
     print(f"Processing interval/time trigger for {state.name}")
+    process_gate_trigger(app, state, state_machine, should_terminate)
 
 
 def _retry_metadata_updates(
@@ -42,6 +45,7 @@ def _retry_metadata_updates(
     should_terminate,
 ) -> None:
     print(f"Processing metadata update trigger for {state.name}")
+    process_gate_metadata_retries(app, state, state_machine, should_terminate)
 
 
 class _Process(NamedTuple):
