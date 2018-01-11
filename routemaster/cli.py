@@ -23,8 +23,21 @@ logger = logging.getLogger(__name__)
     type=click.File(encoding='utf-8'),
     required=True,
 )
+@click.option(
+    '-l',
+    '--log-level',
+    help="Logging level.",
+    type=click.Choice((
+        'CRITICAL',
+        'ERROR',
+        'WARNING',
+        'INFO',
+        'DEBUG',
+    )),
+    default='INFO',
+)
 @click.pass_context
-def main(ctx, config_file):
+def main(ctx, config_file, log_level):
     """Shared entrypoint configuration."""
     logging.basicConfig(
         format=(
@@ -32,7 +45,7 @@ def main(ctx, config_file):
             "[%(name)s] %(message)s"
         ),
         datefmt="%Y-%m-%d %H:%M:%S %z",
-        level=logging.INFO,
+        level=getattr(logging, log_level),
     )
 
     try:
