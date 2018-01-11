@@ -1,14 +1,19 @@
 """CLI handling for `routemaster`."""
+import logging
+
 import yaml
 import click
+import click_log
 
 from routemaster.app import App
 from routemaster.cron import CronThread
-from routemaster.config import load_config
+from routemaster.config import ConfigError, load_config
 from routemaster.server import server
 from routemaster.validation import ValidationError, validate_config
 from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -19,10 +24,26 @@ from routemaster.gunicorn_application import GunicornWSGIApplication
     type=click.File(encoding='utf-8'),
     required=True,
 )
+@click_log.simple_verbosity_option(logger)
 @click.pass_context
 def main(ctx, config_file):
     """Shared entrypoint configuration."""
-    config = load_config(yaml.load(config_file))
+    logging.basicConfig(
+        format=(
+            "[%(asctime)s] [%(process)d] [%(levelname)s] "
+            "[%(name)s] %(message)s"
+        ),
+        datefmt="%Y-%m-%d %H:%M:%S %z",
+        level=logging.INFO,
+    )
+
+    try:
+        config = load_config(yaml.load(config_file))
+    except ConfigError as e:
+        msg = f"Configuration Error: {e}"
+        logger.exception(msg)
+        click.get_current_context().exit(1)
+
     ctx.obj = App(config)
     _validate_config(ctx.obj)
 
@@ -78,6 +99,5 @@ def _validate_config(app: App):
         validate_config(app, app.config)
     except ValidationError as e:
         msg = f"Validation Error: {e}"
-
-        click.echo(click.style(msg, bold=True, fg='red'))
+        logger.exception(msg)
         click.get_current_context().exit(1)
