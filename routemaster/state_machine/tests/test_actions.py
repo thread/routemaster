@@ -69,28 +69,27 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
 def test_actions_retries_use_same_idempotency_token(app_config, create_label, mock_webhook, assert_history):
     state_machine = app_config.config.state_machines['test_machine']
 
-    # Figure out what our idempotency token should be
-    with app_config.db.begin() as conn:
-        latest_id = conn.scalar(
-            'select nextval(pg_get_serial_sequence(\'history\', \'id\'))',
-        )
+    expected = {'token': None}
 
-    # We generate an entry before the one that will be used for the token
-    history_offset = 2
-    expected_token = hashlib.sha256(
-        f'foo:{str(latest_id + history_offset)}'.encode('ascii'),
-    ).hexdigest()
+    def persist_token(url, content_type, data, token):
+        expected['token'] = token
+        return WebhookResult.FAIL
 
     # First get the label into the action state by failing the automatic
     # progression through the machine.
-    with mock_webhook(WebhookResult.FAIL) as webhook:
+    with mock.patch(
+        'routemaster.webhooks.RequestsWebhookRunner.__call__',
+        side_effect=persist_token,
+    ) as webhook:
         create_label('foo', state_machine.name, {'should_progress': True})
+
+    assert expected['token'] is not None
 
     webhook.assert_called_once_with(
         'http://localhost/hook',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
-        expected_token,
+        expected['token'],
     )
 
     with mock_webhook(WebhookResult.FAIL) as webhook:
@@ -104,7 +103,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
         'http://localhost/hook',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
-        expected_token,
+        expected['token'],
     )
 
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
@@ -118,8 +117,51 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
         'http://localhost/hook',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
-        expected_token,
+        expected['token'],
     )
+
+
+def test_different_actions_use_different_idempotency_tokens(app_config, create_label, mock_webhook, assert_history):
+    state_machine = app_config.config.state_machines['test_machine']
+
+    seen_tokens = []
+
+    def persist_token(url, content_type, data, token):
+        seen_tokens.append(token)
+        return WebhookResult.SUCCESS
+
+    # First get the label into the action state by failing the automatic
+    # progression through the machine.
+    with mock.patch(
+        'routemaster.webhooks.RequestsWebhookRunner.__call__',
+        side_effect=persist_token,
+    ) as webhook:
+        create_label('foo', state_machine.name, {'should_progress': True})
+        create_label('bar', state_machine.name, {'should_progress': True})
+        create_label('baz', state_machine.name, {'should_progress': True})
+
+    assert len(seen_tokens) == 3
+
+    webhook.assert_has_calls((
+        mock.call(
+            'http://localhost/hook',
+            'application/json',
+            b'{"label": "foo", "metadata": {"should_progress": true}}',
+            mock.ANY,
+        ),
+        mock.call(
+            'http://localhost/hook',
+            'application/json',
+            b'{"label": "bar", "metadata": {"should_progress": true}}',
+            mock.ANY,
+        ),
+        mock.call(
+            'http://localhost/hook',
+            'application/json',
+            b'{"label": "baz", "metadata": {"should_progress": true}}',
+            mock.ANY,
+        ),
+    ))
 
 
 def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_label, mock_webhook, assert_history):
