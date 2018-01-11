@@ -279,7 +279,7 @@ def process_cron(
                     conn,
                 )
 
-            if could_progress:
+            if could_progress and not should_terminate():
                 process_transitions(app, label)
 
 
