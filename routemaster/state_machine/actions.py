@@ -122,7 +122,7 @@ def process_retries(
                 current_state = get_current_state(label, state_machine, conn)
 
                 if current_state != action:
-                    return
+                    continue
 
                 could_progress = _process_action_with_metadata(
                     app,
