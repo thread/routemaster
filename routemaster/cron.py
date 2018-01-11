@@ -1,8 +1,9 @@
 """Periodic job running."""
 
 import time
+import logging
 import threading
-from typing import Callable
+from typing import Callable, NamedTuple
 
 import schedule
 
@@ -24,6 +25,8 @@ CronProcessor = Callable[
     None,
 ]
 
+logger = logging.getLogger(__name__)
+
 
 def _retry_action(app, state, state_machine, should_terminate) -> None:
     print(f"Processing action retries for {state.name}")
@@ -43,17 +46,38 @@ def _retry_metadata_updates(
     print(f"Processing metadata update trigger for {state.name}")
 
 
-def _process(
-    fn: CronProcessor,
-    state: State,
-    app: App,
-    state_machine: StateMachine,
-    is_terminating: IsExitingCheck,
-) -> None:
-    try:
-        fn(app, state, state_machine, is_terminating)
-    except Exception as e:
-        print(e)
+class _Process(NamedTuple):
+    fn: CronProcessor
+    state: State
+    app: App
+    state_machine: StateMachine
+    is_terminating: IsExitingCheck
+
+    def __call__(self):
+        logger.info(
+            f"Started cron {self.fn.__name__} for state {self.state.name} in "
+            f"{self.state_machine.name}",
+        )
+
+        try:
+            time_start = time.time()
+            self.fn(
+                self.app,
+                self.state,
+                self.state_machine,
+                self.is_terminating,
+            )
+            duration = time.time() - time_start
+        except Exception as e:
+            print(e)
+
+        logger.info(
+            f"Completed cron {self.fn.__name__} for state {self.state.name} "
+            f"in {self.state_machine.name} in {duration:.2f} seconds",
+        )
+
+    def __repr__(self):
+        return self.fn.__name__
 
 
 def _configure_schedule_for_state_machine(
@@ -67,10 +91,7 @@ def _configure_schedule_for_state_machine(
     for state in state_machine.states:
         if isinstance(state, Action):
             scheduler.every().minute.do(
-                _process,
-                _retry_action,
-                state,
-                *process_args,
+                _Process(_retry_action, state, *process_args),
             )
 
         elif isinstance(state, Gate):
@@ -79,26 +100,21 @@ def _configure_schedule_for_state_machine(
                     scheduler.every().day.at(
                         f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
                     ).do(
-                        _process,
-                        _trigger_gate,
-                        state,
-                        *process_args,
+                        _Process(_trigger_gate, state, *process_args),
                     )
                 elif isinstance(trigger, IntervalTrigger):
                     scheduler.every(
                         trigger.interval.total_seconds(),
                     ).seconds.do(
-                        _process,
-                        _trigger_gate,
-                        state,
-                        *process_args,
+                        _Process(_trigger_gate, state, *process_args),
                     )
                 elif isinstance(trigger, MetadataTrigger):
-                    scheduler.every(60).seconds.do(
-                        _process,
-                        _retry_metadata_updates,
-                        state,
-                        *process_args,
+                    scheduler.every().minute.do(
+                        _Process(
+                            _retry_metadata_updates,
+                            state,
+                            *process_args,
+                        ),
                     )
 
 
@@ -129,6 +145,7 @@ class CronThread(threading.Thread):  # pragma: no cover
     def run(self) -> None:
         """Run main scheduling loop."""
         configure_schedule(self.app, self.scheduler, self.is_terminating)
+        logger.info("Starting cron thread")
         while not self.is_terminating():
             self.scheduler.run_pending()
             time.sleep(1)
@@ -136,6 +153,7 @@ class CronThread(threading.Thread):  # pragma: no cover
     def stop(self) -> None:
         """Set the stopping flag and wait for thread end."""
         self._terminating = True
+        logger.info("Cron thread shutting down")
         self.join()
 
     def is_terminating(self) -> bool:
