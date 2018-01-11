@@ -3,8 +3,10 @@
 import datetime
 from typing import Any, Dict, List, Tuple, Iterable
 
+
 import dateutil.tz
 from sqlalchemy import and_, func, not_, select
+from sqlalchemy.sql.elements import ClauseElement
 
 from routemaster.db import labels, history
 from routemaster.app import App
@@ -130,33 +132,32 @@ def labels_in_state(
     conn,
 ) -> Iterable[str]:
     """Util to get all the labels in an action state that need retrying."""
-    ranked_transitions = select((
-        history.c.label_name,
-        history.c.old_state,
-        history.c.new_state,
-        func.row_number().over(
-            order_by=history.c.created.desc(),
-            partition_by=history.c.label_name,
-        ).label('rank'),
-    )).where(
-        history.c.label_state_machine == state_machine.name,
-    ).alias('transitions')
-
-    active_participants = select((
-        ranked_transitions.c.label_name,
-    )).where(and_(
-        ranked_transitions.c.new_state == state.name,
-        ranked_transitions.c.rank == 1,
-        ranked_transitions.c.label_name == labels.c.name,
-        labels.c.state_machine == state_machine.name,
-    ))
-
-    return [x for x, in conn.execute(active_participants)]
+    return _labels_in_state(
+        state_machine,
+        state,
+        (),
+        conn,
+    )
 
 
 def labels_needing_metadata_update_retry_in_gate(
     state_machine: StateMachine,
     gate: Gate,
+    conn,
+) -> Iterable[str]:
+    """Util to get all the labels in an action state that need retrying."""
+    return _labels_in_state(
+        state_machine,
+        gate,
+        (not_(labels.c.metadata_triggers_processed),),
+        conn,
+    )
+
+
+def _labels_in_state(
+    state_machine: StateMachine,
+    state: State,
+    filters: Iterable[ClauseElement],
     conn,
 ) -> Iterable[str]:
     """Util to get all the labels in an action state that need retrying."""
@@ -172,15 +173,16 @@ def labels_needing_metadata_update_retry_in_gate(
         history.c.label_state_machine == state_machine.name,
     ).alias('transitions')
 
-    active_participants = select((
-        ranked_transitions.c.label_name,
-    )).where(and_(
-        ranked_transitions.c.new_state == gate.name,
+    active_filters = (
+        ranked_transitions.c.new_state == state.name,
         ranked_transitions.c.rank == 1,
         ranked_transitions.c.label_name == labels.c.name,
         labels.c.state_machine == state_machine.name,
-        not_(labels.c.metadata_triggers_processed),
-    ))
+    )
+
+    active_participants = select((
+        ranked_transitions.c.label_name,
+    )).where(and_(*(active_filters + tuple(filters))))
 
     return [x for x, in conn.execute(active_participants)]
 
