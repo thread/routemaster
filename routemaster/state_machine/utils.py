@@ -3,7 +3,6 @@
 import datetime
 from typing import Any, Dict, List, Tuple, Iterable
 
-
 import dateutil.tz
 from sqlalchemy import and_, func, not_, select
 from sqlalchemy.sql.elements import ClauseElement
