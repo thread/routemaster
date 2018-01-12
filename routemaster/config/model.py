@@ -2,6 +2,7 @@
 
 import datetime
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -11,7 +12,6 @@ from typing import (
     Iterable,
     Sequence,
     NamedTuple,
-    TYPE_CHECKING,
 )
 
 from dataclasses import dataclass
