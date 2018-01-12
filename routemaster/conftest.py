@@ -9,11 +9,12 @@ from typing import Any, Dict
 import mock
 import pytest
 import httpretty
-from sqlalchemy import select, create_engine
+from sqlalchemy import and_, select, create_engine
 
 from routemaster import state_machine
-from routemaster.db import history, metadata
+from routemaster.db import labels, history, metadata
 from routemaster.app import App
+from routemaster.utils import dict_merge
 from routemaster.config import (
     Feed,
     Gate,
@@ -151,6 +152,37 @@ TEST_STATE_MACHINES = {
                 triggers=[],
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    ),
+    # This state machine is used for testing the possibility of infinite loops.
+    'test_infinite_machine': StateMachine(
+        name='test_infinite_machine',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='gate_1',
+                triggers=[
+                    OnEntryTrigger(),
+                    MetadataTrigger(metadata_path='should_progress'),
+                ],
+                next_states=ConstantNextState('gate_2'),
+                exit_condition=ExitConditionProgram(
+                    'metadata.should_progress = true',
+                ),
+            ),
+            Gate(
+                name='gate_2',
+                triggers=[OnEntryTrigger()],
+                next_states=ConstantNextState('gate_3'),
+                exit_condition=ExitConditionProgram('true'),
+            ),
+            Gate(
+                name='gate_3',
+                triggers=[OnEntryTrigger()],
+                next_states=ConstantNextState('gate_2'),
+                exit_condition=ExitConditionProgram('true'),
             ),
         ],
     ),
@@ -338,3 +370,28 @@ def assert_history(app_config):
 
             assert history_entries == entries
     return _assert
+
+
+@pytest.fixture()
+def set_metadata(app_config):
+    """Directly set the metadata for a label in the database."""
+    def _inner(label, update):
+        with app_config.db.begin() as conn:
+            filter_ = and_(
+                labels.c.name == label.name,
+                labels.c.state_machine == label.state_machine,
+            )
+
+            existing_metadata = conn.scalar(
+                select([labels.c.metadata]).where(filter_),
+            )
+
+            new_metadata = dict_merge(existing_metadata, update)
+
+            conn.execute(labels.update().where(filter_).values(
+                metadata=new_metadata,
+                metadata_triggers_processed=True,
+            ))
+
+            return new_metadata
+    return _inner
