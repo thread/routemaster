@@ -11,7 +11,7 @@ from routemaster.exit_conditions.error_display import (
     format_parse_error_message,
 )
 
-if False:  # typing
+if typing.TYPE_CHECKING:
     from routemaster.context import Context  # noqa
 
 
