@@ -51,8 +51,9 @@ class _Process(NamedTuple):
                 self.is_terminating,
             )
             duration = time.time() - time_start
-        except Exception as e:
-            print(e)
+        except Exception:
+            logger.exception(f"Error while processing cron {name}")
+            return
 
         logger.info(
             f"Completed cron {name} for state {self.state.name} "
@@ -91,7 +92,7 @@ def _configure_schedule_for_state_machine(
                     ).seconds.do(
                         _Process(process_gate_trigger, state, *process_args),
                     )
-                elif isinstance(trigger, MetadataTrigger):
+                elif isinstance(trigger, MetadataTrigger):  # pragma: no branch
                     scheduler.every().minute.do(
                         _Process(
                             process_gate_metadata_retries,
@@ -99,6 +100,13 @@ def _configure_schedule_for_state_machine(
                             *process_args,
                         ),
                     )
+                else:
+                    # We only care about time based triggers and retries here.
+                    pass  # pragma: no cover
+        else:
+            raise RuntimeError(  # pragma: no cover
+                f"Unsupported state type {state}",
+            )
 
 
 def configure_schedule(
