@@ -91,14 +91,13 @@ def get_current_state(
 
 def get_current_history_id(
     label: LabelRef,
-    state_machine: StateMachine,
     conn,
 ) -> int:
     """Get the id of a label's last history entry."""
     history_id = conn.execute(
         select([history.c.id]).where(and_(
             history.c.label_name == label.name,
-            history.c.label_state_machine == state_machine.name,
+            history.c.label_state_machine == label.state_machine,
         )).order_by(
             history.c.created.desc(),
         ).limit(1),
