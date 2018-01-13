@@ -1,3 +1,5 @@
+import hashlib
+
 import mock
 import pytest
 
@@ -26,6 +28,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
         'http://localhost/hook',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
+        mock.ANY,
     )
 
     assert_history([
@@ -54,12 +57,109 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
         'http://localhost/hook',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
+        mock.ANY,
     )
 
     assert_history([
         (None, 'start'),
         ('start', 'perform_action'),
     ])
+
+
+def test_actions_retries_use_same_idempotency_token(app_config, create_label, mock_webhook, assert_history):
+    state_machine = app_config.config.state_machines['test_machine']
+
+    expected = {'token': None}
+
+    def persist_token(url, content_type, data, token):
+        expected['token'] = token
+        return WebhookResult.FAIL
+
+    # First get the label into the action state by failing the automatic
+    # progression through the machine.
+    with mock.patch(
+        'routemaster.webhooks.RequestsWebhookRunner.__call__',
+        side_effect=persist_token,
+    ) as webhook:
+        create_label('foo', state_machine.name, {'should_progress': True})
+
+    assert expected['token'] is not None
+
+    webhook.assert_called_once_with(
+        'http://localhost/hook',
+        'application/json',
+        b'{"label": "foo", "metadata": {"should_progress": true}}',
+        expected['token'],
+    )
+
+    with mock_webhook(WebhookResult.FAIL) as webhook:
+        process_retries(
+            app_config,
+            state_machine,
+            state_machine.states[1],
+        )
+
+    webhook.assert_called_once_with(
+        'http://localhost/hook',
+        'application/json',
+        b'{"label": "foo", "metadata": {"should_progress": true}}',
+        expected['token'],
+    )
+
+    with mock_webhook(WebhookResult.SUCCESS) as webhook:
+        process_retries(
+            app_config,
+            state_machine,
+            state_machine.states[1],
+        )
+
+    webhook.assert_called_once_with(
+        'http://localhost/hook',
+        'application/json',
+        b'{"label": "foo", "metadata": {"should_progress": true}}',
+        expected['token'],
+    )
+
+
+def test_different_actions_use_different_idempotency_tokens(app_config, create_label, mock_webhook, assert_history):
+    state_machine = app_config.config.state_machines['test_machine']
+
+    seen_tokens = set()
+
+    def persist_token(url, content_type, data, token):
+        seen_tokens.add(token)
+        return WebhookResult.SUCCESS
+
+    with mock.patch(
+        'routemaster.webhooks.RequestsWebhookRunner.__call__',
+        side_effect=persist_token,
+    ) as webhook:
+        create_label('foo', state_machine.name, {'should_progress': True})
+        create_label('bar', state_machine.name, {'should_progress': True})
+        create_label('baz', state_machine.name, {'should_progress': True})
+
+    assert len(seen_tokens) == 3
+
+    webhook.assert_has_calls((
+        mock.call(
+            'http://localhost/hook',
+            'application/json',
+            b'{"label": "foo", "metadata": {"should_progress": true}}',
+            mock.ANY,
+        ),
+        mock.call(
+            'http://localhost/hook',
+            'application/json',
+            b'{"label": "bar", "metadata": {"should_progress": true}}',
+            mock.ANY,
+        ),
+        mock.call(
+            'http://localhost/hook',
+            'application/json',
+            b'{"label": "baz", "metadata": {"should_progress": true}}',
+            mock.ANY,
+        ),
+    ))
 
 
 def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_label, mock_webhook, assert_history):
@@ -94,6 +194,7 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
         'http://localhost/hook',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
+        mock.ANY,
     )
 
     assert_history([

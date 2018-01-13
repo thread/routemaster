@@ -1,6 +1,7 @@
 """Action (webhook invocation) evaluator."""
 
 import json
+import hashlib
 
 from sqlalchemy import func
 
@@ -20,6 +21,7 @@ from routemaster.state_machine.utils import (
     get_state_machine,
     get_label_metadata,
     process_transitions,
+    get_current_history_id,
     labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
@@ -65,10 +67,13 @@ def _process_action_with_metadata(
 
     run_webhook = webhook_runner_for_state_machine(state_machine)
 
+    idempotency_token = _calculate_idempotency_token(label, conn)
+
     result = run_webhook(
         action.webhook,
         'application/json',
         webhook_data,
+        idempotency_token,
     )
 
     if result != WebhookResult.SUCCESS:
@@ -86,6 +91,31 @@ def _process_action_with_metadata(
     ))
 
     return True
+
+
+def _calculate_idempotency_token(label: LabelRef, conn) -> str:
+    """
+    We want to make sure that an action is only performed once.
+
+    While we attempt to only deliver an action webhook once, we cannot
+    guarantee this in all cases, so we call webhooks with an
+    _idempotency token_. This token allows the receiver to record that it has
+    performed the appropriate action, and should not perform it again.
+
+    Idempotency tokens must represent precisely one logical call to a webhook
+    in the design of the state machine. For example:
+
+    - An action being retried _must_ use the same idempotency token, in case
+      the original failure was a network issue, and the receiver did indeed
+      process the action.
+    - An action being triggered again in a state machine that loops _must_ use
+      a different token, as loops are a supported use-case.
+
+    The label passed to this function _must_ be locked for the current
+    transaction.
+    """
+    latest_history_id = get_current_history_id(label, conn)
+    return hashlib.sha256(str(latest_history_id).encode('ascii')).hexdigest()
 
 
 def process_retries(

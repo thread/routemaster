@@ -89,6 +89,26 @@ def get_current_state(
     return state_machine.get_state(history_entry.new_state)
 
 
+def get_current_history_id(
+    label: LabelRef,
+    conn,
+) -> int:
+    """Get the id of a label's last history entry."""
+    history_id = conn.execute(
+        select([history.c.id]).where(and_(
+            history.c.label_name == label.name,
+            history.c.label_state_machine == label.state_machine,
+        )).order_by(
+            history.c.created.desc(),
+        ).limit(1),
+    ).scalar()
+
+    if history_id is None:
+        raise UnknownLabel(label)
+
+    return history_id
+
+
 def needs_gate_evaluation_for_metadata_change(
     state_machine: StateMachine,
     label: LabelRef,
