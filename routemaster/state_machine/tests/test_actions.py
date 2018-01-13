@@ -130,8 +130,6 @@ def test_different_actions_use_different_idempotency_tokens(app_config, create_l
         seen_tokens.add(token)
         return WebhookResult.SUCCESS
 
-    # First get the label into the action state by failing the automatic
-    # progression through the machine.
     with mock.patch(
         'routemaster.webhooks.RequestsWebhookRunner.__call__',
         side_effect=persist_token,
