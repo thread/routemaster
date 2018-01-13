@@ -124,10 +124,10 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
 def test_different_actions_use_different_idempotency_tokens(app_config, create_label, mock_webhook, assert_history):
     state_machine = app_config.config.state_machines['test_machine']
 
-    seen_tokens = []
+    seen_tokens = set()
 
     def persist_token(url, content_type, data, token):
-        seen_tokens.append(token)
+        seen_tokens.add(token)
         return WebhookResult.SUCCESS
 
     # First get the label into the action state by failing the automatic
