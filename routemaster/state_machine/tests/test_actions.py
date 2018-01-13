@@ -115,11 +115,11 @@ def test_process_action_does_not_work_for_deleted_label(app_config, create_delet
     with pytest.raises(DeletedLabel):
         with app_config.db.begin() as conn:
             process_action(
-                app_config,
-                action,
-                state_machine,
-                deleted_label,
-                conn,
+                app=app_config,
+                state=action,
+                state_machine=state_machine,
+                label=deleted_label,
+                conn=conn,
             )
 
     assert_history([
@@ -144,11 +144,11 @@ def test_process_action(app_config, create_label, mock_webhook, assert_history):
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         with app_config.db.begin() as conn:
             process_action(
-                app_config,
-                action,
-                state_machine,
-                label,
-                conn,
+                app=app_config,
+                state=action,
+                state_machine=state_machine,
+                label=label,
+                conn=conn,
             )
 
         webhook.assert_called_once()
@@ -176,11 +176,11 @@ def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, crea
     with mock_webhook(WebhookResult.FAIL) as webhook:
         with app_config.db.begin() as conn:
             process_action(
-                app_config,
-                action,
-                state_machine,
-                label,
-                conn,
+                app=app_config,
+                state=action,
+                state_machine=state_machine,
+                label=label,
+                conn=conn,
             )
 
         webhook.assert_called_once()
@@ -212,7 +212,12 @@ def test_process_action_fails_retry_works(app_config, create_label, mock_webhook
 
     # Now retry with succeeding webhook
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
-        process_action_retries(app_config, state_machine, action, lambda: False)
+        process_action_retries(
+            app_config,
+            state_machine,
+            action,
+            lambda: False,
+        )
         webhook.assert_called_once()
 
     assert_history([

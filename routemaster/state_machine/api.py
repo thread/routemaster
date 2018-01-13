@@ -191,11 +191,11 @@ def _process_transitions_for_metadata_update(
             )
 
         could_progress = process_gate(
-            app,
-            current_state,
-            state_machine,
-            label,
-            conn,
+            app=app,
+            state=current_state,
+            state_machine=state_machine,
+            label=label,
+            conn=conn,
         )
 
     if could_progress:
@@ -271,12 +271,12 @@ def process_cron(
                 if current_state != state:
                     continue
 
-                could_progress = process(
-                    app,
-                    state,
-                    state_machine,
-                    label,
-                    conn,
+                could_progress = process(  # type: ignore
+                    app=app,
+                    state=state,
+                    state_machine=state_machine,
+                    label=label,
+                    conn=conn,
                 )
 
             if could_progress and not should_terminate():

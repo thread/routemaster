@@ -41,11 +41,11 @@ def process_transitions(app: App, label: LabelRef) -> None:
 
             if isinstance(current_state, Action):
                 return process_action(
-                    app,
-                    current_state,
-                    state_machine,
-                    label,
-                    conn,
+                    app=app,
+                    state=current_state,
+                    state_machine=state_machine,
+                    label=label,
+                    conn=conn,
                 )
 
             elif isinstance(current_state, Gate):  # pragma: no branch
@@ -53,11 +53,11 @@ def process_transitions(app: App, label: LabelRef) -> None:
                     return False
 
                 return process_gate(
-                    app,
-                    current_state,
-                    state_machine,
-                    label,
-                    conn,
+                    app=app,
+                    state=current_state,
+                    state_machine=state_machine,
+                    label=label,
+                    conn=conn,
                 )
 
             else:

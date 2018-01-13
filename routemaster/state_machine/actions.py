@@ -21,8 +21,9 @@ from routemaster.state_machine.exceptions import DeletedLabel
 
 
 def process_action(
+    *,
     app: App,
-    action: Action,
+    state: Action,
     state_machine: StateMachine,
     label: LabelRef,
     conn,
@@ -36,6 +37,12 @@ def process_action(
     Returns whether the label progressed in the state machine, for which `True`
     implies further progression should be attempted.
     """
+    if not isinstance(state, Action):  # pragma: no branch
+        raise RuntimeError(  # pragma: no cover
+            f"{state.name} is not an actio, but was passed to process_action",
+        )
+
+    action = state
 
     metadata, deleted = get_label_metadata(label, state_machine, conn)
     if deleted:

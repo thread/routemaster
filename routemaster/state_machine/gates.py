@@ -3,7 +3,7 @@ from sqlalchemy import and_
 
 from routemaster.db import labels, history
 from routemaster.app import App
-from routemaster.config import Gate, StateMachine
+from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
     choose_next_state,
@@ -15,8 +15,9 @@ from routemaster.state_machine.exceptions import DeletedLabel
 
 
 def process_gate(
+    *,
     app: App,
-    gate: Gate,
+    state: State,
     state_machine: StateMachine,
     label: LabelRef,
     conn,
@@ -30,6 +31,12 @@ def process_gate(
     Returns whether the label progressed in the state machine, for which `True`
     implies further progression should be attempted.
     """
+    if not isinstance(state, Gate):  # pragma: no branch
+        raise RuntimeError(  # pragma: no cover
+            f"{state.name} is not a gate, but was passed to process_gate",
+        )
+
+    gate = state
 
     state_machine = get_state_machine(app, label)
     metadata, deleted = get_label_metadata(label, state_machine, conn)
