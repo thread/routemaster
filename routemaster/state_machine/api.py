@@ -1,7 +1,6 @@
 """The core of the state machine logic."""
 
 import logging
-import functools
 from typing import Any, Callable, Iterable
 
 from sqlalchemy import and_, not_
@@ -13,24 +12,16 @@ from routemaster.app import App
 from routemaster.utils import dict_merge, suppress_exceptions
 from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.gates import process_gate
-from routemaster.state_machine.types import (
-    LabelRef,
-    Metadata,
-    IsExitingCheck,
-    StateProcessor,
-)
+from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.utils import \
     get_label_metadata as get_label_metadata_internal
 from routemaster.state_machine.utils import (
     lock_label,
-    labels_in_state,
     get_current_state,
     get_state_machine,
     start_state_machine,
     needs_gate_evaluation_for_metadata_change,
-    labels_needing_metadata_update_retry_in_gate,
 )
-from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import (
     DeletedLabel,
     UnknownLabel,
@@ -248,7 +239,6 @@ def process_cron(
     app: App,
     state_machine: StateMachine,
     state: State,
-    should_terminate: IsExitingCheck,
 ):
     """
     Cron event entrypoint.
@@ -257,9 +247,6 @@ def process_cron(
         relevant_labels = get_labels(state_machine, state, conn)
 
     for label_name in relevant_labels:
-        if should_terminate():
-            break
-
         with suppress_exceptions(logger):
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
@@ -279,24 +266,5 @@ def process_cron(
                     conn=conn,
                 )
 
-            if could_progress and not should_terminate():
+            if could_progress:
                 process_transitions(app, label)
-
-
-process_action_retries: StateProcessor = functools.partial(
-    process_cron,
-    process_action,
-    labels_in_state,
-)
-
-process_gate_trigger: StateProcessor = functools.partial(
-    process_cron,
-    process_gate,
-    labels_in_state,
-)
-
-process_gate_metadata_retries: StateProcessor = functools.partial(
-    process_cron,
-    process_gate,
-    labels_needing_metadata_update_retry_in_gate,
-)

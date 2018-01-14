@@ -6,7 +6,7 @@ from sqlalchemy import func
 
 from routemaster.db import history
 from routemaster.app import App
-from routemaster.config import Action, StateMachine
+from routemaster.config import State, Action, StateMachine
 from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
@@ -23,7 +23,7 @@ from routemaster.state_machine.exceptions import DeletedLabel
 def process_action(
     *,
     app: App,
-    state: Action,
+    state: State,
     state_machine: StateMachine,
     label: LabelRef,
     conn,

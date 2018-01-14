@@ -2,7 +2,8 @@ import mock
 import pytest
 
 from routemaster.webhooks import WebhookResult
-from routemaster.state_machine.api import process_action_retries
+from routemaster.state_machine import process_cron
+from routemaster.state_machine.utils import labels_in_state
 from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -17,11 +18,12 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
 
     # Now attempt to process the retry of the action, succeeding.
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
-        process_action_retries(
+        process_cron(
+            process_action,
+            labels_in_state,
             app_config,
             state_machine,
             state_machine.states[1],
-            lambda: False,
         )
 
     webhook.assert_called_once_with(
@@ -46,11 +48,12 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
         create_label('foo', state_machine.name, {'should_progress': True})
 
     with mock_webhook(WebhookResult.FAIL) as webhook:
-        process_action_retries(
+        process_cron(
+            process_action,
+            labels_in_state,
             app_config,
             state_machine,
             state_machine.states[1],
-            lambda: False,
         )
 
     webhook.assert_called_once_with(
@@ -82,11 +85,12 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
         with mock.patch(
             'routemaster.state_machine.api.process_transitions',
         ) as mock_process_transitions:
-            process_action_retries(
+            process_cron(
+                process_action,
+                labels_in_state,
                 app_config,
                 state_machine,
                 state_machine.states[1],
-                lambda: False,
             )
 
     mock_process_transitions.assert_called_once_with(
@@ -212,11 +216,12 @@ def test_process_action_fails_retry_works(app_config, create_label, mock_webhook
 
     # Now retry with succeeding webhook
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
-        process_action_retries(
+        process_cron(
+            process_action,
+            labels_in_state,
             app_config,
             state_machine,
             action,
-            lambda: False,
         )
         webhook.assert_called_once()
 

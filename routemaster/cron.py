@@ -2,8 +2,10 @@
 
 import time
 import logging
+import functools
+import itertools
 import threading
-from typing import Callable, NamedTuple
+from typing import Any, Callable, Iterable
 
 import schedule
 
@@ -18,87 +20,109 @@ from routemaster.config import (
     MetadataTrigger,
 )
 from routemaster.state_machine import (
-    IsExitingCheck,
-    StateProcessor,
-    process_gate_trigger,
-    process_action_retries,
-    process_gate_metadata_retries,
+    LabelStateProcessor,
+    process_cron,
+    process_gate,
+    process_action,
+    labels_in_state,
+    labels_needing_metadata_update_retry_in_gate,
 )
 
 logger = logging.getLogger(__name__)
 
+IsTerminating = Callable[[], bool]
+GetLabels = Callable[[StateMachine, State, Any], Iterable[str]]
+CronProcessorFactory = Callable[
+    [LabelStateProcessor, GetLabels, State, StateMachine],
+    Callable,
+]
 
-class _Process(NamedTuple):
-    fn: StateProcessor
-    state: State
-    app: App
-    state_machine: StateMachine
-    is_terminating: IsExitingCheck
 
-    def __call__(self):
-        name = getattr(self.fn, '__name__', 'process')
-        logger.info(
-            f"Started cron {name} for state {self.state.name} in "
-            f"{self.state_machine.name}",
+def process_job(
+    app: App,
+    is_terminating: IsTerminating,
+    fn: LabelStateProcessor,
+    get_labels: GetLabels,
+    state: State,
+    state_machine: StateMachine,
+):
+    """Process a single instance of a single cron job."""
+
+    def _iter_labels_until_terminating(state_machine, state, conn):
+        return itertools.takewhile(
+            lambda _: not is_terminating(),
+            get_labels(state_machine, state, conn),
         )
 
-        try:
-            time_start = time.time()
-            self.fn(
-                self.app,
-                self.state,
-                self.state_machine,
-                self.is_terminating,
-            )
-            duration = time.time() - time_start
-        except Exception:
-            logger.exception(f"Error while processing cron {name}")
-            return
+    logger.info(
+        f"Started cron {fn.__name__} for state {state.name} in "
+        f"{state_machine.name}",
+    )
 
-        logger.info(
-            f"Completed cron {name} for state {self.state.name} "
-            f"in {self.state_machine.name} in {duration:.2f} seconds",
+    try:
+        time_start = time.time()
+        process_cron(
+            process=fn,
+            get_labels=_iter_labels_until_terminating,
+            app=app,
+            state=state,
+            state_machine=state_machine,
         )
+        duration = time.time() - time_start
+    except Exception:
+        logger.exception(f"Error while processing cron {fn.__name__}")
+        return
 
-    def __repr__(self):
-        return self.fn.__name__
+    logger.info(
+        f"Completed cron {fn.__name__} for state {state.name} "
+        f"in {state_machine.name} in {duration:.2f} seconds",
+    )
 
 
 def _configure_schedule_for_state_machine(
     app: App,
     scheduler: schedule.Scheduler,
     state_machine: StateMachine,
-    is_terminating: Callable[[], bool],
+    processor: CronProcessorFactory,
 ) -> None:
-    process_args = (app, state_machine, is_terminating)
-
     for state in state_machine.states:
         if isinstance(state, Action):
             scheduler.every().minute.do(
-                _Process(process_action_retries, state, *process_args),
+                processor,
+                process_action,
+                labels_in_state,
+                state,
+                state_machine,
             )
-
         elif isinstance(state, Gate):
             for trigger in state.triggers:
                 if isinstance(trigger, TimeTrigger):
                     scheduler.every().day.at(
                         f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
                     ).do(
-                        _Process(process_gate_trigger, state, *process_args),
+                        processor,
+                        process_gate,
+                        labels_in_state,
+                        state,
+                        state_machine,
                     )
                 elif isinstance(trigger, IntervalTrigger):
                     scheduler.every(
                         trigger.interval.total_seconds(),
                     ).seconds.do(
-                        _Process(process_gate_trigger, state, *process_args),
+                        processor,
+                        process_gate,
+                        labels_in_state,
+                        state,
+                        state_machine,
                     )
                 elif isinstance(trigger, MetadataTrigger):  # pragma: no branch
                     scheduler.every().minute.do(
-                        _Process(
-                            process_gate_metadata_retries,
-                            state,
-                            *process_args,
-                        ),
+                        processor,
+                        process_gate,
+                        labels_needing_metadata_update_retry_in_gate,
+                        state,
+                        state_machine,
                     )
                 else:
                     # We only care about time based triggers and retries here.
@@ -112,7 +136,7 @@ def _configure_schedule_for_state_machine(
 def configure_schedule(
     app: App,
     scheduler: schedule.Scheduler,
-    is_terminating: Callable[[], bool],
+    processor: CronProcessorFactory,
 ) -> None:
     """Set up all scheduled tasks that need running."""
     for state_machine in app.config.state_machines.values():
@@ -120,7 +144,7 @@ def configure_schedule(
             app,
             scheduler,
             state_machine,
-            is_terminating,
+            processor,
         )
 
 
@@ -135,7 +159,11 @@ class CronThread(threading.Thread):  # pragma: no cover
 
     def run(self) -> None:
         """Run main scheduling loop."""
-        configure_schedule(self.app, self.scheduler, self.is_terminating)
+        configure_schedule(
+            self.app,
+            self.scheduler,
+            functools.partial(process_job, self.app, self.is_terminating),
+        )
         logger.info("Starting cron thread")
         while not self.is_terminating():
             self.scheduler.run_pending()

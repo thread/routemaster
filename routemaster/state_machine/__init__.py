@@ -2,17 +2,21 @@
 
 from routemaster.state_machine.api import (
     LabelRef,
+    LabelStateProcessor,
     list_labels,
     create_label,
     delete_label,
+    process_cron,
     get_label_state,
     get_label_metadata,
-    process_gate_trigger,
-    process_action_retries,
     update_metadata_for_label,
-    process_gate_metadata_retries,
 )
-from routemaster.state_machine.types import IsExitingCheck, StateProcessor
+from routemaster.state_machine.gates import process_gate
+from routemaster.state_machine.utils import (
+    labels_in_state,
+    labels_needing_metadata_update_retry_in_gate,
+)
+from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import (
     UnknownLabel,
     LabelAlreadyExists,
@@ -24,15 +28,17 @@ __all__ = (
     'list_labels',
     'create_label',
     'delete_label',
+    'process_cron',
+    'process_gate',
     'UnknownLabel',
     'IsExitingCheck',
-    'StateProcessor',
+    'process_action',
     'get_label_state',
+    'labels_in_state',
     'get_label_metadata',
     'LabelAlreadyExists',
+    'LabelStateProcessor',
     'UnknownStateMachine',
-    'process_gate_trigger',
-    'process_action_retries',
     'update_metadata_for_label',
-    'process_gate_metadata_retries',
+    'labels_needing_metadata_update_retry_in_gate',
 )
