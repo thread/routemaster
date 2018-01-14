@@ -33,7 +33,7 @@ def test_action_once_per_minute(custom_app_config):
     action = Action('noop_action', next_states=NoNextStates(), webhook='')
     app = create_app(custom_app_config, [action])
 
-    def processor(process_label, get_labels, state, state_machine):
+    def processor(*, state, **kwargs):
         assert state == action
         processor.called = True
 
@@ -65,7 +65,7 @@ def test_gate_at_fixed_time(custom_app_config):
     )
     app = create_app(custom_app_config, [gate])
 
-    def processor(process_label, get_labels, state, state_machine):
+    def processor(*, state, **kwargs):
         assert state == gate
         processor.called = True
 
@@ -97,7 +97,7 @@ def test_gate_at_interval(custom_app_config):
     )
     app = create_app(custom_app_config, [gate])
 
-    def processor(process_label, get_labels, state, state_machine):
+    def processor(*, state, **kwargs):
         assert state == gate
         processor.called = True
 
@@ -129,7 +129,7 @@ def test_gate_metadata_retry(custom_app_config):
     )
     app = create_app(custom_app_config, [gate])
 
-    def processor(process_label, get_labels, state, state_machine):
+    def processor(*, state, **kwargs):
         assert state == gate
         processor.called = True
 
@@ -176,12 +176,12 @@ def test_cron_job_gracefully_exit_signalling(custom_app_config):
         return_value=gate,
     ), mock.patch('routemaster.state_machine.api.lock_label'):
         process_job(
-            app,
-            is_terminating,
-            processor,
-            lambda x, y, z: items_to_process,
-            gate,
-            state_machine,
+            app=app,
+            is_terminating=is_terminating,
+            fn=processor,
+            label_provider=lambda x, y, z: items_to_process,
+            state=gate,
+            state_machine=state_machine,
         )
 
     assert items_to_process == ['should_not_process']
@@ -210,10 +210,10 @@ def test_cron_job_does_not_forward_exceptions(custom_app_config):
     ), mock.patch('routemaster.state_machine.api.lock_label'):
 
         process_job(
-            app,
-            raise_value_error,
-            processor,
-            lambda x, y, z: [],
-            gate,
-            state_machine,
+            app=app,
+            is_terminating=raise_value_error,
+            fn=processor,
+            label_provider=lambda x, y, z: [],
+            state=gate,
+            state_machine=state_machine,
         )

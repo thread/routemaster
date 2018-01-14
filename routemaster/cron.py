@@ -44,6 +44,7 @@ CronProcessor = Callable[
 # stage for testing.
 
 def process_job(
+    *,
     # Bound at the cron thread level
     app: App,
     is_terminating: IsTerminating,
@@ -52,14 +53,14 @@ def process_job(
     state_machine: StateMachine,
     # Bound when scheduling a specific job for a state
     fn: LabelStateProcessor,
-    get_labels: LabelProvider,
+    label_provider: LabelProvider,
 ):
     """Process a single instance of a single cron job."""
 
     def _iter_labels_until_terminating(state_machine, state, conn):
         return itertools.takewhile(
             lambda _: not is_terminating(),
-            get_labels(state_machine, state, conn),
+            label_provider(state_machine, state, conn),
         )
 
     logger.info(
@@ -96,8 +97,8 @@ def _configure_schedule_for_state(
     if isinstance(state, Action):
         scheduler.every().minute.do(
             processor,
-            process_action,
-            labels_in_state,
+            fn=process_action,
+            label_provider=labels_in_state,
         )
     elif isinstance(state, Gate):
         for trigger in state.triggers:
@@ -106,22 +107,23 @@ def _configure_schedule_for_state(
                     f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
                 ).do(
                     processor,
-                    process_gate,
-                    labels_in_state,
+                    fn=process_gate,
+                    label_provider=labels_in_state,
                 )
             elif isinstance(trigger, IntervalTrigger):
                 scheduler.every(
                     trigger.interval.total_seconds(),
                 ).seconds.do(
                     processor,
-                    process_gate,
-                    labels_in_state,
+                    fn=process_gate,
+                    label_provider=labels_in_state,
                 )
             elif isinstance(trigger, MetadataTrigger):  # pragma: no branch
+                label_provider = labels_needing_metadata_update_retry_in_gate
                 scheduler.every().minute.do(
                     processor,
-                    process_gate,
-                    labels_needing_metadata_update_retry_in_gate,
+                    fn=process_gate,
+                    label_provider=label_provider,
                 )
             else:
                 # We only care about time based triggers and retries here.
@@ -143,7 +145,11 @@ def configure_schedule(
             _configure_schedule_for_state(
                 app,
                 scheduler,
-                functools.partial(processor, state, state_machine),
+                functools.partial(
+                    processor,
+                    state=state,
+                    state_machine=state_machine,
+                ),
                 state,
             )
 
@@ -162,7 +168,11 @@ class CronThread(threading.Thread):  # pragma: no cover
         configure_schedule(
             self.app,
             self.scheduler,
-            functools.partial(process_job, self.app, self.is_terminating),
+            functools.partial(
+                process_job,
+                app=self.app,
+                is_terminating=self.is_terminating,
+            ),
         )
         logger.info("Starting cron thread")
         while not self.is_terminating():
