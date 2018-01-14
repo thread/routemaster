@@ -31,20 +31,28 @@ from routemaster.state_machine import (
 logger = logging.getLogger(__name__)
 
 IsTerminating = Callable[[], bool]
-GetLabels = Callable[[StateMachine, State, Any], Iterable[str]]
-CronProcessorFactory = Callable[
-    [LabelStateProcessor, GetLabels, State, StateMachine],
-    Callable,
+LabelProvider = Callable[[StateMachine, State, Any], Iterable[str]]
+
+CronProcessor = Callable[
+    [LabelStateProcessor, LabelProvider, State, StateMachine],
+    None,
 ]
 
 
+# The cron configuration works by building up a partially applied function
+# `process_job`, at multiple levels. This allows us to hook an intermediate
+# stage for testing.
+
 def process_job(
+    # Bound at the cron thread level
     app: App,
     is_terminating: IsTerminating,
-    fn: LabelStateProcessor,
-    get_labels: GetLabels,
+    # Bound at the state scheduling level
     state: State,
     state_machine: StateMachine,
+    # Bound when scheduling a specific job for a state
+    fn: LabelStateProcessor,
+    get_labels: LabelProvider,
 ):
     """Process a single instance of a single cron job."""
 
@@ -79,73 +87,65 @@ def process_job(
     )
 
 
-def _configure_schedule_for_state_machine(
+def _configure_schedule_for_state(
     app: App,
     scheduler: schedule.Scheduler,
-    state_machine: StateMachine,
-    processor: CronProcessorFactory,
+    processor: CronProcessor,
+    state: State,
 ) -> None:
-    for state in state_machine.states:
-        if isinstance(state, Action):
-            scheduler.every().minute.do(
-                processor,
-                process_action,
-                labels_in_state,
-                state,
-                state_machine,
-            )
-        elif isinstance(state, Gate):
-            for trigger in state.triggers:
-                if isinstance(trigger, TimeTrigger):
-                    scheduler.every().day.at(
-                        f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
-                    ).do(
-                        processor,
-                        process_gate,
-                        labels_in_state,
-                        state,
-                        state_machine,
-                    )
-                elif isinstance(trigger, IntervalTrigger):
-                    scheduler.every(
-                        trigger.interval.total_seconds(),
-                    ).seconds.do(
-                        processor,
-                        process_gate,
-                        labels_in_state,
-                        state,
-                        state_machine,
-                    )
-                elif isinstance(trigger, MetadataTrigger):  # pragma: no branch
-                    scheduler.every().minute.do(
-                        processor,
-                        process_gate,
-                        labels_needing_metadata_update_retry_in_gate,
-                        state,
-                        state_machine,
-                    )
-                else:
-                    # We only care about time based triggers and retries here.
-                    pass  # pragma: no cover
-        else:
-            raise RuntimeError(  # pragma: no cover
-                f"Unsupported state type {state}",
-            )
+    if isinstance(state, Action):
+        scheduler.every().minute.do(
+            processor,
+            process_action,
+            labels_in_state,
+        )
+    elif isinstance(state, Gate):
+        for trigger in state.triggers:
+            if isinstance(trigger, TimeTrigger):
+                scheduler.every().day.at(
+                    f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
+                ).do(
+                    processor,
+                    process_gate,
+                    labels_in_state,
+                )
+            elif isinstance(trigger, IntervalTrigger):
+                scheduler.every(
+                    trigger.interval.total_seconds(),
+                ).seconds.do(
+                    processor,
+                    process_gate,
+                    labels_in_state,
+                )
+            elif isinstance(trigger, MetadataTrigger):  # pragma: no branch
+                scheduler.every().minute.do(
+                    processor,
+                    process_gate,
+                    labels_needing_metadata_update_retry_in_gate,
+                )
+            else:
+                # We only care about time based triggers and retries here.
+                pass  # pragma: no cover
+    else:
+        raise RuntimeError(  # pragma: no cover
+            f"Unsupported state type {state}",
+        )
 
 
 def configure_schedule(
     app: App,
     scheduler: schedule.Scheduler,
-    processor: CronProcessorFactory,
+    processor: CronProcessor,
 ) -> None:
     """Set up all scheduled tasks that need running."""
     for state_machine in app.config.state_machines.values():
-        _configure_schedule_for_state_machine(
-            app,
-            scheduler,
-            state_machine,
-            processor,
-        )
+        for state in state_machine.states:
+            _configure_schedule_for_state(
+                app,
+                scheduler,
+                functools.partial(processor, state, state_machine),
+                state,
+            )
 
 
 class CronThread(threading.Thread):  # pragma: no cover
