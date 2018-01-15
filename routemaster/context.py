@@ -1,6 +1,6 @@
 """Context definition for exit condition programs."""
 import datetime
-from typing import Any, Dict, Iterable, Sequence
+from typing import Any, Dict, Iterable, Optional, Sequence
 
 import dateutil.tz
 
@@ -19,6 +19,7 @@ class Context(object):
         now: datetime.datetime = None,
         feeds: Dict[str, Feed] = {},
         accessed_variables: Iterable[str] = [],
+        current_history_entry: Optional[Any] = None,
     ) -> None:
         """Create an execution context."""
         if now is None:
@@ -31,6 +32,7 @@ class Context(object):
         self.now = now
         self.metadata = metadata
         self.feeds = feeds
+        self.current_history_entry = current_history_entry
 
         self._pre_warm_feeds(label, accessed_variables)
 
@@ -42,6 +44,7 @@ class Context(object):
             return {
                 'metadata': self._lookup_metadata,
                 'feeds': self._lookup_feed_data,
+                'history': self._lookup_history,
             }[location](rest)
         except (KeyError, ValueError):
             return None
@@ -52,6 +55,16 @@ class Context(object):
     def _lookup_feed_data(self, path: Sequence[str]) -> Any:
         feed_name, *rest = path
         return self.feeds[feed_name].lookup(rest)
+
+    def _lookup_history(self, path: Sequence[str]) -> Any:
+        if self.current_history_entry is None:
+            raise ValueError("Accessed uninitialised variable")
+
+        variable_name, = path
+        return {
+            'entered_state': self.current_history_entry.created,
+            'previous_state': self.current_history_entry.old_state,
+        }[variable_name]
 
     def property_handler(self, property_name, value, **kwargs):
         """Handle a property in execution."""

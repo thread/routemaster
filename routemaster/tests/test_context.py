@@ -93,6 +93,14 @@ def test_non_existent_feed_is_none():
     assert context.lookup(['feeds', 'foo', 'bar']) is None
 
 
+def test_non_existent_history_variable_is_none():
+    context = Context(
+        label='label1',
+        accessed_variables=['history.foo'],
+    )
+    assert context.lookup(['history', 'foo']) is None
+
+
 def test_accessing_prefix_directly_does_not_error():
     context = Context(
         label='label1',
