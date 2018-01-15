@@ -1,25 +1,19 @@
 """Utilities for state machine execution."""
 
 import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Iterable
 
 import dateutil.tz
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, not_, select
+from sqlalchemy.sql.elements import ClauseElement
 
 from routemaster.db import labels, history
 from routemaster.app import App
 from routemaster.feeds import feeds_for_state_machine
-from routemaster.config import (
-    Gate,
-    State,
-    Action,
-    StateMachine,
-    ContextNextStates,
-)
+from routemaster.config import Gate, State, StateMachine, ContextNextStates
 from routemaster.context import Context
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (
-    DeletedLabel,
     UnknownLabel,
     UnknownStateMachine,
 )
@@ -151,11 +145,46 @@ def lock_label(label: LabelRef, conn):
     return row
 
 
-def labels_to_retry_for_action(
+def labels_in_state(
     state_machine: StateMachine,
-    action: Action,
+    state: State,
     conn,
-) -> Dict[str, Metadata]:
+) -> List[str]:
+    """Util to get all the labels in an action state that need retrying."""
+    return _labels_in_state(
+        state_machine,
+        state,
+        (),
+        conn,
+    )
+
+
+def labels_needing_metadata_update_retry_in_gate(
+    state_machine: StateMachine,
+    state: State,
+    conn,
+) -> List[str]:
+    """Util to get all the labels in an action state that need retrying."""
+    if not isinstance(state, Gate):  # pragma: no branch
+        raise ValueError(  # pragma: no cover
+            f"labels_needing_metadata_update_retry_in_gate called with "
+            f"{state.name} which is not an Gate",
+        )
+
+    return _labels_in_state(
+        state_machine,
+        state,
+        (not_(labels.c.metadata_triggers_processed),),
+        conn,
+    )
+
+
+def _labels_in_state(
+    state_machine: StateMachine,
+    state: State,
+    filters: Iterable[ClauseElement],
+    conn,
+) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     ranked_transitions = select((
         history.c.label_name,
@@ -169,20 +198,18 @@ def labels_to_retry_for_action(
         history.c.label_state_machine == state_machine.name,
     ).alias('transitions')
 
-    active_participants = select((
-        ranked_transitions.c.label_name,
-        labels.c.metadata,
-    )).where(and_(
-        ranked_transitions.c.new_state == action.name,
+    active_filters = (
+        ranked_transitions.c.new_state == state.name,
         ranked_transitions.c.rank == 1,
         ranked_transitions.c.label_name == labels.c.name,
         labels.c.state_machine == state_machine.name,
-    ))
+    )
 
-    return {
-        x.label_name: x.metadata
-        for x in conn.execute(active_participants)
-    }
+    active_participants = select((
+        ranked_transitions.c.label_name,
+    )).where(and_(*(active_filters + tuple(filters))))
+
+    return [x for x, in conn.execute(active_participants)]
 
 
 def context_for_label(
@@ -207,55 +234,3 @@ def context_for_label(
         feeds,
         accessed_variables,
     )
-
-
-def process_transitions(app: App, label: LabelRef) -> None:
-    """
-    Process each transition for a label until it cannot move any further.
-
-    Will silently accept DeletedLabel exceptions and end the processing of
-    transitions.
-    """
-
-    state_machine = get_state_machine(app, label)
-    could_progress = True
-
-    def _transition() -> bool:
-        with app.db.begin() as conn:
-            lock_label(label, conn)
-            current_state = get_current_state(label, state_machine, conn)
-
-            if isinstance(current_state, Action):
-                from routemaster.state_machine.actions import process_action
-                return process_action(
-                    app,
-                    current_state,
-                    label,
-                    conn,
-                )
-
-            elif isinstance(current_state, Gate):  # pragma: no branch
-                if not current_state.trigger_on_entry:
-                    return False
-                from routemaster.state_machine.gates import process_gate
-
-                return process_gate(
-                    app,
-                    current_state,
-                    label,
-                    conn,
-                )
-
-            else:
-                raise RuntimeError(  # pragma: no cover
-                    "Unsupported state type {0}".format(current_state),
-                )
-
-    while could_progress:
-        try:
-            could_progress = _transition()
-        except DeletedLabel:
-            # Label might have been deleted, that's a supported use-case,
-            # not even a warning, and we should allow the retry process to
-            # continue.
-            pass

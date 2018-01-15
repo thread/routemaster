@@ -16,6 +16,7 @@ DEPENDENCIES = (
     ('__main__', 'cli'),
 
     ('cli', 'config'),
+    ('cli', 'cron'),
     ('cli', 'server'),
     ('cli', 'app'),
     ('cli', 'gunicorn_application'),
@@ -30,6 +31,9 @@ DEPENDENCIES = (
     ('config', 'exit_conditions'),
     ('config', 'utils'),
     ('db', 'config'),
+
+    ('cron', 'app'),
+    ('cron', 'state_machine'),
 
     ('validation', 'app'),
     ('validation', 'config'),
