@@ -89,7 +89,6 @@ def process_job(
 
 
 def _configure_schedule_for_state(
-    app: App,
     scheduler: schedule.Scheduler,
     processor: CronProcessor,
     state: State,
@@ -143,7 +142,6 @@ def configure_schedule(
     for state_machine in app.config.state_machines.values():
         for state in state_machine.states:
             _configure_schedule_for_state(
-                app,
                 scheduler,
                 functools.partial(
                     processor,
