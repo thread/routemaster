@@ -1,7 +1,4 @@
-import datetime
-
 import pytest
-import dateutil
 
 from routemaster.config import (
     NoNextStates,
@@ -10,8 +7,6 @@ from routemaster.config import (
     ContextNextStatesOption,
 )
 from routemaster.context import Context
-
-UTC_NOW = datetime.datetime.now(dateutil.tz.tzutc())
 
 
 def test_constant_next_state():
@@ -36,7 +31,7 @@ def test_context_next_states():
         ],
     )
 
-    context = Context('label1', {'foo': True}, UTC_NOW, None, [])
+    context = Context(label='label1', metadata={'foo': True})
 
     assert next_states.all_destinations() == ['1', '2']
     assert next_states.next_state_for_label(context) == '1'
@@ -51,7 +46,7 @@ def test_context_next_states_raises_for_no_valid_state():
         ],
     )
 
-    context = Context('label1', {'foo': 'bar'}, UTC_NOW, None, [])
+    context = Context(label='label1', metadata={'foo': 'bar'})
 
     with pytest.raises(RuntimeError):
         next_states.next_state_for_label(context)

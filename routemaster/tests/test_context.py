@@ -2,49 +2,39 @@ import datetime
 
 import mock
 import pytest
-import dateutil
 import httpretty
 
 from routemaster.feeds import Feed
 from routemaster.context import Context
 
-UTC_NOW = datetime.datetime.now(dateutil.tz.tzutc())
-
 
 def test_context_does_not_accept_naive_datetimes():
     with pytest.raises(ValueError):
-        Context('label1', {}, datetime.datetime.utcnow(), None, [])
+        Context(label='label1', now=datetime.datetime.utcnow())
 
 
 def test_finds_path_in_context():
     context = Context(
-        'label1',
-        {'foo': {'bar': 'baz'}},
-        UTC_NOW,
-        {},
-        ['metadata.foo.bar'],
+        label='label1',
+        metadata={'foo': {'bar': 'baz'}},
+        accessed_variables=['metadata.foo.bar'],
     )
     assert context.lookup(['metadata', 'foo', 'bar']) == 'baz'
 
 
 def test_returns_none_for_unknown_prefix():
     context = Context(
-        'label1',
-        {'foo': {'bar': 'baz'}},
-        UTC_NOW,
-        {},
-        ['unknown.foo.bar'],
+        label='label1',
+        accessed_variables=['unknown.foo.bar'],
     )
     assert context.lookup(['unknown', 'foo', 'bar']) is None
 
 
 def test_returns_none_for_unknown_metadata_variable():
     context = Context(
-        'label1',
-        {'foo': {'bar': 'baz'}},
-        UTC_NOW,
-        {},
-        ['metadata.unknown'],
+        label='label1',
+        metadata={'foo': {'bar': 'baz'}},
+        accessed_variables=['metadata.unknown'],
     )
     assert context.lookup(['metadata', 'unknown']) is None
 
@@ -60,11 +50,9 @@ def test_accesses_variable_in_feed():
 
     feed = Feed('http://example.com/<label>', 'test_machine')
     context = Context(
-        'label1',
-        {},
-        UTC_NOW,
-        {'example': feed},
-        ['feeds.example.foo'],
+        label='label1',
+        feeds={'example': feed},
+        accessed_variables=['feeds.example.foo'],
     )
     result = context.lookup(('feeds', 'example', 'foo'))
     assert result == 'bar'
@@ -84,11 +72,10 @@ def test_only_loads_feed_once():
 
         feed = Feed('http://example.com/<label>', 'test_machine')
         context = Context(
-            'label1',
-            {},
-            UTC_NOW,
-            {'example': feed},
-            ['feeds.example.foo', 'feeds.example.baz'],
+            label='label1',
+            metadata={},
+            feeds={'example': feed},
+            accessed_variables=['feeds.example.foo', 'feeds.example.baz'],
         )
 
         context.lookup(('feeds', 'example', 'foo'))
@@ -99,21 +86,17 @@ def test_only_loads_feed_once():
 
 def test_non_existent_feed_is_none():
     context = Context(
-        'label1',
-        {},
-        UTC_NOW,
-        {},
-        ['feeds.foo.bar'],
+        label='label1',
+        feeds={},
+        accessed_variables=['feeds.foo.bar'],
     )
     assert context.lookup(['feeds', 'foo', 'bar']) is None
 
 
 def test_accessing_prefix_directly_does_not_error():
     context = Context(
-        'label1',
-        {},
-        UTC_NOW,
-        {},
-        ['metadata'],
+        label='label1',
+        metadata={},
+        accessed_variables=['metadata'],
     )
     assert context.lookup(['metadata']) == {}

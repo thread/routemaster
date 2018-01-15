@@ -2,6 +2,8 @@
 import datetime
 from typing import Any, Dict, Iterable, Sequence
 
+import dateutil.tz
+
 from routemaster.feeds import Feed
 from routemaster.utils import get_path
 
@@ -11,14 +13,17 @@ class Context(object):
 
     def __init__(
         self,
+        *,
         label: str,
-        metadata: Dict[str, Any],
-        now: datetime.datetime,
-        feeds: Dict[str, Feed],
-        accessed_variables: Iterable[str],
+        metadata: Dict[str, Any] = {},
+        now: datetime.datetime = None,
+        feeds: Dict[str, Feed] = {},
+        accessed_variables: Iterable[str] = [],
     ) -> None:
         """Create an execution context."""
-        if now.tzinfo is None:
+        if now is None:
+            now = datetime.datetime.now(dateutil.tz.tzutc())
+        elif now.tzinfo is None:
             raise ValueError(
                 "Cannot evaluate exit conditions with naive datetimes",
             )

@@ -80,11 +80,11 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
 
         utils.context_for_label(label, metadata, state_machine, state)
         mock_constructor.assert_called_once_with(
-            label.name,
-            metadata,
-            dt,
-            {'tests': Feed('http://localhost/tests', 'test_machine')},
-            [
+            label=label.name,
+            metadata=metadata,
+            now=dt,
+            feeds={'tests': Feed('http://localhost/tests', 'test_machine')},
+            accessed_variables=[
                 'metadata.should_progress',
                 'feeds.tests.should_do_alternate_action',
             ],
@@ -105,9 +105,9 @@ def test_context_for_label_in_action_created_with_correct_variables(app_config):
 
         utils.context_for_label(label, metadata, state_machine, state)
         mock_constructor.assert_called_once_with(
-            label.name,
-            metadata,
-            dt,
-            {'tests': Feed('http://localhost/tests', 'test_machine')},
-            ['feeds.tests.should_loop'],
+            label=label.name,
+            metadata=metadata,
+            now=dt,
+            feeds={'tests': Feed('http://localhost/tests', 'test_machine')},
+            accessed_variables=['feeds.tests.should_loop'],
         )

@@ -228,9 +228,9 @@ def context_for_label(
         accessed_variables.append(state.next_states.path)
 
     return Context(
-        label.name,
-        metadata,
-        datetime.datetime.now(dateutil.tz.tzutc()),
-        feeds,
-        accessed_variables,
+        label=label.name,
+        metadata=metadata,
+        now=datetime.datetime.now(dateutil.tz.tzutc()),
+        feeds=feeds,
+        accessed_variables=accessed_variables,
     )
