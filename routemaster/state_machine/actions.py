@@ -17,9 +17,7 @@ from routemaster.state_machine.utils import (
     choose_next_state,
     context_for_label,
     get_label_metadata,
-    process_transitions,
     get_current_history_id,
-    labels_to_retry_for_action,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -108,4 +106,3 @@ def _calculate_idempotency_token(label: LabelRef, conn) -> str:
     """
     latest_history_id = get_current_history_id(label, conn)
     return hashlib.sha256(str(latest_history_id).encode('ascii')).hexdigest()
-
