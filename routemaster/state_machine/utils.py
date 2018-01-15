@@ -146,8 +146,9 @@ def labels_needing_metadata_update_retry_in_gate(
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     if not isinstance(state, Gate):  # pragma: no branch
-        raise RuntimeError(  # pragma: no cover
-            f"{state.name} is not a gate, but was passed to process_gate",
+        raise ValueError(  # pragma: no cover
+            f"labels_needing_metadata_update_retry_in_gate called with "
+            f"{state.name} which is not an Gate",
         )
 
     return _labels_in_state(

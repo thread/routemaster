@@ -32,8 +32,8 @@ def process_gate(
     implies further progression should be attempted.
     """
     if not isinstance(state, Gate):  # pragma: no branch
-        raise RuntimeError(  # pragma: no cover
-            f"{state.name} is not a gate, but was passed to process_gate",
+        raise ValueError(  # pragma: no cover
+            f"process_gate called with {state.name} which is not an Gate",
         )
 
     gate = state

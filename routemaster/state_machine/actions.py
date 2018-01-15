@@ -38,8 +38,8 @@ def process_action(
     implies further progression should be attempted.
     """
     if not isinstance(state, Action):  # pragma: no branch
-        raise RuntimeError(  # pragma: no cover
-            f"{state.name} is not an actio, but was passed to process_action",
+        raise ValueError(  # pragma: no cover
+            f"process_action called with {state.name} which is not an Action",
         )
 
     action = state
