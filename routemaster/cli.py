@@ -50,9 +50,8 @@ def main(ctx, config_file, log_level):
 
     try:
         config = load_config(yaml.load(config_file))
-    except ConfigError as e:
-        msg = f"Configuration Error: {e}"
-        logger.exception(msg)
+    except ConfigError:
+        logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
     ctx.obj = App(config)
