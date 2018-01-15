@@ -16,7 +16,7 @@ class WebhookResult(enum.Enum):
     FAIL = 'fail'
 
 
-WebhookRunner = Callable[[str, str, bytes], WebhookResult]
+WebhookRunner = Callable[[str, str, bytes, str], WebhookResult]
 
 
 class RequestsWebhookRunner(object):
@@ -35,9 +35,13 @@ class RequestsWebhookRunner(object):
         url: str,
         content_type: str,
         data: bytes,
+        idempotency_token: str,
     ) -> WebhookResult:
         """Run a POST on the given webhook."""
-        headers = {'Content-Type': content_type}
+        headers = {
+            'Content-Type': content_type,
+            'X-Idempotency-Token': idempotency_token,
+        }
         headers.update(self._headers_for_url(url))
 
         try:
