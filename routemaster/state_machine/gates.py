@@ -1,5 +1,5 @@
 """Processing for gate states."""
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 
 from routemaster.db import labels, history
 from routemaster.app import App
@@ -63,6 +63,7 @@ def process_gate(
         labels.c.state_machine == label.state_machine,
     )).values(
         metadata_triggers_processed=True,
+        updated=func.now(),
     ))
 
     return True
