@@ -51,29 +51,14 @@ history = Table(
     # Null indicates starting a state machine
     Column('old_state', String, nullable=True),
     Column('new_state', String),
-
-    # Can we get foreign key constraints on these as well?
-    # Currently: no, because those columns are not unique themselves, however
-    # we could add `old_state_state_machine` and `new_state_state_machine`, add
-    # the constraints with them, and then add a constraint that the three
-    # state machine references are all identical.
-    # ForeignKeyConstraint(
-    #     ['old_state'],
-    #     ['states.name'],
-    # ),
-    # ForeignKeyConstraint(
-    #     ['new_state'],
-    #     ['states.name'],
-    # ),
 )
 
 
 """
 Represents a state machine.
 
-We serialise versions of the configuration into the database so that:
-- The structure of the state machines can be exported to a data warehouse.
-- We don't rely on stringly-typed fields in rest of the data model.
+We serialise versions of the configuration into the database so that the
+structure of the state machines can be exported to a data warehouse.
 """
 state_machines = Table(
     'state_machines',
