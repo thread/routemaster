@@ -73,12 +73,19 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
     state_machine = app_config.config.state_machines['test_machine']
     state = state_machine.states[0]
     dt = datetime.datetime.now(dateutil.tz.tzutc())
+    history_entry = mock.Mock()
 
     with mock.patch(
         'routemaster.state_machine.utils.Context',
     ) as mock_constructor:
 
-        utils.context_for_label(label, metadata, state_machine, state)
+        utils.context_for_label(
+            label,
+            metadata,
+            state_machine,
+            state,
+            history_entry,
+        )
         mock_constructor.assert_called_once_with(
             label=label.name,
             metadata=metadata,
@@ -88,6 +95,7 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
                 'metadata.should_progress',
                 'feeds.tests.should_do_alternate_action',
             ],
+            current_history_entry=history_entry,
         )
 
 
@@ -98,16 +106,24 @@ def test_context_for_label_in_action_created_with_correct_variables(app_config):
     state_machine = app_config.config.state_machines['test_machine']
     state = state_machine.states[2]
     dt = datetime.datetime.now(dateutil.tz.tzutc())
+    history_entry = mock.Mock()
 
     with mock.patch(
         'routemaster.state_machine.utils.Context',
     ) as mock_constructor:
 
-        utils.context_for_label(label, metadata, state_machine, state)
+        utils.context_for_label(
+            label,
+            metadata,
+            state_machine,
+            state,
+            history_entry,
+        )
         mock_constructor.assert_called_once_with(
             label=label.name,
             metadata=metadata,
             now=dt,
             feeds={'tests': Feed('http://localhost/tests', 'test_machine')},
             accessed_variables=['feeds.tests.should_loop'],
+            current_history_entry=history_entry,
         )
