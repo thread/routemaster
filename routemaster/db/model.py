@@ -26,6 +26,7 @@ labels = Table(
     Column('metadata', JSONB),
     Column('metadata_triggers_processed', Boolean, default=True),
     Column('deleted', Boolean, default=False),
+    Column('updated', DateTime, nullable=False),
 )
 
 
