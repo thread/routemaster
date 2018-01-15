@@ -5,7 +5,7 @@ import logging
 import functools
 import itertools
 import threading
-from typing import Any, Callable, Iterable
+from typing import Any, List, Callable
 
 import schedule
 
@@ -31,7 +31,11 @@ from routemaster.state_machine import (
 logger = logging.getLogger(__name__)
 
 IsTerminating = Callable[[], bool]
-LabelProvider = Callable[[StateMachine, State, Any], Iterable[str]]
+
+# Note: This function will be called in a different transaction to where we
+# iterate over the results, so to prevent confusion or the possible
+# introduction of errors, we require all the data up-front.
+LabelProvider = Callable[[StateMachine, State, Any], List[str]]
 
 CronProcessor = Callable[
     [LabelStateProcessor, LabelProvider, State, StateMachine],

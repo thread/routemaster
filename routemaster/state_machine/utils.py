@@ -129,7 +129,7 @@ def labels_in_state(
     state_machine: StateMachine,
     state: State,
     conn,
-) -> Iterable[str]:
+) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     return _labels_in_state(
         state_machine,
@@ -143,7 +143,7 @@ def labels_needing_metadata_update_retry_in_gate(
     state_machine: StateMachine,
     state: State,
     conn,
-) -> Iterable[str]:
+) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     if not isinstance(state, Gate):  # pragma: no branch
         raise RuntimeError(  # pragma: no cover
@@ -163,7 +163,7 @@ def _labels_in_state(
     state: State,
     filters: Iterable[ClauseElement],
     conn,
-) -> Iterable[str]:
+) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     ranked_transitions = select((
         history.c.label_name,
@@ -188,9 +188,7 @@ def _labels_in_state(
         ranked_transitions.c.label_name,
     )).where(and_(*(active_filters + tuple(filters))))
 
-    y = [x for x, in conn.execute(active_participants)]
-    print(y)
-    return y
+    return [x for x, in conn.execute(active_participants)]
 
 
 def context_for_label(
