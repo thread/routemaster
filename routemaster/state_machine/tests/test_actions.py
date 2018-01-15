@@ -99,7 +99,9 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     )
 
     with mock_webhook(WebhookResult.FAIL) as webhook:
-        process_retries(
+        process_cron(
+            process_action,
+            labels_in_state,
             app_config,
             state_machine,
             state_machine.states[1],
@@ -113,7 +115,9 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     )
 
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
-        process_retries(
+        process_cron(
+            process_action,
+            labels_in_state,
             app_config,
             state_machine,
             state_machine.states[1],
