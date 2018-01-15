@@ -46,9 +46,9 @@ CronProcessor = Callable[
 def process_job(
     *,
     # Bound at the cron thread level
-    app: App,
     is_terminating: IsTerminating,
     # Bound at the state scheduling level
+    app: App,
     state: State,
     state_machine: StateMachine,
     # Bound when scheduling a specific job for a state
@@ -145,6 +145,7 @@ def configure_schedule(
                 scheduler,
                 functools.partial(
                     processor,
+                    app=app,
                     state=state,
                     state_machine=state_machine,
                 ),
@@ -168,7 +169,6 @@ class CronThread(threading.Thread):  # pragma: no cover
             self.scheduler,
             functools.partial(
                 process_job,
-                app=self.app,
                 is_terminating=self.is_terminating,
             ),
         )
