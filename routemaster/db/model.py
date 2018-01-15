@@ -1,9 +1,10 @@
 """Database model definition."""
 import datetime
+import functools
 
+from sqlalchemy import Column as NullableColumn
 from sqlalchemy import (
     Table,
-    Column,
     String,
     Boolean,
     Integer,
@@ -16,6 +17,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
 
+Column = functools.partial(NullableColumn, nullable=False)
+
 
 """The representation of the state of a label."""
 labels = Table(
@@ -26,7 +29,7 @@ labels = Table(
     Column('metadata', JSONB),
     Column('metadata_triggers_processed', Boolean, default=True),
     Column('deleted', Boolean, default=False),
-    Column('updated', DateTime, nullable=False),
+    Column('updated', DateTime),
 )
 
 
@@ -50,8 +53,8 @@ history = Table(
     Column('forced', Boolean, default=False),
 
     # Null indicates starting a state machine
-    Column('old_state', String, nullable=True),
-    Column('new_state', String),
+    NullableColumn('old_state', String),
+    NullableColumn('new_state', String),
 
     # Can we get foreign key constraints on these as well?
     # Currently: no, because those columns are not unique themselves, however
@@ -108,11 +111,11 @@ states = Table(
 edges = Table(
     'edges',
     metadata,
-    Column('state_machine', String, primary_key=True, nullable=False),
-    Column('from_state', String, primary_key=True, nullable=False),
-    Column('to_state', String, primary_key=True, nullable=False),
-    Column('deprecated', Boolean, default=False, nullable=False),
-    Column('updated', DateTime, nullable=False),
+    Column('state_machine', String, primary_key=True),
+    Column('from_state', String, primary_key=True),
+    Column('to_state', String, primary_key=True),
+    Column('deprecated', Boolean, default=False),
+    Column('updated', DateTime),
     ForeignKeyConstraint(
         columns=('state_machine', 'from_state'),
         refcolumns=(states.c.state_machine, states.c.name),
