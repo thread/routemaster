@@ -17,7 +17,7 @@ from routemaster.state_machine.utils import (
     choose_next_state,
     context_for_label,
     get_label_metadata,
-    get_current_history_id,
+    get_current_history,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -50,6 +50,8 @@ def process_action(
     if deleted:
         raise DeletedLabel(label)
 
+    latest_history = get_current_history(label, conn)
+
     webhook_data = json.dumps({
         'metadata': metadata,
         'label': label.name,
@@ -57,7 +59,7 @@ def process_action(
 
     run_webhook = webhook_runner_for_state_machine(state_machine)
 
-    idempotency_token = _calculate_idempotency_token(label, conn)
+    idempotency_token = _calculate_idempotency_token(label, latest_history)
 
     result = run_webhook(
         action.webhook,
@@ -69,7 +71,13 @@ def process_action(
     if result != WebhookResult.SUCCESS:
         return False
 
-    context = context_for_label(label, metadata, state_machine, action)
+    context = context_for_label(
+        label,
+        metadata,
+        state_machine,
+        action,
+        latest_history,
+    )
     next_state = choose_next_state(state_machine, action, context)
 
     conn.execute(history.insert().values(
@@ -83,7 +91,7 @@ def process_action(
     return True
 
 
-def _calculate_idempotency_token(label: LabelRef, conn) -> str:
+def _calculate_idempotency_token(label: LabelRef, latest_history) -> str:
     """
     We want to make sure that an action is only performed once.
 
@@ -104,5 +112,4 @@ def _calculate_idempotency_token(label: LabelRef, conn) -> str:
     The label passed to this function _must_ be locked for the current
     transaction.
     """
-    latest_history_id = get_current_history_id(label, conn)
-    return hashlib.sha256(str(latest_history_id).encode('ascii')).hexdigest()
+    return hashlib.sha256(str(latest_history.id).encode('ascii')).hexdigest()

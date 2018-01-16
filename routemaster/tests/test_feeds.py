@@ -3,8 +3,7 @@ import pytest
 import httpretty
 
 from routemaster.feeds import Feed, FeedNotFetched, feeds_for_state_machine
-from routemaster.config import Feed as FeedConfig
-from routemaster.config import Gate, NoNextStates, StateMachine
+from routemaster.config import Gate, FeedConfig, NoNextStates, StateMachine
 from routemaster.exit_conditions import ExitConditionProgram
 
 

@@ -3,12 +3,14 @@
 import os
 import re
 import json
+import datetime
 import contextlib
 from typing import Any, Dict
 
 import mock
 import pytest
 import httpretty
+import dateutil.tz
 from sqlalchemy import and_, select, create_engine
 
 from routemaster import state_machine
@@ -16,11 +18,11 @@ from routemaster.db import labels, history, metadata
 from routemaster.app import App
 from routemaster.utils import dict_merge
 from routemaster.config import (
-    Feed,
     Gate,
     Action,
     Config,
     Webhook,
+    FeedConfig,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -31,6 +33,7 @@ from routemaster.config import (
     ContextNextStatesOption,
 )
 from routemaster.server import server
+from routemaster.context import Context
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
@@ -47,7 +50,7 @@ TEST_STATE_MACHINES = {
     'test_machine': StateMachine(
         name='test_machine',
         feeds=[
-            Feed(name='tests', url='http://localhost/tests'),
+            FeedConfig(name='tests', url='http://localhost/tests'),
         ],
         webhooks=[
             Webhook(
@@ -394,4 +397,19 @@ def set_metadata(app_config):
             ))
 
             return new_metadata
+    return _inner
+
+
+@pytest.fixture()
+def make_context():
+    """Factory for Contexts that provides sane defaults for testing."""
+    def _inner(**kwargs):
+        return Context(
+            label=kwargs['label'],
+            metadata=kwargs.get('metadata', {}),
+            now=kwargs.get('now', datetime.datetime.now(dateutil.tz.tzutc())),
+            feeds=kwargs.get('feeds', {}),
+            accessed_variables=kwargs.get('accessed_variables', []),
+            current_history_entry=kwargs.get('current_history_entry'),
+        )
     return _inner

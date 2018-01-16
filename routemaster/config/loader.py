@@ -11,13 +11,13 @@ import pkg_resources
 import jsonschema.exceptions
 
 from routemaster.config.model import (
-    Feed,
     Gate,
     State,
     Action,
     Config,
     Trigger,
     Webhook,
+    FeedConfig,
     NextStates,
     TimeTrigger,
     NoNextStates,
@@ -100,11 +100,12 @@ def _load_state_machine(
     name: str,
     yaml_state_machine: Yaml,
 ) -> StateMachine:
-    feeds = [_load_feed(x) for x in yaml_state_machine.get('feeds', [])]
+    feeds = [_load_feed_config(x) for x in yaml_state_machine.get('feeds', [])]
 
     if len(set(x.name for x in feeds)) < len(feeds):
         raise ConfigError(
-            f"Feeds must have unique names at {'.'.join(path + ['feeds'])}",
+            f"FeedConfigs must have unique names at "
+            f"{'.'.join(path + ['feeds'])}",
         )
 
     return StateMachine(
@@ -128,8 +129,8 @@ def _load_webhook(yaml: Yaml) -> Webhook:
     )
 
 
-def _load_feed(yaml: Yaml) -> Feed:
-    return Feed(name=yaml['name'], url=yaml['url'])
+def _load_feed_config(yaml: Yaml) -> FeedConfig:
+    return FeedConfig(name=yaml['name'], url=yaml['url'])
 
 
 def _load_state(path: Path, yaml_state: Yaml) -> State:

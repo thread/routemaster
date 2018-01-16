@@ -10,6 +10,7 @@ from routemaster.state_machine.utils import (
     context_for_label,
     get_state_machine,
     get_label_metadata,
+    get_current_history,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
@@ -43,7 +44,15 @@ def process_gate(
     if deleted:
         raise DeletedLabel(label)
 
-    context = context_for_label(label, metadata, state_machine, gate)
+    history_entry = get_current_history(label, conn)
+
+    context = context_for_label(
+        label,
+        metadata,
+        state_machine,
+        gate,
+        history_entry,
+    )
     can_exit = gate.exit_condition.run(context)
 
     if not can_exit:

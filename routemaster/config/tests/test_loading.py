@@ -8,11 +8,11 @@ import yaml
 import pytest
 
 from routemaster.config import (
-    Feed,
     Gate,
     Action,
     Config,
     Webhook,
+    FeedConfig,
     ConfigError,
     TimeTrigger,
     NoNextStates,
@@ -77,7 +77,7 @@ def test_realistic_config():
             'example': StateMachine(
                 name='example',
                 feeds=[
-                    Feed(name='data_feed', url='http://localhost/<label>'),
+                    FeedConfig(name='data_feed', url='http://localhost/<label>'),
                 ],
                 webhooks=[
                     Webhook(
@@ -233,7 +233,7 @@ def test_environment_variables_override_config_file_for_database_config():
             'example': StateMachine(
                 name='example',
                 feeds=[
-                    Feed(name='data_feed', url='http://localhost/<label>'),
+                    FeedConfig(name='data_feed', url='http://localhost/<label>'),
                 ],
                 webhooks=[
                     Webhook(
@@ -317,5 +317,5 @@ def test_raises_for_unparseable_database_port_in_environment_variable():
 
 
 def test_multiple_feeds_same_name_invalid():
-    with assert_config_error("Feeds must have unique names at state_machines.example.feeds"):
+    with assert_config_error("FeedConfigs must have unique names at state_machines.example.feeds"):
         load_config(yaml_data('multiple_feeds_same_name_invalid'))

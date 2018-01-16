@@ -1,13 +1,13 @@
 """Loading of application configuration."""
 
 from routemaster.config.model import (
-    Feed,
     Gate,
     State,
     Action,
     Config,
     Trigger,
     Webhook,
+    FeedConfig,
     NextStates,
     TimeTrigger,
     NoNextStates,
@@ -26,13 +26,13 @@ from routemaster.config.exceptions import ConfigError
 __all__ = (
     'load_config',
     'load_database_config',
-    'Feed',
     'Gate',
     'State',
     'Action',
     'Config',
     'Trigger',
     'Webhook',
+    'FeedConfig',
     'NextStates',
     'ConfigError',
     'TimeTrigger',
