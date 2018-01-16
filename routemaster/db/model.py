@@ -3,7 +3,6 @@ import datetime
 import functools
 
 import dateutil.tz
-
 from sqlalchemy import Column as NullableColumn
 from sqlalchemy import (
     DDL,
