@@ -2,8 +2,6 @@
 import datetime
 from typing import Any, Dict, Iterable, Optional, Sequence
 
-import dateutil.tz
-
 from routemaster.feeds import Feed
 from routemaster.utils import get_path
 
