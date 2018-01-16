@@ -2,6 +2,8 @@
 import datetime
 import functools
 
+import dateutil.tz
+
 from sqlalchemy import Column as NullableColumn
 from sqlalchemy import (
     DDL,
@@ -53,7 +55,7 @@ labels = Table(
     Column('deleted', Boolean, default=False),
     Column(
         'updated',
-        DateTime,
+        DateTime(timezone=True),
         server_default=func.now(),
         server_onupdate=FetchedValue(),
     ),
@@ -76,7 +78,11 @@ history = Table(
         ['labels.name', 'labels.state_machine'],
     ),
 
-    Column('created', DateTime, default=datetime.datetime.utcnow),
+    Column(
+        'created',
+        DateTime(timezone=True),
+        default=lambda: datetime.datetime.now(dateutil.tz.tzutc()),
+    ),
 
     # `forced = True` represents a manual transition that may not be in
     # accordance with the state machine logic.
