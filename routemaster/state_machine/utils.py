@@ -83,24 +83,21 @@ def get_current_state(
     return state_machine.get_state(history_entry.new_state)
 
 
-def get_current_history_id(
-    label: LabelRef,
-    conn,
-) -> int:
-    """Get the id of a label's last history entry."""
-    history_id = conn.execute(
-        select([history.c.id]).where(and_(
+def get_current_history(label: LabelRef, conn) -> Any:
+    """Get a label's last history entry."""
+    history_entry = conn.execute(
+        select([history]).where(and_(
             history.c.label_name == label.name,
             history.c.label_state_machine == label.state_machine,
         )).order_by(
             history.c.created.desc(),
         ).limit(1),
-    ).scalar()
+    ).fetchone()
 
-    if history_id is None:
+    if history_entry is None:
         raise UnknownLabel(label)
 
-    return history_id
+    return history_entry
 
 
 def needs_gate_evaluation_for_metadata_change(
@@ -217,6 +214,7 @@ def context_for_label(
     metadata: Metadata,
     state_machine: StateMachine,
     state: State,
+    history_entry: Any,
 ) -> Context:
     """Util to build the context for a label in a state."""
     feeds = feeds_for_state_machine(state_machine)
@@ -228,9 +226,10 @@ def context_for_label(
         accessed_variables.append(state.next_states.path)
 
     return Context(
-        label.name,
-        metadata,
-        datetime.datetime.now(dateutil.tz.tzutc()),
-        feeds,
-        accessed_variables,
+        label=label.name,
+        metadata=metadata,
+        now=datetime.datetime.now(dateutil.tz.tzutc()),
+        feeds=feeds,
+        accessed_variables=accessed_variables,
+        current_history_entry=history_entry,
     )
