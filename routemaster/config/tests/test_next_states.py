@@ -22,7 +22,7 @@ def test_no_next_states_must_not_be_called():
         next_states.next_state_for_label(None)
 
 
-def test_context_next_states():
+def test_context_next_states(make_context):
     next_states = ContextNextStates(
         path='metadata.foo',
         destinations=[
@@ -31,13 +31,13 @@ def test_context_next_states():
         ],
     )
 
-    context = Context(label='label1', metadata={'foo': True})
+    context = make_context(label='label1', metadata={'foo': True})
 
     assert next_states.all_destinations() == ['1', '2']
     assert next_states.next_state_for_label(context) == '1'
 
 
-def test_context_next_states_raises_for_no_valid_state():
+def test_context_next_states_raises_for_no_valid_state(make_context):
     next_states = ContextNextStates(
         path='metadata.foo',
         destinations=[
@@ -46,7 +46,7 @@ def test_context_next_states_raises_for_no_valid_state():
         ],
     )
 
-    context = Context(label='label1', metadata={'foo': 'bar'})
+    context = make_context(label='label1', metadata={'foo': 'bar'})
 
     with pytest.raises(RuntimeError):
         next_states.next_state_for_label(context)

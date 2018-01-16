@@ -3,20 +3,23 @@
 import os
 import re
 import json
+import datetime
 import contextlib
-from typing import Any, Dict
+from typing import Any, Dict, Iterable, Optional
 
 import mock
 import pytest
 import httpretty
+import dateutil.tz
 from sqlalchemy import and_, select, create_engine
 
 from routemaster import state_machine
 from routemaster.db import labels, history, metadata
 from routemaster.app import App
+from routemaster.feeds import Feed
 from routemaster.utils import dict_merge
+from routemaster.config import Feed as FeedConfig
 from routemaster.config import (
-    Feed,
     Gate,
     Action,
     Config,
@@ -31,6 +34,7 @@ from routemaster.config import (
     ContextNextStatesOption,
 )
 from routemaster.server import server
+from routemaster.context import Context
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
@@ -47,7 +51,7 @@ TEST_STATE_MACHINES = {
     'test_machine': StateMachine(
         name='test_machine',
         feeds=[
-            Feed(name='tests', url='http://localhost/tests'),
+            FeedConfig(name='tests', url='http://localhost/tests'),
         ],
         webhooks=[
             Webhook(
@@ -394,4 +398,36 @@ def set_metadata(app_config):
             ))
 
             return new_metadata
+    return _inner
+
+
+@pytest.fixture()
+def make_context():
+    """Factory for Contexts that provides sane defaults for testing."""
+    def _inner(
+        *,
+        label: str,
+        metadata: Dict[str, Any] = None,
+        now: datetime.datetime = None,
+        feeds: Dict[str, Feed] = None,
+        accessed_variables: Iterable[str] = None,
+        current_history_entry: Optional[Any] = None,
+    ):
+        if metadata is None:
+            metadata = {}
+        if now is None:
+            now = datetime.datetime.now(dateutil.tz.tzutc())
+        if feeds is None:
+            feeds = {}
+        if accessed_variables is None:
+            accessed_variables = []
+
+        return Context(
+            label=label,
+            metadata=metadata,
+            now=now,
+            feeds=feeds,
+            accessed_variables=accessed_variables,
+            current_history_entry=current_history_entry,
+        )
     return _inner

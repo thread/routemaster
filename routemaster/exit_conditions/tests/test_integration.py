@@ -68,9 +68,9 @@ HISTORY_ENTRY = FakeHistoryEntry(
 
 
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
-def test_evaluate(program, expected, variables):
+def test_evaluate(program, expected, variables, make_context):
     program = ExitConditionProgram(program)
-    context = Context(
+    context = make_context(
         label='label1',
         metadata=VARIABLES,
         now=NOW,
@@ -169,10 +169,10 @@ ERRORS = [
 
 
 @pytest.mark.parametrize("source, error", ERRORS)
-def test_errors(source, error):
+def test_errors(source, error, make_context):
     with pytest.raises(ValueError) as compile_error:
         program = ExitConditionProgram(source)
-        context = Context(
+        context = make_context(
             label='label1',
             metadata=VARIABLES,
             now=NOW,

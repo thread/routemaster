@@ -15,16 +15,14 @@ class Context(object):
         self,
         *,
         label: str,
-        metadata: Dict[str, Any] = {},
-        now: datetime.datetime = None,
-        feeds: Dict[str, Feed] = {},
-        accessed_variables: Iterable[str] = [],
-        current_history_entry: Optional[Any] = None,
+        metadata: Dict[str, Any],
+        now: datetime.datetime,
+        feeds: Dict[str, Feed],
+        accessed_variables: Iterable[str],
+        current_history_entry: Optional[Any],
     ) -> None:
         """Create an execution context."""
-        if now is None:
-            now = datetime.datetime.now(dateutil.tz.tzutc())
-        elif now.tzinfo is None:
+        if now.tzinfo is None:
             raise ValueError(
                 "Cannot evaluate exit conditions with naive datetimes",
             )
