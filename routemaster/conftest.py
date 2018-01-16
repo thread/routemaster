@@ -72,10 +72,6 @@ TEST_STATE_MACHINES = {
                     destinations=[
                         ContextNextStatesOption(
                             state='perform_action',
-                            value=None,
-                        ),
-                        ContextNextStatesOption(
-                            state='perform_action',
                             value=False,
                         ),
                         ContextNextStatesOption(
@@ -83,6 +79,7 @@ TEST_STATE_MACHINES = {
                             value=True,
                         ),
                     ],
+                    default='perform_action',
                 ),
                 exit_condition=ExitConditionProgram(
                     'metadata.should_progress = true',
@@ -101,10 +98,6 @@ TEST_STATE_MACHINES = {
                     destinations=[
                         ContextNextStatesOption(
                             state='end',
-                            value=None,
-                        ),
-                        ContextNextStatesOption(
-                            state='end',
                             value=False,
                         ),
                         ContextNextStatesOption(
@@ -112,6 +105,7 @@ TEST_STATE_MACHINES = {
                             value=True,
                         ),
                     ],
+                    default='end',
                 ),
             ),
             Gate(

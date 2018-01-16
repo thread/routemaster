@@ -26,6 +26,7 @@ state_machines:
         next:
           type: context
           path: foo.bar
+          default: end
           destinations:
             - state: stage3
               value: '1'

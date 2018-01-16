@@ -115,7 +115,8 @@ def test_realistic_config():
                                     state='stage3',
                                     value='2',
                                 ),
-                            ]
+                            ],
+                            default='end',
                         ),
                         exit_condition=ExitConditionProgram(
                             'foo.bar is defined',
@@ -271,7 +272,8 @@ def test_environment_variables_override_config_file_for_database_config():
                                     state='stage3',
                                     value='2',
                                 ),
-                            ]
+                            ],
+                            default='end',
                         ),
                         exit_condition=ExitConditionProgram(
                             'foo.bar is defined',

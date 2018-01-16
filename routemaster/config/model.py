@@ -78,6 +78,7 @@ class ContextNextStates(NamedTuple):
     """Defined a choice based on a path in the given `label_context`."""
     path: str
     destinations: Iterable[ContextNextStatesOption]
+    default: str  # noqa: E704
 
     def next_state_for_label(self, label_context: 'Context') -> str:
         """Returns next state based on context value at `self.path`."""
@@ -85,11 +86,11 @@ class ContextNextStates(NamedTuple):
         for destination in self.destinations:
             if destination.value == val:
                 return destination.state
-        raise RuntimeError("Handle this gracefully.")
+        return self.default
 
     def all_destinations(self) -> Iterable[str]:
         """Returns all possible destination states."""
-        return [x.state for x in self.destinations]
+        return [x.state for x in self.destinations] + [self.default]
 
 
 class NoNextStates(NamedTuple):

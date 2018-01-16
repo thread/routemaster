@@ -29,24 +29,25 @@ def test_context_next_states(make_context):
             ContextNextStatesOption(state='1', value=True),
             ContextNextStatesOption(state='2', value=False),
         ],
+        default='3',
     )
 
     context = make_context(label='label1', metadata={'foo': True})
 
-    assert next_states.all_destinations() == ['1', '2']
+    assert next_states.all_destinations() == ['1', '2', '3']
     assert next_states.next_state_for_label(context) == '1'
 
 
-def test_context_next_states_raises_for_no_valid_state(make_context):
+def test_context_next_states_returns_default_if_no_match(make_context):
     next_states = ContextNextStates(
         path='metadata.foo',
         destinations=[
             ContextNextStatesOption(state='1', value=True),
             ContextNextStatesOption(state='2', value=False),
         ],
+        default='3',
     )
 
     context = make_context(label='label1', metadata={'foo': 'bar'})
 
-    with pytest.raises(RuntimeError):
-        next_states.next_state_for_label(context)
+    assert next_states.next_state_for_label(context) == '3'
