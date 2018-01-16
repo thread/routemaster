@@ -84,6 +84,8 @@ history = Table(
 
     # Null indicates starting a state machine
     NullableColumn('old_state', String),
+
+    # Null indicates being deleted from a state machine
     NullableColumn('new_state', String),
 )
 
