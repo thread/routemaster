@@ -63,7 +63,6 @@ def process_gate(
         labels.c.state_machine == label.state_machine,
     )).values(
         metadata_triggers_processed=True,
-        updated=func.now(),
     ))
 
     return True

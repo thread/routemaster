@@ -2,6 +2,9 @@
 import datetime
 
 from sqlalchemy import (
+    func,
+    event,
+    DDL,
     Table,
     Column,
     String,
@@ -10,11 +13,31 @@ from sqlalchemy import (
     DateTime,
     MetaData,
     ForeignKey,
+    FetchedValue,
     ForeignKeyConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
+
+sync_label_updated_column = DDL(
+    '''
+    CREATE OR REPLACE FUNCTION sync_label_updated_column_fn()
+        RETURNS TRIGGER AS
+            $$
+                BEGIN
+                    NEW.updated = now();
+                    RETURN NEW;
+                END;
+            $$
+        LANGUAGE PLPGSQL;
+
+    CREATE TRIGGER sync_label_updated_column
+        BEFORE UPDATE ON labels
+        FOR EACH ROW
+        EXECUTE PROCEDURE sync_label_updated_column_fn();
+    ''',
+)
 
 
 """The representation of the state of a label."""
@@ -26,7 +49,15 @@ labels = Table(
     Column('metadata', JSONB),
     Column('metadata_triggers_processed', Boolean, default=True),
     Column('deleted', Boolean, default=False),
-    Column('updated', DateTime, nullable=False),
+    Column(
+        'updated',
+        DateTime,
+        server_default=func.now(),
+        server_onupdate=FetchedValue(),
+    ),
+    listeners=[
+        ('after_create', sync_label_updated_column)
+    ]
 )
 
 

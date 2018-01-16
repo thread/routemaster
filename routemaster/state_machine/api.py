@@ -88,7 +88,6 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
                 name=label.name,
                 state_machine=state_machine.name,
                 metadata=metadata,
-                updated=func.now(),
             ))
         except IntegrityError:
             raise LabelAlreadyExists(label)
@@ -136,7 +135,6 @@ def update_metadata_for_label(
         )).values(
             metadata=new_metadata,
             metadata_triggers_processed=not needs_gate_evaluation,
-            updated=func.now(),
         ))
 
     # Outside transaction
@@ -220,7 +218,6 @@ def delete_label(app: App, label: LabelRef) -> None:
         )).values(
             metadata={},
             deleted=True,
-            updated=func.now(),
         ))
 
         # Add a history entry for the deletion
