@@ -17,8 +17,10 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.declarative import declarative_base
 
 metadata = MetaData()
+Base = declarative_base(metadata=metadata)
 
 Column = functools.partial(NullableColumn, nullable=False)
 
@@ -92,3 +94,23 @@ history = Table(
     # Null indicates being deleted from a state machine
     NullableColumn('new_state', String),
 )
+
+
+class Label(Base):
+    __table__ = labels
+
+    def __repr__(self):
+        return (
+            f"Label(state_machine={self.state_machine!r}, name={self.name!r})"
+        )
+
+
+class History(Base):
+    __table__ = history
+
+    def __repr__(self):
+        return (
+            f"History(id={self.id!r}, "
+            f"label_state_machine={self.label_state_machine!r}, "
+            f"label_name={self.label_name!r})"
+        )
