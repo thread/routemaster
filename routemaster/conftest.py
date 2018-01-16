@@ -18,12 +18,12 @@ from routemaster.db import labels, history, metadata
 from routemaster.app import App
 from routemaster.feeds import Feed
 from routemaster.utils import dict_merge
-from routemaster.config import Feed as FeedConfig
 from routemaster.config import (
     Gate,
     Action,
     Config,
     Webhook,
+    FeedConfig,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
