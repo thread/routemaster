@@ -1,6 +1,7 @@
 # Migrations setup
 
-Routemaster uses [`alembic`][alembic] for its migrations.
+Routemaster uses [`alembic`][alembic] for its migrations, and supports
+Postgres for its data storage.
 
 ## I need to set up my database up for the first time
 

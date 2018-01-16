@@ -236,3 +236,39 @@ def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metada
     assert_history([
         (None, 'gate_1'),
     ])
+
+
+def test_maintains_updated_field_on_label(app_config, mock_test_feed):
+    label = LabelRef('foo', 'test_machine')
+
+    with mock_test_feed():
+        state_machine.create_label(
+            app_config,
+            label,
+            {},
+        )
+
+    with app_config.db.begin() as conn:
+        first_updated = conn.scalar(
+            select([labels.c.updated]).where(and_(
+                labels.c.name == label.name,
+                labels.c.state_machine == label.state_machine,
+            )),
+        )
+
+    with mock_test_feed():
+        state_machine.update_metadata_for_label(
+            app_config,
+            label,
+            {'foo': 'bar'},
+        )
+
+    with app_config.db.begin() as conn:
+        second_updated = conn.scalar(
+            select([labels.c.updated]).where(and_(
+                labels.c.name == label.name,
+                labels.c.state_machine == label.state_machine,
+            )),
+        )
+
+    assert second_updated > first_updated

@@ -6,7 +6,7 @@ State machines as a service.
 
 (The _master_ of _routes_ through a state machine.)
 
-Routemaster targets Python 3.6 and above.
+Routemaster targets Python 3.6 and above, and requires Postgres.
 
 
 ##### Useful Links
