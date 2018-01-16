@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Callable, Iterable
 
-from sqlalchemy import and_, func, not_
+from sqlalchemy import and_, not_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
 

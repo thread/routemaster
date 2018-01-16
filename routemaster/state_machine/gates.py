@@ -1,5 +1,5 @@
 """Processing for gate states."""
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 
 from routemaster.db import labels, history
 from routemaster.app import App

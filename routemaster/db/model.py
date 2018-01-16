@@ -4,8 +4,6 @@ import functools
 
 from sqlalchemy import Column as NullableColumn
 from sqlalchemy import (
-    func,
-    event,
     DDL,
     Table,
     String,
@@ -16,6 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     FetchedValue,
     ForeignKeyConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -59,7 +58,7 @@ labels = Table(
         server_onupdate=FetchedValue(),
     ),
     listeners=[
-        ('after_create', sync_label_updated_column)
+        ('after_create', sync_label_updated_column),
     ],
 )
 
