@@ -105,8 +105,10 @@ state_machines = Table(
     'state_machines',
     metadata,
 
-    Column('name', String, primary_key=True),
-    Column('updated', DateTime),
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('name', String),
+    Column('updated', DateTime(timezone=True)),
+    NullableColumn('deleted', DateTime(timezone=True)),
 )
 
 
@@ -114,18 +116,20 @@ state_machines = Table(
 states = Table(
     'states',
     metadata,
-    Column('name', String, primary_key=True),
+
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('name', String),
     Column(
-        'state_machine',
-        String,
-        ForeignKey('state_machines.name'),
-        primary_key=True,
+        'state_machine_id',
+        Integer,
+        ForeignKey('state_machines.id'),
     ),
 
-    # `deprecated = True` represents a state that is no longer accessible.
-    Column('deprecated', Boolean, default=False),
+    NullableColumn('exit_condition', String),
+    NullableColumn('webhook', String),
 
-    Column('updated', DateTime),
+    Column('updated', DateTime(timezone=True)),
+    NullableColumn('deleted', DateTime(timezone=True)),
 )
 
 
@@ -133,17 +137,12 @@ states = Table(
 edges = Table(
     'edges',
     metadata,
-    Column('state_machine', String, primary_key=True),
-    Column('from_state', String, primary_key=True),
-    Column('to_state', String, primary_key=True),
-    Column('deprecated', Boolean, default=False),
-    Column('updated', DateTime),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'from_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'to_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
+    Column('id', Integer, primary_key=True, autoincrement=True),
+
+    Column('state_machine_id', ForeignKey('states.id')),
+    Column('from_state_id', ForeignKey('states.id')),
+    Column('to_state_id', ForeignKey('states.id')),
+
+    Column('updated', DateTime(timezone=True)),
+    NullableColumn('deleted', DateTime(timezone=True)),
 )
