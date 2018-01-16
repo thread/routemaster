@@ -109,7 +109,8 @@ def test_nonexistent_node_destination_invalid(app_config):
                             state='end',
                             value='2',
                         ),
-                    ]
+                    ],
+                    default='end',
                 ),
                 exit_condition=ExitConditionProgram('false'),
             ),

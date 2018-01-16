@@ -293,6 +293,7 @@ def _load_context_next_states(
             )
             for idx, yaml_option in enumerate(yaml_next_states['destinations'])
         ],
+        default=yaml_next_states['default'],
     )
 
 
