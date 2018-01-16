@@ -5,7 +5,8 @@
 You'll need to create a database for developing against and for running tests
 against. This can be done by running the `scripts/database/create_databases.sh`
 script. Full details of how the database, models & migrations are handled can be
-found in the [migrations docs](docs/migrations.md).
+found in the [migrations docs](docs/migrations.md). Routemaster requires
+Postgres.
 
 #### Tox
 
