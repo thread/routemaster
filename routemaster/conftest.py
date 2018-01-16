@@ -5,7 +5,7 @@ import re
 import json
 import datetime
 import contextlib
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict
 
 import mock
 import pytest
@@ -16,7 +16,6 @@ from sqlalchemy import and_, select, create_engine
 from routemaster import state_machine
 from routemaster.db import labels, history, metadata
 from routemaster.app import App
-from routemaster.feeds import Feed
 from routemaster.utils import dict_merge
 from routemaster.config import (
     Gate,
@@ -404,30 +403,13 @@ def set_metadata(app_config):
 @pytest.fixture()
 def make_context():
     """Factory for Contexts that provides sane defaults for testing."""
-    def _inner(
-        *,
-        label: str,
-        metadata: Dict[str, Any] = None,
-        now: datetime.datetime = None,
-        feeds: Dict[str, Feed] = None,
-        accessed_variables: Iterable[str] = None,
-        current_history_entry: Optional[Any] = None,
-    ):
-        if metadata is None:
-            metadata = {}
-        if now is None:
-            now = datetime.datetime.now(dateutil.tz.tzutc())
-        if feeds is None:
-            feeds = {}
-        if accessed_variables is None:
-            accessed_variables = []
-
+    def _inner(**kwargs):
         return Context(
-            label=label,
-            metadata=metadata,
-            now=now,
-            feeds=feeds,
-            accessed_variables=accessed_variables,
-            current_history_entry=current_history_entry,
+            label=kwargs['label'],
+            metadata=kwargs.get('metadata', {}),
+            now=kwargs.get('now', datetime.datetime.now(dateutil.tz.tzutc())),
+            feeds=kwargs.get('feeds', {}),
+            accessed_variables=kwargs.get('accessed_variables', []),
+            current_history_entry=kwargs.get('current_history_entry'),
         )
     return _inner
