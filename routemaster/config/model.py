@@ -78,7 +78,7 @@ class ContextNextStates(NamedTuple):
     """Defined a choice based on a path in the given `label_context`."""
     path: str
     destinations: Iterable[ContextNextStatesOption]
-    default: str  # noqa: E704
+    default: str  # noqa: E704 misidentified "multiple statements on one line"
 
     def next_state_for_label(self, label_context: 'Context') -> str:
         """Returns next state based on context value at `self.path`."""
