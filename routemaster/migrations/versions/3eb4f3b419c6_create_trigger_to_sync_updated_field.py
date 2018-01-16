@@ -22,7 +22,7 @@ def upgrade():
             RETURNS TRIGGER AS
                 $$
                     BEGIN
-                        NEW.updated = now();
+                        NEW.updated = now() AT TIME ZONE 'UTC';
                         RETURN NEW;
                     END;
                 $$
