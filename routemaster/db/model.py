@@ -12,7 +12,6 @@ from sqlalchemy import (
     Integer,
     DateTime,
     MetaData,
-    ForeignKey,
     FetchedValue,
     ForeignKeyConstraint,
     func,
@@ -92,57 +91,4 @@ history = Table(
 
     # Null indicates being deleted from a state machine
     NullableColumn('new_state', String),
-)
-
-
-"""
-Represents a state machine.
-
-We serialise versions of the configuration into the database so that the
-structure of the state machines can be exported to a data warehouse.
-"""
-state_machines = Table(
-    'state_machines',
-    metadata,
-
-    Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('name', String),
-    Column('updated', DateTime(timezone=True)),
-    NullableColumn('deleted', DateTime(timezone=True)),
-)
-
-
-"""Represents a state in a state machine."""
-states = Table(
-    'states',
-    metadata,
-
-    Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('name', String),
-    Column(
-        'state_machine_id',
-        Integer,
-        ForeignKey('state_machines.id'),
-    ),
-
-    NullableColumn('exit_condition', String),
-    NullableColumn('webhook', String),
-
-    Column('updated', DateTime(timezone=True)),
-    NullableColumn('deleted', DateTime(timezone=True)),
-)
-
-
-"""Represents an edge between states in a state machine."""
-edges = Table(
-    'edges',
-    metadata,
-    Column('id', Integer, primary_key=True, autoincrement=True),
-
-    Column('state_machine_id', ForeignKey('states.id')),
-    Column('from_state_id', ForeignKey('states.id')),
-    Column('to_state_id', ForeignKey('states.id')),
-
-    Column('updated', DateTime(timezone=True)),
-    NullableColumn('deleted', DateTime(timezone=True)),
 )

@@ -20,7 +20,6 @@ DEPENDENCIES = (
     ('cli', 'server'),
     ('cli', 'app'),
     ('cli', 'gunicorn_application'),
-    ('cli', 'record_states'),
     ('cli', 'validation'),
 
     ('exit_conditions', 'utils'),
@@ -50,9 +49,6 @@ DEPENDENCIES = (
     ('state_machine', 'feeds'),
     ('state_machine', 'context'),
     ('state_machine', 'webhooks'),
-
-    ('record_states', 'app'),
-    ('record_states', 'config'),
 
     ('feeds', 'config'),
 

@@ -9,7 +9,6 @@ from routemaster.cron import CronThread
 from routemaster.config import ConfigError, load_config
 from routemaster.server import server
 from routemaster.validation import ValidationError, validate_config
-from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
 logger = logging.getLogger(__name__)
@@ -91,8 +90,6 @@ def serve(ctx, bind, debug):  # pragma: no cover
     server.config.app = app
     if debug:
         server.config['DEBUG'] = True
-
-    record_state_machines(app, app.config.state_machines.values())
 
     cron_thread = CronThread(app)
     cron_thread.start()
