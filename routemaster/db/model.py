@@ -12,7 +12,6 @@ from sqlalchemy import (
     Integer,
     DateTime,
     MetaData,
-    ForeignKey,
     FetchedValue,
     ForeignKeyConstraint,
     func,
@@ -92,58 +91,4 @@ history = Table(
 
     # Null indicates being deleted from a state machine
     NullableColumn('new_state', String),
-)
-
-
-"""
-Represents a state machine.
-
-We serialise versions of the configuration into the database so that the
-structure of the state machines can be exported to a data warehouse.
-"""
-state_machines = Table(
-    'state_machines',
-    metadata,
-
-    Column('name', String, primary_key=True),
-    Column('updated', DateTime),
-)
-
-
-"""Represents a state in a state machine."""
-states = Table(
-    'states',
-    metadata,
-    Column('name', String, primary_key=True),
-    Column(
-        'state_machine',
-        String,
-        ForeignKey('state_machines.name'),
-        primary_key=True,
-    ),
-
-    # `deprecated = True` represents a state that is no longer accessible.
-    Column('deprecated', Boolean, default=False),
-
-    Column('updated', DateTime),
-)
-
-
-"""Represents an edge between states in a state machine."""
-edges = Table(
-    'edges',
-    metadata,
-    Column('state_machine', String, primary_key=True),
-    Column('from_state', String, primary_key=True),
-    Column('to_state', String, primary_key=True),
-    Column('deprecated', Boolean, default=False),
-    Column('updated', DateTime),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'from_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'to_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
 )
