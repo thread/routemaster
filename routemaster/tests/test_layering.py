@@ -41,6 +41,7 @@ DEPENDENCIES = (
     ('app', 'config'),
 
     ('server', 'state_machine'),
+    ('server', 'VERSION'),
 
     ('state_machine', 'app'),
     ('state_machine', 'db'),

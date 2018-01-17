@@ -3,6 +3,7 @@ import json
 import mock
 from sqlalchemy import and_, select
 
+from routemaster import VERSION
 from routemaster.db import labels, history
 
 
@@ -11,6 +12,7 @@ def test_root(client):
     assert response.json == {
         'status': 'ok',
         'state-machines': '/state-machines',
+        'version': VERSION,
     }
 
 
@@ -24,6 +26,7 @@ def test_root_error_state(client):
         assert response.json == {
             'status': 'error',
             'message': 'Cannot connect to database',
+            'version': VERSION,
         }
 
 

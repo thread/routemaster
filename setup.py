@@ -1,12 +1,14 @@
 from setuptools import setup, find_packages
 
+import routemaster
+
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 
 setup(
     name='routemaster',
-    version='0.0.2',
+    version=routemaster.VERSION,
     url='https://github.com/thread/routemaster',
     description="State machines as a service.",
     long_description=long_description,
