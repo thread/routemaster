@@ -26,9 +26,17 @@ WSGICallable = Callable[
 class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
     """gunicorn application for routemaster."""
 
-    def __init__(self, app: WSGICallable, *, bind: str, debug: bool) -> None:
+    def __init__(
+        self,
+        app: WSGICallable,
+        *,
+        bind: str,
+        log_level: str,
+        debug: bool,
+    ) -> None:
         self.application = app
         self.bind = bind
+        self.log_level = log_level
         self.debug = debug
         super().__init__()
 
@@ -41,6 +49,7 @@ class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
         """
         self.cfg.set('bind', self.bind)
         self.cfg.set('workers', 1)
+        self.cfg.set('loglevel', self.log_level)
 
         if self.debug:
             self.cfg.set('reload', True)

@@ -53,7 +53,7 @@ def main(ctx, config_file, log_level):
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
-    ctx.obj = App(config)
+    ctx.obj = App(config, log_level)
     _validate_config(ctx.obj)
 
 
@@ -95,7 +95,12 @@ def serve(ctx, bind, debug):  # pragma: no cover
     cron_thread.start()
 
     try:
-        instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
+        instance = GunicornWSGIApplication(
+            server,
+            bind=bind,
+            debug=debug,
+            log_level=ctx.obj.log_level,
+        )
         instance.run()
     finally:
         cron_thread.stop()
