@@ -47,6 +47,8 @@ def main(ctx, config_file, log_level):
         level=getattr(logging, log_level),
     )
 
+    logging.getLogger('schedule').setLevel(logging.CRITICAL)
+
     try:
         config = load_config(yaml.load(config_file))
     except ConfigError:
