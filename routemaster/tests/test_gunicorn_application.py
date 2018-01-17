@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 import werkzeug.test
 import werkzeug.testapp
@@ -14,7 +12,7 @@ def test_gunicorn_application_can_be_constructed(debug):
         werkzeug.testapp.test_app,
         bind='[::1]:0',
         debug=debug,
-        log_level=logging.DEBUG,
+        log_level='DEBUG',
     )
 
     application.load_config()
