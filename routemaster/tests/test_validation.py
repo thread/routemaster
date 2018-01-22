@@ -15,6 +15,8 @@ from routemaster.exit_conditions import ExitConditionProgram
 def test_valid(app_config):
     _validate_state_machine(app_config, StateMachine(
         name='example',
+        feeds=[],
+        webhooks=[],
         states=[
             Gate(
                 name='start',
@@ -35,6 +37,8 @@ def test_valid(app_config):
 def test_disconnected_state_machine_invalid(app_config):
     state_machine = StateMachine(
         name='example',
+        feeds=[],
+        webhooks=[],
         states=[
             Gate(
                 name='start',
@@ -57,6 +61,8 @@ def test_disconnected_state_machine_invalid(app_config):
 def test_no_path_from_start_to_end_state_machine_invalid(app_config):
     state_machine = StateMachine(
         name='example',
+        feeds=[],
+        webhooks=[],
         states=[
             Gate(
                 name='start',
@@ -80,6 +86,8 @@ def test_no_path_from_start_to_end_state_machine_invalid(app_config):
 def test_nonexistent_node_destination_invalid(app_config):
     state_machine = StateMachine(
         name='example',
+        feeds=[],
+        webhooks=[],
         states=[
             Gate(
                 name='start',
@@ -95,7 +103,8 @@ def test_nonexistent_node_destination_invalid(app_config):
                             state='end',
                             value='2',
                         ),
-                    ]
+                    ],
+                    default='end',
                 ),
                 exit_condition=ExitConditionProgram('false'),
             ),
@@ -115,6 +124,8 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
     create_label('foo', 'test_machine', {})  # Created in "start" implicitly
     state_machine = StateMachine(
         name='test_machine',
+        feeds=[],
+        webhooks=[],
         states=[
             # Note: state "start" from "test_machine" is gone.
             Gate(
@@ -125,5 +136,29 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
             ),
         ]
     )
-    # with pytest.raises(ValidationError): This should be enabled!
-    _validate_state_machine(app_config, state_machine)
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)
+
+
+def test_label_in_deleted_state_on_per_state_machine_basis(
+    app_config,
+    create_label,
+):
+    create_label('foo', 'test_machine', {})  # Created in "start" implicitly
+    state_machine = StateMachine(
+        name='other_machine',
+        feeds=[],
+        webhooks=[],
+        states=[
+            # Note: state "start" is not present, but that we're in a different
+            # state machine.
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ]
+    )
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app_config, state_machine)

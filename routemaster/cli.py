@@ -1,13 +1,17 @@
 """CLI handling for `routemaster`."""
+import logging
+
 import yaml
 import click
 
 from routemaster.app import App
-from routemaster.config import load_config
+from routemaster.cron import CronThread
+from routemaster.config import ConfigError, load_config
 from routemaster.server import server
 from routemaster.validation import ValidationError, validate_config
-from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -18,19 +22,53 @@ from routemaster.gunicorn_application import GunicornWSGIApplication
     type=click.File(encoding='utf-8'),
     required=True,
 )
+@click.option(
+    '-l',
+    '--log-level',
+    help="Logging level.",
+    type=click.Choice((
+        'CRITICAL',
+        'ERROR',
+        'WARNING',
+        'INFO',
+        'DEBUG',
+    )),
+    default='INFO',
+)
 @click.pass_context
-def main(ctx, config_file):
+def main(ctx, config_file, log_level):
     """Shared entrypoint configuration."""
-    config = load_config(yaml.load(config_file))
-    ctx.obj = App(config)
+    logging.basicConfig(
+        format=(
+            "[%(asctime)s] [%(process)d] [%(levelname)s] "
+            "[%(name)s] %(message)s"
+        ),
+        datefmt="%Y-%m-%d %H:%M:%S %z",
+        level=getattr(logging, log_level),
+    )
+
+    logging.getLogger('schedule').setLevel(logging.CRITICAL)
+
+    try:
+        config = load_config(yaml.load(config_file))
+    except ConfigError:
+        logger.exception("Configuration Error")
+        click.get_current_context().exit(1)
+
+    ctx.obj = App(config, log_level)
+    _validate_config(ctx.obj)
 
 
 @main.command()
 @click.pass_context
 def validate(ctx):
-    """Entrypoint for validation of configuration files."""
-    app = ctx.obj
-    _validate_config(app)
+    """
+    Entrypoint for validation of configuration files.
+
+    Validation is done by the main handler in order to cover all code paths,
+    so this function is a stub so that `serve` does not have to be called.
+    """
+    pass
 
 
 @main.command()
@@ -47,26 +85,33 @@ def validate(ctx):
     default=False,
 )
 @click.pass_context
-def serve(ctx, bind, debug):
+def serve(ctx, bind, debug):  # pragma: no cover
     """Entrypoint for serving the Routemaster HTTP service."""
     app = ctx.obj
-    _validate_config(app)
 
     server.config.app = app
     if debug:
         server.config['DEBUG'] = True
 
-    record_state_machines(app, app.config.state_machines.values())
+    cron_thread = CronThread(app)
+    cron_thread.start()
 
-    instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
-    instance.run()
+    try:
+        instance = GunicornWSGIApplication(
+            server,
+            bind=bind,
+            debug=debug,
+            log_level=ctx.obj.log_level,
+        )
+        instance.run()
+    finally:
+        cron_thread.stop()
 
 
-def _validate_config(app):
+def _validate_config(app: App):
     try:
         validate_config(app, app.config)
     except ValidationError as e:
         msg = f"Validation Error: {e}"
-
-        click.echo(click.style(msg, bold=True, fg='red'))
+        logger.exception(msg)
         click.get_current_context().exit(1)

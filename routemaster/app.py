@@ -11,7 +11,8 @@ class App:
     db: Engine
     config: Config
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, log_level: str = 'INFO') -> None:
         """Initialisation of the app state."""
         self.config = config
         self.db = initialise_db(self.config.database)
+        self.log_level = log_level

@@ -2,25 +2,39 @@ $schema: http://json-schema.org/draft-06/schema#
 title: Configuration
 type: object
 properties:
-  database:
-    type: object
-    properties:
-      host:
-        type: string
-      port:
-        type: number
-      name:
-        type: string
-      username:
-        type: string
-      password:
-        type: string
   state_machines:
     type: object
     additionalProperties:
       title: State Machine
       type: object
       properties:
+        feeds:
+          title: Feeds
+          type: array
+          items:
+            title: Feed
+            type: object
+            properties:
+              name:
+                type: string
+              url:
+                type: string
+            required:
+              - name
+              - url
+            additionalProperties: false
+        webhooks:
+          type: array
+          uniqueItems: true
+          items:
+            title: Webhook
+            type: object
+            properties:
+              match:
+                type: string
+              headers:
+                type: object
+            additionalProperties: false
         states:
           title: States
           type: array
@@ -54,6 +68,24 @@ properties:
                             time:
                               type: string
                               pattern: '^[0-9]{1,2}h[0-9]{2}m$'
+                          required:
+                            - time
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            interval:
+                              type: string
+                              pattern: '^[0-9]*d?[0-9]*h?[0-9]*m?$'
+                          required:
+                            - interval
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            event:
+                              const: entry
+                          required:
+                            - event
+                          additionalProperties: false
                   exit_condition:
                     title: Exit condition
                     anyOf:
@@ -78,6 +110,8 @@ properties:
                           type:
                             const: 'metadata'
                           path: *dotted_path_definition
+                          default:
+                            type: string
                           destinations:
                             type: array
                             minItems: 1

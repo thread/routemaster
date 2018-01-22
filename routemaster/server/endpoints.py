@@ -2,9 +2,9 @@
 
 from flask import Flask, Response, abort, jsonify, request
 
-from routemaster import state_machine
+from routemaster import VERSION, state_machine
 from routemaster.state_machine import (
-    Label,
+    LabelRef,
     UnknownLabel,
     LabelAlreadyExists,
     UnknownStateMachine,
@@ -16,21 +16,39 @@ server = Flask('routemaster')
 
 @server.route('/', methods=['GET'])
 def status():
-    """Status check endpoint."""
+    """
+    Status check endpoint.
+
+    Returns:
+    - 200 Ok:                  if upstream services are up and the application
+                               appears ready to serve requests.
+    - 503 Service Unavailable: if there is any detected reason why the service
+                               might not be able to serve requests.
+    """
     try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
             return jsonify({
                 'status': 'ok',
                 'state-machines': '/state-machines',
+                'version': VERSION,
             })
     except Exception:
-        return jsonify({'status': 'Could not connect to database'})
+        return jsonify({
+            'status': 'error',
+            'message': 'Cannot connect to database',
+            'version': VERSION,
+        }), 503
 
 
 @server.route('/state-machines', methods=['GET'])
 def get_state_machines():
-    """Status check endpoint."""
+    """
+    List the state machines known to this server.
+
+    Successful return codes return a list of dictionaries containing at least
+    the name of each state machine.
+    """
     return jsonify({
         'state-machines': [
             {
@@ -112,7 +130,7 @@ def get_label(state_machine_name, label_name):
     Successful return codes return the full metadata for the label.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
 
     try:
         metadata = state_machine.get_label_metadata(app, label)
@@ -122,6 +140,8 @@ def get_label(state_machine_name, label_name):
             f"Label {label.name} in state machine '{label.state_machine}' "
             f"does not exist.",
         )
+    except UnknownStateMachine:
+        abort(404, f"State machine '{label.state_machine}' does not exist.")
 
     state = state_machine.get_label_state(app, label)
     return jsonify(metadata=metadata, state=state.name)
@@ -144,7 +164,7 @@ def create_label(state_machine_name, label_name):
     Successful return codes return the full created metadata for the label.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
     data = request.get_json()
 
     try:
@@ -185,7 +205,7 @@ def update_label(state_machine_name, label_name):
     Successful return codes return the full new metadata for a label.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
 
     try:
         patch_metadata = request.get_json()['metadata']
@@ -227,7 +247,7 @@ def delete_label(state_machine_name, label_name):
     - 404 Not Found: if the state machine does not exist.
     """
     app = server.config.app
-    label = Label(label_name, state_machine_name)
+    label = LabelRef(label_name, state_machine_name)
 
     try:
         state_machine.delete_label(app, label)

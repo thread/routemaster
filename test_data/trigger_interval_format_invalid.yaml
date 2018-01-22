@@ -1,0 +1,7 @@
+state_machines:
+  example:
+    states:
+      - gate: start
+        triggers:
+          - interval: 1d22389h1d
+        exit_condition: false

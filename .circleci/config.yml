@@ -24,16 +24,17 @@ jobs:
         # Set up a cached virtualenv in which to install tox
       - restore_cache:
           name: Restore build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1
+          key: deps-venv-{{ .Branch }}-2.9.1-1.2.0
       - run:
           name: Install tox
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install tox==2.9.1
+            pip install coveralls==1.2.0
       - save_cache:
           name: Save build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1
+          key: deps-venv-{{ .Branch }}-2.9.1-1.2.0
           paths:
             - "venv"
 
@@ -44,7 +45,7 @@ jobs:
       # Run tox, caching the .tox directory
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
           name: Test/Lint/Typecheck
           command: |
@@ -52,7 +53,7 @@ jobs:
             tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
           paths:
             - ".tox"
 
@@ -62,3 +63,42 @@ jobs:
       - store_artifacts:
           path: build/artifacts/coverage
           destination: coverage
+      - run:
+          name: Report coverage
+          command: |
+            . venv/bin/activate
+            coveralls
+
+  deploy:
+    working_directory: ~/routemaster
+    docker:
+      - image: circleci/python:3.6.3
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker thread/routemaster image
+          command: docker build -t routemaster .
+      - run:
+          name: Push Docker image
+          command: |
+            docker tag routemaster thread/routemaster:latest
+            docker tag routemaster thread/routemaster:$CIRCLE_BUILD_NUM
+
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+
+            docker push thread/routemaster:latest
+            docker push thread/routemaster:$CIRCLE_BUILD_NUM
+
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master

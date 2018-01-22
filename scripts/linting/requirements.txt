@@ -8,3 +8,8 @@ flake8-todo
 flake8-pep3101
 flake8-string-format
 flake8-junit-report
+flake8-tuple
+flake8-commas
+flake8-blind-except
+flake8-builtins
+flake8-print

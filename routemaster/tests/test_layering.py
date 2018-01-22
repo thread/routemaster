@@ -16,17 +16,23 @@ DEPENDENCIES = (
     ('__main__', 'cli'),
 
     ('cli', 'config'),
+    ('cli', 'cron'),
     ('cli', 'server'),
     ('cli', 'app'),
     ('cli', 'gunicorn_application'),
-    ('cli', 'record_states'),
     ('cli', 'validation'),
 
     ('exit_conditions', 'utils'),
 
+    ('context', 'utils'),
+    ('context', 'feeds'),
+
     ('config', 'exit_conditions'),
     ('config', 'utils'),
     ('db', 'config'),
+
+    ('cron', 'app'),
+    ('cron', 'state_machine'),
 
     ('validation', 'app'),
     ('validation', 'config'),
@@ -35,14 +41,19 @@ DEPENDENCIES = (
     ('app', 'config'),
 
     ('server', 'state_machine'),
+    ('server', 'VERSION'),
 
     ('state_machine', 'app'),
     ('state_machine', 'db'),
     ('state_machine', 'utils'),
     ('state_machine', 'config'),
+    ('state_machine', 'feeds'),
+    ('state_machine', 'context'),
+    ('state_machine', 'webhooks'),
 
-    ('record_states', 'app'),
-    ('record_states', 'config'),
+    ('feeds', 'config'),
+
+    ('webhooks', 'config'),
 )
 
 EXCLUDED_MODULES = (

@@ -1,13 +1,13 @@
 state_machines:
   user_lifecycle:
     feeds:
-      - path: jacquard
-        feed: http://localhost:1212/<label_id>
+      - name: jacquard
+        url: http://localhost:1212/<label_id>
 
     states:
       - gate: start
         triggers:
-          - metadata: jacquard.has_redesigned_first_two_drip_emails
+          - interval: 1m
         exit_condition: >
           jacquard.has_redesigned_first_two_drip_emails is defined
         next:
