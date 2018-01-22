@@ -44,7 +44,11 @@ def suppress_exceptions(logger):
         logger.exception("Error suppressed")
 
 
-def template_url(url_template: str, state_machine_name: str, label:str) -> str:
+def template_url(
+    url_template: str,
+    state_machine_name: str,
+    label: str,
+) -> str:
     """
     Templates a URL for an external service.
 
