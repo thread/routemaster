@@ -87,7 +87,7 @@ TEST_STATE_MACHINES = {
             ),
             Action(
                 name='perform_action',
-                webhook='http://localhost/hook',
+                webhook='http://localhost/hook/<state_machine>/<label>',
                 next_states=ConstantNextState(state='end'),
             ),
             Action(

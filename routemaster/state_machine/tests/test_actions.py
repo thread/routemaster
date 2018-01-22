@@ -29,7 +29,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
         )
 
     webhook.assert_called_once_with(
-        'http://localhost/hook',
+        'http://localhost/hook/test_machine/foo',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         mock.ANY,
@@ -60,7 +60,7 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
         )
 
     webhook.assert_called_once_with(
-        'http://localhost/hook',
+        'http://localhost/hook/test_machine/foo',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         mock.ANY,
@@ -92,7 +92,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     assert expected['token'] is not None
 
     webhook.assert_called_once_with(
-        'http://localhost/hook',
+        'http://localhost/hook/test_machine/foo',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         expected['token'],
@@ -108,7 +108,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
         )
 
     webhook.assert_called_once_with(
-        'http://localhost/hook',
+        'http://localhost/hook/test_machine/foo',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         expected['token'],
@@ -124,7 +124,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
         )
 
     webhook.assert_called_once_with(
-        'http://localhost/hook',
+        'http://localhost/hook/test_machine/foo',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         expected['token'],
@@ -152,19 +152,19 @@ def test_different_actions_use_different_idempotency_tokens(app_config, create_l
 
     webhook.assert_has_calls((
         mock.call(
-            'http://localhost/hook',
+            'http://localhost/hook/test_machine/foo',
             'application/json',
             b'{"label": "foo", "metadata": {"should_progress": true}}',
             mock.ANY,
         ),
         mock.call(
-            'http://localhost/hook',
+            'http://localhost/hook/test_machine/bar',
             'application/json',
             b'{"label": "bar", "metadata": {"should_progress": true}}',
             mock.ANY,
         ),
         mock.call(
-            'http://localhost/hook',
+            'http://localhost/hook/test_machine/baz',
             'application/json',
             b'{"label": "baz", "metadata": {"should_progress": true}}',
             mock.ANY,
@@ -203,7 +203,7 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
     )
 
     webhook.assert_called_once_with(
-        'http://localhost/hook',
+        'http://localhost/hook/test_machine/foo',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         mock.ANY,

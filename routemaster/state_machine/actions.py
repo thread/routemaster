@@ -7,6 +7,7 @@ from sqlalchemy import func
 
 from routemaster.db import history
 from routemaster.app import App
+from routemaster.utils import template_url
 from routemaster.config import State, Action, StateMachine
 from routemaster.webhooks import (
     WebhookResult,
@@ -62,7 +63,7 @@ def process_action(
     idempotency_token = _calculate_idempotency_token(label, latest_history)
 
     result = run_webhook(
-        action.webhook,
+        template_url(action.webhook, state_machine.name, label.name),
         'application/json',
         webhook_data,
         idempotency_token,
