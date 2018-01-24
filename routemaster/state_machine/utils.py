@@ -73,7 +73,7 @@ def get_current_state(
             history.c.label_name == label.name,
             history.c.label_state_machine == state_machine.name,
         )).order_by(
-            history.c.created.desc(),
+            history.c.id.desc(),
         ).limit(1),
     ).fetchone()
 
@@ -90,7 +90,7 @@ def get_current_history(label: LabelRef, conn) -> Any:
             history.c.label_name == label.name,
             history.c.label_state_machine == label.state_machine,
         )).order_by(
-            history.c.created.desc(),
+            history.c.id.desc(),
         ).limit(1),
     ).fetchone()
 
@@ -188,7 +188,7 @@ def _labels_in_state(
         history.c.old_state,
         history.c.new_state,
         func.row_number().over(
-            order_by=history.c.created.desc(),
+            order_by=history.c.id.desc(),
             partition_by=history.c.label_name,
         ).label('rank'),
     )).where(
