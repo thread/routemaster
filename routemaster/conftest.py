@@ -183,6 +183,29 @@ TEST_STATE_MACHINES = {
             ),
         ],
     ),
+    'test_machine_timing': StateMachine(
+        name='test_machine_timing',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='start',
+                triggers=[
+                    OnEntryTrigger(),
+                ],
+                next_states=ConstantNextState('end'),
+                exit_condition=ExitConditionProgram(
+                    '1d12h has passed since history.entered_state',
+                ),
+            ),
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    ),
 }
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)

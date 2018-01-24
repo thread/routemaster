@@ -1,5 +1,7 @@
 import mock
+
 import pytest
+from freezegun import freeze_time
 from sqlalchemy import and_, select
 from requests.exceptions import RequestException
 
@@ -10,6 +12,7 @@ from routemaster.state_machine import (
     UnknownLabel,
     UnknownStateMachine,
 )
+from routemaster.state_machine.gates import process_gate
 
 
 def current_state(app_config, label):
@@ -272,3 +275,41 @@ def test_maintains_updated_field_on_label(app_config, mock_test_feed):
         )
 
     assert second_updated > first_updated
+
+
+def test_continues_after_time_since_entering_gate(app_config):
+    label = LabelRef('foo', 'test_machine_timing')
+    gate = app_config.config.state_machines['test_machine_timing'].states[0]
+
+    with freeze_time('2018-01-24 12:00:00'):
+        state_machine.create_label(
+            app_config,
+            label,
+            {},
+        )
+
+    # 1 day later, not enough to progress
+    with freeze_time('2018-01-25 12:00:00'):
+        with app_config.db.begin() as conn:
+            process_gate(
+                app=app_config,
+                state=gate,
+                state_machine=state_machine,
+                label=label,
+                conn=conn,
+            )
+
+    assert current_state(app_config, label) == 'start'
+
+    # 2 days later
+    with freeze_time('2018-01-26 12:00:00'):
+        with app_config.db.begin() as conn:
+            process_gate(
+                app=app_config,
+                state=gate,
+                state_machine=state_machine,
+                label=label,
+                conn=conn,
+            )
+
+    assert current_state(app_config, label) == 'end'
