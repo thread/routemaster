@@ -26,6 +26,7 @@ def current_state(app_config, label):
             ).limit(1)
         )
 
+
 def metadata_triggers_processed(app_config, label):
     with app_config.db.begin() as conn:
         return conn.scalar(select([labels.c.metadata_triggers_processed]))
@@ -313,3 +314,52 @@ def test_continues_after_time_since_entering_gate(app_config):
             )
 
     assert current_state(app_config, label) == 'end'
+
+
+def test_delete_label(app_config, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+    with mock_test_feed():
+        state_machine.create_label(app_config, label_foo, {})
+
+    state_machine.delete_label(app_config, label_foo)
+
+    with app_config.db.begin() as conn:
+        deleted = conn.scalar(
+            select([labels.c.deleted]).where(and_(
+                labels.c.name == label_foo.name,
+                labels.c.state_machine == label_foo.state_machine,
+            )),
+        )
+        assert deleted is True
+
+    assert_history([
+        (None, 'start'),
+        ('start', None),
+    ])
+
+
+def test_delete_label_only_deletes_target_label(app_config, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+    label_bar = LabelRef('bar', 'test_machine')
+    with mock_test_feed():
+        state_machine.create_label(app_config, label_foo, {})
+        state_machine.create_label(app_config, label_bar, {})
+
+    state_machine.delete_label(app_config, label_foo)
+
+    with app_config.db.begin() as conn:
+        deleted_foo = conn.scalar(
+            select([labels.c.deleted]).where(and_(
+                labels.c.name == label_foo.name,
+                labels.c.state_machine == label_foo.state_machine,
+            )),
+        )
+        assert deleted_foo is True
+
+        deleted_bar = conn.scalar(
+            select([labels.c.deleted]).where(and_(
+                labels.c.name == label_bar.name,
+                labels.c.state_machine == label_bar.state_machine,
+            )),
+        )
+        assert deleted_bar is False

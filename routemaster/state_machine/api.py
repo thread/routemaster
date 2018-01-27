@@ -213,8 +213,8 @@ def delete_label(app: App, label: LabelRef) -> None:
 
         # Record the label as having been deleted and remove its metadata
         conn.execute(labels.update().where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
+            labels.c.name == label.name,
+            labels.c.state_machine == label.state_machine,
         )).values(
             metadata={},
             deleted=True,
