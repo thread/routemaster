@@ -7,6 +7,13 @@ import routemaster.version
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
+try:
+    from m2r import convert
+    long_description = convert(long_description)
+except ImportError:
+    # Fall back to markdown formatted readme when no m2r package.
+    pass
+
 
 setup(
     name='routemaster',
