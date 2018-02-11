@@ -13,12 +13,14 @@ from routemaster.utils import dict_merge, suppress_exceptions
 from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.types import LabelRef, Metadata
-from routemaster.state_machine.utils import \
-    get_label_metadata as get_label_metadata_internal
 from routemaster.state_machine.utils import (
     lock_label,
     get_current_state,
     get_state_machine,
+)
+from routemaster.state_machine.utils import \
+    get_label_metadata as get_label_metadata_internal
+from routemaster.state_machine.utils import (
     start_state_machine,
     needs_gate_evaluation_for_metadata_change,
 )
