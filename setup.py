@@ -1,6 +1,8 @@
+"""Package setup."""
+
 from setuptools import setup, find_packages
 
-import routemaster
+import routemaster.version
 
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
@@ -8,7 +10,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='routemaster',
-    version=routemaster.VERSION,
+    version=routemaster.version.get_version(),
     url='https://github.com/thread/routemaster',
     description="State machines as a service.",
     long_description=long_description,

@@ -2,7 +2,8 @@
 
 from flask import Flask, abort, jsonify, request
 
-from routemaster import VERSION, state_machine
+from routemaster import state_machine
+from routemaster.version import get_version
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -30,13 +31,13 @@ def status():
             return jsonify({
                 'status': 'ok',
                 'state-machines': '/state-machines',
-                'version': VERSION,
+                'version': get_version(),
             })
     except Exception:
         return jsonify({
             'status': 'error',
             'message': 'Cannot connect to database',
-            'version': VERSION,
+            'version': get_version(),
         }), 503
 
 
