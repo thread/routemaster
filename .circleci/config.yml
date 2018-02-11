@@ -50,7 +50,7 @@ jobs:
           name: Test/Lint/Typecheck
           command: |
             . venv/bin/activate
-            tox
+            TOXENV=py36 tox
       - save_cache:
           name: Save .tox cache
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
