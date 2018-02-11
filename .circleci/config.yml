@@ -69,7 +69,7 @@ jobs:
             . venv/bin/activate
             coveralls
 
-  deploy:
+  publish-dev-build:
     working_directory: ~/routemaster
     docker:
       - image: circleci/python:3.6.3
@@ -82,13 +82,47 @@ jobs:
       - run:
           name: Push Docker image
           command: |
+            docker tag routemaster thread/routemaster:$CIRCLE_BUILD_NUM-dev
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push thread/routemaster:$CIRCLE_BUILD_NUM-dev
+
+  publish-release:
+    working_directory: ~/routemaster
+    docker:
+      - image: circleci/python:3.6.3
+    steps:
+      - checkout
+
+      - run:
+          name: init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+
+      - run:
+          name: PyPI Upload
+          command: |
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
+      - setup_remote_docker
+
+      - run:
+          name: Build Docker thread/routemaster image
+          command: docker build -t routemaster .
+
+      - run:
+          name: Push Docker image
+          command: |
             docker tag routemaster thread/routemaster:latest
-            docker tag routemaster thread/routemaster:$CIRCLE_BUILD_NUM
+            docker tag routemaster thread/routemaster:$CIRCLE_TAG
 
             docker login -u $DOCKER_USER -p $DOCKER_PASS
 
             docker push thread/routemaster:latest
-            docker push thread/routemaster:$CIRCLE_BUILD_NUM
+            docker push thread/routemaster:$CIRCLE_TAG
 
 
 workflows:
@@ -96,9 +130,19 @@ workflows:
   build-deploy:
     jobs:
       - build
-      - deploy:
+      - publish-dev-build:
           requires:
             - build
           filters:
             branches:
               only: master
+            tags:
+              ignore: /[0-9]+(\.[0-9]+)*/
+      - publish-release:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
