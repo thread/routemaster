@@ -160,9 +160,9 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
+            pip install twine wheel
             python setup.py sdist
             python setup.py bdist_wheel
-            pip install twine
             twine upload dist/*
 
       - setup_remote_docker
