@@ -10,4 +10,3 @@ build/*
 .mypy_cache/
 .python-version
 config.dev.yaml
-dist
