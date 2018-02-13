@@ -8,6 +8,7 @@ from routemaster.app import App
 from routemaster.cron import CronThread
 from routemaster.config import ConfigError, load_config
 from routemaster.server import server
+from routemaster.logging import register_loggers
 from routemaster.validation import ValidationError, validate_config
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
@@ -55,7 +56,9 @@ def main(ctx, config_file, log_level):
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
-    ctx.obj = App(config, log_level)
+    loggers = register_loggers(config)
+
+    ctx.obj = App(config, loggers, log_level)
     _validate_config(ctx.obj)
 
 
