@@ -29,6 +29,10 @@ from routemaster.config import (
 from routemaster.exit_conditions import ExitConditionProgram
 
 
+def reset_environment():
+    return mock.patch.dict(os.environ, {}, clear=True)
+
+
 def yaml_data(name: str):
     with open(f'test_data/{name}.yaml') as f:
         return yaml.load(f)
@@ -67,7 +71,8 @@ def test_trivial_config():
             password='',
         ),
     )
-    assert load_config(data) == expected
+    with reset_environment():
+        assert load_config(data) == expected
 
 
 def test_realistic_config():
@@ -144,7 +149,8 @@ def test_realistic_config():
             password='',
         ),
     )
-    assert load_config(data) == expected
+    with reset_environment():
+        assert load_config(data) == expected
 
 
 def test_raises_for_action_and_gate_state():
@@ -224,7 +230,8 @@ def test_next_states_shorthand_results_in_constant_config():
             password='',
         ),
     )
-    assert load_config(data) == expected
+    with reset_environment():
+        assert load_config(data) == expected
 
 
 def test_environment_variables_override_config_file_for_database_config():
