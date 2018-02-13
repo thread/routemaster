@@ -246,6 +246,7 @@ def app_config(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
+        logging_plugins=kwargs.get('logging_plugins', []),
     ))
 
 

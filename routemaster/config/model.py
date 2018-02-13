@@ -175,6 +175,12 @@ class StateMachine(NamedTuple):
         return [x for x in self.states if x.name == state_name][0]
 
 
+class LoggingPluginConfig(NamedTuple):
+    """The configuration for a single logging plugin."""
+    dotted_path: str
+    kwargs: Dict[str, str]
+
+
 class DatabaseConfig(NamedTuple):
     """Database connection configuration."""
     host: str
@@ -206,3 +212,4 @@ class Config(NamedTuple):
     """
     state_machines: Mapping[str, StateMachine]
     database: DatabaseConfig
+    logging_plugins: List[LoggingPluginConfig]

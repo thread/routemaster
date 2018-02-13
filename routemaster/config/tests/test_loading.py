@@ -23,6 +23,7 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
     load_config,
 )
@@ -70,6 +71,7 @@ def test_trivial_config():
             username='routemaster',
             password='',
         ),
+        logging_plugins=[],
     )
     with reset_environment():
         assert load_config(data) == expected
@@ -148,6 +150,16 @@ def test_realistic_config():
             username='routemaster',
             password='',
         ),
+        logging_plugins=[
+            LoggingPluginConfig(
+                dotted_path='routemaster_prometheus.PrometheusLogger',
+                kwargs={'prometheus_gateway': 'localhost'},
+            ),
+            LoggingPluginConfig(
+                dotted_path='routemaster_sentry.SentryLogger',
+                kwargs={'raven_dsn': 'nai8ioca4zeeb2ahgh4V'},
+            ),
+        ],
     )
     with reset_environment():
         assert load_config(data) == expected
@@ -198,6 +210,11 @@ def test_raises_for_invalid_interval_format_in_trigger():
         load_config(yaml_data('trigger_interval_format_invalid'))
 
 
+def test_raises_for_nested_kwargs_in_logging_plugin_config():
+    with assert_config_error("Could not validate config file against schema."):
+        load_config(yaml_data('nested_kwargs_logging_plugin_invalid'))
+
+
 def test_next_states_shorthand_results_in_constant_config():
     data = yaml_data('next_states_shorthand')
     expected = Config(
@@ -229,6 +246,7 @@ def test_next_states_shorthand_results_in_constant_config():
             username='routemaster',
             password='',
         ),
+        logging_plugins=[],
     )
     with reset_environment():
         assert load_config(data) == expected
@@ -307,6 +325,16 @@ def test_environment_variables_override_config_file_for_database_config():
             username='username',
             password='password',
         ),
+        logging_plugins=[
+            LoggingPluginConfig(
+                dotted_path='routemaster_prometheus.PrometheusLogger',
+                kwargs={'prometheus_gateway': 'localhost'},
+            ),
+            LoggingPluginConfig(
+                dotted_path='routemaster_sentry.SentryLogger',
+                kwargs={'raven_dsn': 'nai8ioca4zeeb2ahgh4V'},
+            ),
+        ],
     )
 
     with mock.patch.dict(os.environ, {

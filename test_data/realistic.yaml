@@ -41,3 +41,13 @@ state_machines:
 
       - gate: end
         exit_condition: false
+
+plugins:
+  logging:
+    - class: routemaster_prometheus.PrometheusLogger
+      kwargs:
+        prometheus_gateway: localhost
+
+    - class: routemaster_sentry.SentryLogger
+      kwargs:
+        raven_dsn: nai8ioca4zeeb2ahgh4V
