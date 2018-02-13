@@ -71,6 +71,7 @@ setup(
         'networkx',
         'tox',
         'pytest-cov',
+        'pytest-pythonpath',
     ),
 
     entry_points={
