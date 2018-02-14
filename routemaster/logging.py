@@ -88,11 +88,8 @@ class LoggerProxy:
     def __init__(self, loggers: List[BaseLogger]) -> None:
         self.loggers = loggers
 
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
         """Return a proxy function that will dispatch to all loggers."""
-        if name == 'loggers':
-            return super().__getattribute__(name)
-
         def log_all(*args, **kwargs):
             for logger in self.loggers:
                 getattr(logger, name)(*args, **kwargs)
