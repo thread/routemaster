@@ -1,6 +1,7 @@
 """Utilities for state machine execution."""
 
 import datetime
+import contextlib
 from typing import Any, Dict, List, Tuple, Iterable
 
 import dateutil.tz
@@ -12,6 +13,7 @@ from routemaster.app import App
 from routemaster.feeds import feeds_for_state_machine
 from routemaster.config import Gate, State, StateMachine, ContextNextStates
 from routemaster.context import Context
+from routemaster.logging import BaseLogger
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (
     UnknownLabel,
@@ -215,6 +217,7 @@ def context_for_label(
     state_machine: StateMachine,
     state: State,
     history_entry: Any,
+    logger: BaseLogger,
 ) -> Context:
     """Util to build the context for a label in a state."""
     feeds = feeds_for_state_machine(state_machine)
@@ -225,6 +228,11 @@ def context_for_label(
     if isinstance(state.next_states, ContextNextStates):
         accessed_variables.append(state.next_states.path)
 
+    @contextlib.contextmanager
+    def feed_logging_context(feed_url):
+        with logger.process_feed(state_machine, state, feed_url):
+            yield logger.feed_response
+
     return Context(
         label=label.name,
         metadata=metadata,
@@ -232,4 +240,5 @@ def context_for_label(
         feeds=feeds,
         accessed_variables=accessed_variables,
         current_history_entry=history_entry,
+        feed_logging_context=feed_logging_context,
     )

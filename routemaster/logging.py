@@ -42,6 +42,15 @@ class BaseLogger:
         """Logs the receipt of a response from a webhook."""
         pass
 
+    @contextlib.contextmanager
+    def process_feed(self, state_machine, state, feed_url):
+        """Wraps the processing of a feed for logging purposes."""
+        yield
+
+    def feed_response(self, response):
+        """Logs the receipt of a response from a feed."""
+        pass
+
 
 class PythonLogger(BaseLogger):
     """Routemaster logging interface for Python's logging library."""

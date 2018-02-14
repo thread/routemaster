@@ -18,6 +18,7 @@ class Context(object):
         feeds: Dict[str, Feed],
         accessed_variables: Iterable[str],
         current_history_entry: Optional[Any],
+        feed_logging_context,
     ) -> None:
         """Create an execution context."""
         if now.tzinfo is None:
@@ -30,7 +31,7 @@ class Context(object):
         self.feeds = feeds
         self.current_history_entry = current_history_entry
 
-        self._pre_warm_feeds(label, accessed_variables)
+        self._pre_warm_feeds(label, accessed_variables, feed_logging_context)
 
     def lookup(self, path: Sequence[str]) -> Any:
         """Look up a path in the execution context."""
@@ -75,7 +76,12 @@ class Context(object):
             name='.'.join(property_name)),
         )
 
-    def _pre_warm_feeds(self, label: str, accessed_variables: Iterable[str]):
+    def _pre_warm_feeds(
+        self,
+        label: str,
+        accessed_variables: Iterable[str],
+        logging_context,
+    ):
         for accessed_variable in accessed_variables:
             parts = accessed_variable.split('.')
 
@@ -87,4 +93,5 @@ class Context(object):
 
             feed = self.feeds.get(parts[1])
             if feed is not None:
-                feed.prefetch(label)
+                with logging_context(feed.url) as log_response:
+                    feed.prefetch(label, log_response)

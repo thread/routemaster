@@ -52,6 +52,7 @@ def process_gate(
         state_machine,
         gate,
         history_entry,
+        app.logger,
     )
     can_exit = gate.exit_condition.run(context)
 

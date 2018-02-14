@@ -80,6 +80,7 @@ def process_action(
         state_machine,
         action,
         latest_history,
+        app.logger,
     )
     next_state = choose_next_state(state_machine, action, context)
 

@@ -1,5 +1,5 @@
 """Creation and fetching of feed data."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Callable, Optional
 
 import requests
 from dataclasses import InitVar, dataclass
@@ -27,7 +27,11 @@ class Feed:
     state_machine: str
     data: InitVar[Optional[Dict[str, Any]]] = None
 
-    def prefetch(self, label: str):
+    def prefetch(
+        self,
+        label: str,
+        log_response: Callable[[requests.Response], None] = lambda x: None,
+    ) -> None:
         """Trigger the fetching of a feed's data."""
         if self.data is not None:
             return
@@ -35,6 +39,7 @@ class Feed:
         url = template_url(self.url, self.state_machine, label)
 
         response = requests.get(url)
+        log_response(response)
         response.raise_for_status()
         self.data = response.json()
 

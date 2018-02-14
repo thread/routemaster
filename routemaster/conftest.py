@@ -34,6 +34,7 @@ from routemaster.config import (
 )
 from routemaster.server import server
 from routemaster.context import Context
+from routemaster.logging import BaseLogger
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
@@ -420,9 +421,18 @@ def set_metadata(app_config):
 
 
 @pytest.fixture()
-def make_context():
+def make_context(app_config):
     """Factory for Contexts that provides sane defaults for testing."""
     def _inner(**kwargs):
+        logger = BaseLogger(app_config.config)
+        state_machine = app_config.config.state_machines['test_machine']
+        state = state_machine.states[0]
+
+        @contextlib.contextmanager
+        def feed_logging_context(feed_url):
+            with logger.process_feed(state_machine, state, feed_url):
+                yield logger.feed_response
+
         return Context(
             label=kwargs['label'],
             metadata=kwargs.get('metadata', {}),
@@ -430,5 +440,9 @@ def make_context():
             feeds=kwargs.get('feeds', {}),
             accessed_variables=kwargs.get('accessed_variables', []),
             current_history_entry=kwargs.get('current_history_entry'),
+            feed_logging_context=kwargs.get(
+                'feed_logging_context',
+                feed_logging_context,
+            ),
         )
     return _inner
