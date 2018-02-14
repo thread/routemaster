@@ -1,6 +1,8 @@
 """Logging interface."""
+import time
 import logging
 import importlib
+import contextlib
 from typing import List
 
 from routemaster.config import Config, LoggingPluginConfig
@@ -25,6 +27,11 @@ class BaseLogger:
 
     def _log_handler(self, *args, **kwargs):
         pass
+
+    @contextlib.contextmanager
+    def process_cron(self, state_machine, state, fn_name):
+        """Wraps the processing of a cron job for logging purposes."""
+        yield
 
 
 class PythonLogger(BaseLogger):
@@ -53,6 +60,26 @@ class PythonLogger(BaseLogger):
             'exception',
         ):
             setattr(self, log_fn, getattr(self.logger, log_fn))
+
+    @contextlib.contextmanager
+    def process_cron(self, state_machine, state, fn_name):
+        """Process a cron job, logging information to the Python logger."""
+        self.logger.info(
+            f"Started cron {fn_name} for state {state.name} in "
+            f"{state_machine.name}",
+        )
+        try:
+            time_start = time.time()
+            yield
+            duration = time.time() - time_start
+        except Exception:
+            self.logger.exception(f"Error while processing cron {fn_name}")
+            raise
+
+        self.logger.info(
+            f"Completed cron {fn_name} for state {state.name} "
+            f"in {state_machine.name} in {duration:.2f} seconds",
+        )
 
 
 class LoggerProxy:

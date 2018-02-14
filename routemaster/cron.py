@@ -64,29 +64,17 @@ def process_job(
             label_provider(state_machine, state, conn),
         )
 
-    app.logger.info(
-        f"Started cron {fn.__name__} for state {state.name} in "
-        f"{state_machine.name}",
-    )
-
     try:
-        time_start = time.time()
-        process_cron(
-            process=fn,
-            get_labels=_iter_labels_until_terminating,
-            app=app,
-            state=state,
-            state_machine=state_machine,
-        )
-        duration = time.time() - time_start
+        with app.logger.process_cron(state_machine, state, fn.__name__):
+            process_cron(
+                process=fn,
+                get_labels=_iter_labels_until_terminating,
+                app=app,
+                state=state,
+                state_machine=state_machine,
+            )
     except Exception:
-        app.logger.exception(f"Error while processing cron {fn.__name__}")
         return
-
-    app.logger.info(
-        f"Completed cron {fn.__name__} for state {state.name} "
-        f"in {state_machine.name} in {duration:.2f} seconds",
-    )
 
 
 def _configure_schedule_for_state(
