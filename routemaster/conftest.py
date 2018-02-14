@@ -225,6 +225,7 @@ class TestApp(App):
     def __init__(self, config):
         self.config = config
         self.database_used = False
+        self.logger = mock.MagicMock()
 
     @property
     def db(self):
