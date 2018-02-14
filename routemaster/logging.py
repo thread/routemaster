@@ -96,6 +96,20 @@ class LoggerProxy:
         def log_all(*args, **kwargs):
             for logger in self.loggers:
                 getattr(logger, name)(*args, **kwargs)
+
+        @contextlib.contextmanager
+        def log_all_ctx(*args, **kwargs):
+            with contextlib.ExitStack() as stack:
+                for logger in self.loggers:
+                    logger_ctx = getattr(logger, name)
+                    stack.enter_context(logger_ctx(*args, **kwargs))
+                    yield
+
+        if isinstance(
+            getattr(BaseLogger, name),
+            contextlib.AbstractContextManager,
+        ):
+            return log_all_ctx
         return log_all
 
 
