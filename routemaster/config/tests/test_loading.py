@@ -152,11 +152,11 @@ def test_realistic_config():
         ),
         logging_plugins=[
             LoggingPluginConfig(
-                dotted_path='routemaster_prometheus.PrometheusLogger',
+                dotted_path='routemaster_prometheus:PrometheusLogger',
                 kwargs={'prometheus_gateway': 'localhost'},
             ),
             LoggingPluginConfig(
-                dotted_path='routemaster_sentry.SentryLogger',
+                dotted_path='routemaster_sentry:SentryLogger',
                 kwargs={'raven_dsn': 'nai8ioca4zeeb2ahgh4V'},
             ),
         ],
@@ -327,11 +327,11 @@ def test_environment_variables_override_config_file_for_database_config():
         ),
         logging_plugins=[
             LoggingPluginConfig(
-                dotted_path='routemaster_prometheus.PrometheusLogger',
+                dotted_path='routemaster_prometheus:PrometheusLogger',
                 kwargs={'prometheus_gateway': 'localhost'},
             ),
             LoggingPluginConfig(
-                dotted_path='routemaster_sentry.SentryLogger',
+                dotted_path='routemaster_sentry:SentryLogger',
                 kwargs={'raven_dsn': 'nai8ioca4zeeb2ahgh4V'},
             ),
         ],

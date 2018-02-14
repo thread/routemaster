@@ -16,3 +16,8 @@ class InvalidLogger(object):
 
     It does not inherit from `routemaster.logging.BaseLogger`.
     """
+
+
+def dynamic_logger(config):
+    """This is a callable rather than a class."""
+    return BaseLogger(config)
