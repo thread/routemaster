@@ -1,7 +1,6 @@
 """Periodic job running."""
 
 import time
-import logging
 import functools
 import itertools
 import threading
@@ -27,8 +26,6 @@ from routemaster.state_machine import (
     labels_in_state,
     labels_needing_metadata_update_retry_in_gate,
 )
-
-logger = logging.getLogger(__name__)
 
 IsTerminating = Callable[[], bool]
 
@@ -67,7 +64,7 @@ def process_job(
             label_provider(state_machine, state, conn),
         )
 
-    logger.info(
+    app.logger.info(
         f"Started cron {fn.__name__} for state {state.name} in "
         f"{state_machine.name}",
     )
@@ -83,10 +80,10 @@ def process_job(
         )
         duration = time.time() - time_start
     except Exception:
-        logger.exception(f"Error while processing cron {fn.__name__}")
+        app.logger.exception(f"Error while processing cron {fn.__name__}")
         return
 
-    logger.info(
+    app.logger.info(
         f"Completed cron {fn.__name__} for state {state.name} "
         f"in {state_machine.name} in {duration:.2f} seconds",
     )
@@ -176,7 +173,7 @@ class CronThread(threading.Thread):  # pragma: no cover
                 is_terminating=self.is_terminating,
             ),
         )
-        logger.info("Starting cron thread")
+        self.app.logger.info("Starting cron thread")
         while not self.is_terminating():
             self.scheduler.run_pending()
             time.sleep(1)
@@ -184,7 +181,7 @@ class CronThread(threading.Thread):  # pragma: no cover
     def stop(self) -> None:
         """Set the stopping flag and wait for thread end."""
         self._terminating = True
-        logger.info("Cron thread shutting down")
+        self.app.logger.info("Cron thread shutting down")
         self.join()
 
     def is_terminating(self) -> bool:
