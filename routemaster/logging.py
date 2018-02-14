@@ -33,6 +33,15 @@ class BaseLogger:
         """Wraps the processing of a cron job for logging purposes."""
         yield
 
+    @contextlib.contextmanager
+    def process_webhook(self, state_machine, state):
+        """Wraps the processing of a webhook for logging purposes."""
+        yield
+
+    def webhook_response(self, response):
+        """Logs the receipt of a response from a webhook."""
+        pass
+
 
 class PythonLogger(BaseLogger):
     """Routemaster logging interface for Python's logging library."""
