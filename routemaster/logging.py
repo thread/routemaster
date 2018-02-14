@@ -53,6 +53,25 @@ class PythonLogger(BaseLogger):
             'exception',
         ):
             setattr(self, log_fn, getattr(self.logger, log_fn))
+
+
+class LoggerProxy:
+    """Proxies logging calls to all loggers in a list."""
+
+    def __init__(self, loggers: List[BaseLogger]) -> None:
+        self.loggers = loggers
+
+    def __getattribute__(self, name):
+        """Return a proxy function that will dispatch to all loggers."""
+        if name == 'loggers':
+            return super().__getattribute__(name)
+
+        def log_all(*args, **kwargs):
+            for logger in self.loggers:
+                getattr(logger, name)(*args, **kwargs)
+        return log_all
+
+
 class PluginConfigurationException(Exception):
     """Raised to signal an invalid plugin that was loaded."""
 

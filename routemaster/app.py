@@ -1,12 +1,11 @@
 """Core App singleton that holds state for the application."""
 import threading
-from typing import List
 
 from sqlalchemy.engine import Engine
 
 from routemaster.db import initialise_db
 from routemaster.config import Config
-from routemaster.logging import BaseLogger
+from routemaster.logging import LoggerProxy, register_loggers
 
 
 class App(threading.local):
@@ -14,16 +13,16 @@ class App(threading.local):
 
     db: Engine
     config: Config
-    loggers: List[BaseLogger]
+    logger: LoggerProxy
 
     def __init__(
         self,
         config: Config,
-        loggers: List[BaseLogger] = [],
         log_level: str = 'INFO',
     ) -> None:
         """Initialisation of the app state."""
         self.config = config
         self.db = initialise_db(self.config.database)
-        self.loggers = loggers
         self.log_level = log_level
+
+        self.logger = LoggerProxy(register_loggers(config))
