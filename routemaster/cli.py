@@ -8,7 +8,6 @@ from routemaster.app import App
 from routemaster.cron import CronThread
 from routemaster.config import ConfigError, load_config
 from routemaster.server import server
-from routemaster.logging import register_loggers
 from routemaster.validation import ValidationError, validate_config
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
@@ -39,15 +38,6 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def main(ctx, config_file, log_level):
     """Shared entrypoint configuration."""
-    logging.basicConfig(
-        format=(
-            "[%(asctime)s] [%(process)d] [%(levelname)s] "
-            "[%(name)s] %(message)s"
-        ),
-        datefmt="%Y-%m-%d %H:%M:%S %z",
-        level=getattr(logging, log_level),
-    )
-
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
     try:
@@ -56,9 +46,7 @@ def main(ctx, config_file, log_level):
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
-    loggers = register_loggers(config)
-
-    ctx.obj = App(config, loggers, log_level)
+    ctx.obj = App(config, log_level)
     _validate_config(ctx.obj)
 
 

@@ -1,15 +1,58 @@
 """Logging interface."""
+import logging
 import importlib
+from typing import List
 
 from routemaster.config import Config, LoggingPluginConfig
 
 
 class BaseLogger:
     """Base class for logging plugins."""
-    def __init__(self, config, *args, **kwargs):
+
+    def __init__(self, config, *args, **kwargs) -> None:
         self.config = config
 
+        for log_fn in (
+            'debug',
+            'info',
+            'warning',
+            'error',
+            'critical',
+            'log',
+            'exception',
+        ):
+            setattr(self, log_fn, self._log_handler)
 
+    def _log_handler(self, *args, **kwargs):
+        pass
+
+
+class PythonLogger(BaseLogger):
+    """Routemaster logging interface for Python's logging library."""
+
+    def __init__(self, *args, log_level: str) -> None:
+        super().__init__(*args)
+
+        logging.basicConfig(
+            format=(
+                "[%(asctime)s] [%(process)d] [%(levelname)s] "
+                "[%(name)s] %(message)s"
+            ),
+            datefmt="%Y-%m-%d %H:%M:%S %z",
+            level=getattr(logging, log_level),
+        )
+        self.logger = logging.getLogger('routemaster')
+
+        for log_fn in (
+            'debug',
+            'info',
+            'warning',
+            'error',
+            'critical',
+            'log',
+            'exception',
+        ):
+            setattr(self, log_fn, getattr(self.logger, log_fn))
 class PluginConfigurationException(Exception):
     """Raised to signal an invalid plugin that was loaded."""
 
