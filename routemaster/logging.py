@@ -100,7 +100,7 @@ class PythonLogger(BaseLogger):
         )
 
 
-class LoggerProxy:
+class LoggerProxy(BaseLogger):
     """Proxies logging calls to all loggers in a list."""
 
     def __init__(self, loggers: List[BaseLogger]) -> None:
