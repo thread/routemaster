@@ -61,8 +61,11 @@ def get_version():
         # changed. If it is dirty, append a ".dev1" suffix to indicate a
         # development revision after the release.
         with open(os.devnull, 'w') as fd_devnull:
-            subprocess.call(['git', 'status'],
-                            stdout=fd_devnull, stderr=fd_devnull)
+            subprocess.call(
+                ['git', 'status'],
+                stdout=fd_devnull,
+                stderr=fd_devnull,
+            )
 
         cmd = 'git diff-index --name-only HEAD'.split()
         try:
