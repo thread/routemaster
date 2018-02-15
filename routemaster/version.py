@@ -9,8 +9,9 @@ import re
 import logging
 import os.path
 import subprocess
-import pkg_resources
 from os.path import dirname
+
+import pkg_resources
 
 version_re = re.compile('^Version: (.+)$', re.M)
 
