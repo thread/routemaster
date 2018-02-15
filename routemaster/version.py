@@ -9,6 +9,7 @@ __all__ = ('get_version')
 import os
 import re
 import logging
+import os.path
 import subprocess
 from os.path import dirname
 
@@ -75,7 +76,7 @@ def get_version():
 
     else:
         # Extract the version from the PKG-INFO file.
-        with open(join(dirname(__file__), 'PKG-INFO')) as f:
+        with open(os.path.join(dirname(__file__), 'PKG-INFO')) as f:
             version = version_re.search(f.read()).group(1)
 
     return version
