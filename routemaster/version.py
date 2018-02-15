@@ -1,5 +1,7 @@
 """
 Versioning utils.
+
+Note: This is shared by our plugins as well as routemaster itself.
 """
 
 __all__ = ('get_version')
@@ -8,11 +10,20 @@ import os
 import re
 import logging
 import subprocess
-from os.path import join, isdir, dirname
+from os.path import dirname
 
 version_re = re.compile('^Version: (.+)$', re.M)
 
 logger = logging.getLogger(__file__)
+
+
+def find_git_root(test):
+    prev, test = None, os.path.abspath(test)
+    while prev != test:
+        if os.path.isdir(os.path.join(test, '.git')):
+            return test
+        prev, test = test, os.path.abspath(os.path.join(test, os.pardir))
+    return None
 
 
 def get_version():
@@ -30,9 +41,9 @@ def get_version():
             ...
         )
     """
-    d = join(dirname(dirname(__file__)))
+    git_root = find_git_root(dirname(__file__))
 
-    if isdir(join(d, '.git')):
+    if git_root is not None:
         # Get the version using "git describe".
         cmd = 'git describe --tags --match [0-9]*'.split()
         try:
@@ -64,7 +75,7 @@ def get_version():
 
     else:
         # Extract the version from the PKG-INFO file.
-        with open(join(d, 'PKG-INFO')) as f:
+        with open(join(dirname(__file__), 'PKG-INFO')) as f:
             version = version_re.search(f.read()).group(1)
 
     return version
