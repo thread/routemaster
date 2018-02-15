@@ -78,8 +78,12 @@ def get_version():
             version += '.dev1'
 
     else:
+        pkg_info_path = os.path.join(dirname(dirname(__file__)), 'PKG-INFO')
+        if not os.path.exists(pkg_info_path):
+            version = '0.0.0-unreleased'
+
         # Extract the version from the PKG-INFO file.
-        with open(os.path.join(dirname(dirname(__file__)), 'PKG-INFO')) as f:
+        with open(pkg_info_path) as f:
             version = version_re.search(f.read()).group(1)
 
     return version
