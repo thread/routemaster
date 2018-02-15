@@ -16,8 +16,20 @@ class InvalidLogger(object):
 
     It does not inherit from `routemaster.logging.BaseLogger`.
     """
+    def __init__(self, *args, **kwargs):
+        # Note: args/kwargs needed to not trigger the invalid constructor check
+        pass
+
+
+class NoArgsLogger(BaseLogger):
+    """This logger has an invalid constructor."""
+    def __init__(self):
+        pass
 
 
 def dynamic_logger(config):
     """This is a callable rather than a class."""
     return BaseLogger(config)
+
+
+NOT_CALLABLE = 'not callable'

@@ -49,7 +49,6 @@ class BaseLogger:
             'warning',
             'error',
             'critical',
-            'log',
             'exception',
         ):
             return self._log_handler
