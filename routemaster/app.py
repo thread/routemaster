@@ -23,4 +23,4 @@ class App(threading.local):
         self.config = config
         self.db = initialise_db(self.config.database)
 
-        self.logger = SplitLogger(register_loggers(config))
+        self.logger = SplitLogger(config, loggers=register_loggers(config))

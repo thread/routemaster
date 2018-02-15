@@ -10,7 +10,9 @@ from routemaster.logging.base import BaseLogger
 class SplitLogger(BaseLogger):
     """Proxies logging calls to all loggers in a list."""
 
-    def __init__(self, loggers: List[BaseLogger]) -> None:
+    def __init__(self, *args, loggers: List[BaseLogger]) -> None:
+        super().__init__(*args)
+
         self.loggers = loggers
 
         for fn in (
