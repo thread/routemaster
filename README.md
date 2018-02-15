@@ -214,8 +214,8 @@ results from not specifying any other transition. This creates an end state that
 cannot be progressed from.
 
 
-[label]: docs/glossary.md#label
-[metadata]: docs/glossary.md#metadata
-[action]: docs/glossary.md#action
-[gate]: docs/glossary.md#gate
-[exit-condition]: docs/glossary.md#exit-condition
+[label]: docs/glossary.md
+[metadata]: docs/glossary.md
+[action]: docs/glossary.md
+[gate]: docs/glossary.md
+[exit-condition]: docs/glossary.md
