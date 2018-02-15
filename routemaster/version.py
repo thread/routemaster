@@ -1,7 +1,5 @@
 """
 Versioning utils.
-
-Note: This is shared by our plugins as well as routemaster itself.
 """
 
 __all__ = ('get_version')
@@ -11,6 +9,7 @@ import re
 import logging
 import os.path
 import subprocess
+import pkg_resources
 from os.path import dirname
 
 version_re = re.compile('^Version: (.+)$', re.M)
@@ -77,13 +76,10 @@ def get_version():
         if dirty != '':
             version += '.dev1'
 
+        return version
+
     else:
-        pkg_info_path = os.path.join(dirname(dirname(__file__)), 'PKG-INFO')
-        if not os.path.exists(pkg_info_path):
-            version = '0.0.0-unreleased'
-
-        # Extract the version from the PKG-INFO file.
-        with open(pkg_info_path) as f:
-            version = version_re.search(f.read()).group(1)
-
-    return version
+        try:
+            return pkg_resources.working_set.by_key['routemaster'].version
+        except KeyError:
+            return '0.0.0-unreleased'
