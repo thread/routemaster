@@ -14,7 +14,13 @@ class BaseLogger:
     def __init__(self, config, *args, **kwargs) -> None:
         self.config = config
 
+    def init_flask(self, flask_app):
+        """
+        Entrypoint for configuring logging on the flask server.
 
+        Note: this is only called if routemaster is being run as a server, not
+        when validating configuration for example.
+        """
         pass
 
     @contextlib.contextmanager

@@ -84,6 +84,8 @@ def serve(ctx, bind, debug):  # pragma: no cover
     if debug:
         server.config['DEBUG'] = True
 
+    app.logger.init_flask(server)
+
     cron_thread = CronThread(app)
     cron_thread.start()
 
