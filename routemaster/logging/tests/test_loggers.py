@@ -1,5 +1,7 @@
 import pytest
+import requests
 
+from routemaster.server import server
 from routemaster.logging.base import BaseLogger
 from routemaster.logging.split_logger import SplitLogger
 from routemaster.logging.python_logger import PythonLogger
@@ -25,6 +27,8 @@ def test_logger(app_config, logger, kwargs):
     state_machine = app_config.config.state_machines['test_machine']
     state = state_machine.states[0]
     feed_url = 'https://localhost'
+
+    logger.init_flask(server)
 
     with logger.process_cron(state_machine, state, 'test_cron'):
         pass
@@ -53,3 +57,10 @@ def test_logger(app_config, logger, kwargs):
     logger.error("test")
     logger.critical("test")
     logger.exception("test")
+
+    with pytest.raises(AttributeError):
+        logger.non_existent_logging_fn("test")
+
+    response = requests.Response()
+    logger.webhook_response(response)
+    logger.feed_response(response)
