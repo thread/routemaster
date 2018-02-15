@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-import routemaster.version
+from routemaster import version
 
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
@@ -17,7 +17,7 @@ except ImportError:
 
 setup(
     name='routemaster',
-    version=routemaster.version.get_version(),
+    version=version.get_version(),
     url='https://github.com/thread/routemaster',
     description="State machines as a service.",
     long_description=long_description,
