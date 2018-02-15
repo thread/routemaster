@@ -21,7 +21,7 @@ class InvalidLogger(object):
         pass
 
 
-class NoArgsPlugin(BaseLogger):
+class NoArgsLogger(BaseLogger):
     """This logger has an invalid constructor."""
     def __init__(self):
         pass

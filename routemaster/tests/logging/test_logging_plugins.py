@@ -51,7 +51,6 @@ def test_raises_for_invalid_plugin_base_class(custom_app_config):
     ])
 
     with pytest.raises(PluginConfigurationException):
-        import pdb; pdb.set_trace()
         register_loggers(app_config.config)
 
 
