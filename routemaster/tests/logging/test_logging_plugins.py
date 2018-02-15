@@ -51,4 +51,65 @@ def test_raises_for_invalid_plugin_base_class(custom_app_config):
     ])
 
     with pytest.raises(PluginConfigurationException):
+        import pdb; pdb.set_trace()
+        register_loggers(app_config.config)
+
+
+def test_raises_for_plugin_with_invalid_constructor(custom_app_config):
+    app_config = custom_app_config(logging_plugins=[
+        LoggingPluginConfig(
+            dotted_path='logger_plugin:NoArgsLogger',
+            kwargs={},
+        ),
+    ])
+
+    with pytest.raises(PluginConfigurationException):
+        register_loggers(app_config.config)
+
+
+def test_raises_for_plugin_not_on_pythonpath(custom_app_config):
+    app_config = custom_app_config(logging_plugins=[
+        LoggingPluginConfig(
+            dotted_path='non_existent:DoesNotExistLogger',
+            kwargs={},
+        ),
+    ])
+
+    with pytest.raises(PluginConfigurationException):
+        register_loggers(app_config.config)
+
+
+def test_raises_for_plugin_in_invalid_format(custom_app_config):
+    app_config = custom_app_config(logging_plugins=[
+        LoggingPluginConfig(
+            dotted_path='logger_plugin.TestLogger',
+            kwargs={},
+        ),
+    ])
+
+    with pytest.raises(PluginConfigurationException):
+        register_loggers(app_config.config)
+
+
+def test_raises_for_plugin_non_existent_class(custom_app_config):
+    app_config = custom_app_config(logging_plugins=[
+        LoggingPluginConfig(
+            dotted_path='logger_plugin:DoesNotExistLogger',
+            kwargs={},
+        ),
+    ])
+
+    with pytest.raises(PluginConfigurationException):
+        register_loggers(app_config.config)
+
+
+def test_raises_for_not_callable_value(custom_app_config):
+    app_config = custom_app_config(logging_plugins=[
+        LoggingPluginConfig(
+            dotted_path='logger_plugin:NOT_CALLABLE',
+            kwargs={},
+        ),
+    ])
+
+    with pytest.raises(PluginConfigurationException):
         register_loggers(app_config.config)
