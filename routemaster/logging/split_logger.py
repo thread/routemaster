@@ -21,7 +21,6 @@ class SplitLogger(BaseLogger):
             'warning',
             'error',
             'critical',
-            'log',
             'exception',
 
             'webhook_response',
