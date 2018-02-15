@@ -14,18 +14,7 @@ class BaseLogger:
     def __init__(self, config, *args, **kwargs) -> None:
         self.config = config
 
-        for log_fn in (
-            'debug',
-            'info',
-            'warning',
-            'error',
-            'critical',
-            'log',
-            'exception',
-        ):
-            setattr(self, log_fn, self._log_handler)
 
-    def _log_handler(self, *args, **kwargs):
         pass
 
     @contextlib.contextmanager
@@ -51,6 +40,34 @@ class BaseLogger:
         """Logs the receipt of a response from a feed."""
         pass
 
+    def debug(self, *args, **kwargs):
+        """Mirror Python logging API for `debug`."""
+        pass
+
+    def info(self, *args, **kwargs):
+        """Mirror Python logging API for `info`."""
+        pass
+
+    def warning(self, *args, **kwargs):
+        """Mirror Python logging API for `warning`."""
+        pass
+
+    def error(self, *args, **kwargs):
+        """Mirror Python logging API for `error`."""
+        pass
+
+    def critical(self, *args, **kwargs):
+        """Mirror Python logging API for `critical`."""
+        pass
+
+    def log(self, *args, **kwargs):
+        """Mirror Python logging API for `log`."""
+        pass
+
+    def exception(self, *args, **kwargs):
+        """Mirror Python logging API for `exception`."""
+        pass
+
 
 class PythonLogger(BaseLogger):
     """Routemaster logging interface for Python's logging library."""
@@ -67,17 +84,6 @@ class PythonLogger(BaseLogger):
             level=getattr(logging, log_level),
         )
         self.logger = logging.getLogger('routemaster')
-
-        for log_fn in (
-            'debug',
-            'info',
-            'warning',
-            'error',
-            'critical',
-            'log',
-            'exception',
-        ):
-            setattr(self, log_fn, getattr(self.logger, log_fn))
 
     @contextlib.contextmanager
     def process_cron(self, state_machine, state, fn_name):
@@ -98,6 +104,34 @@ class PythonLogger(BaseLogger):
             f"Completed cron {fn_name} for state {state.name} "
             f"in {state_machine.name} in {duration:.2f} seconds",
         )
+
+    def debug(self, *args, **kwargs):
+        """Mirror Python logging API for `debug`."""
+        self.logger.debug(*args, **kwargs)
+
+    def info(self, *args, **kwargs):
+        """Mirror Python logging API for `info`."""
+        self.logger.info(*args, **kwargs)
+
+    def warning(self, *args, **kwargs):
+        """Mirror Python logging API for `warning`."""
+        self.logger.warning(*args, **kwargs)
+
+    def error(self, *args, **kwargs):
+        """Mirror Python logging API for `error`."""
+        self.logger.error(*args, **kwargs)
+
+    def critical(self, *args, **kwargs):
+        """Mirror Python logging API for `critical`."""
+        self.logger.critical(*args, **kwargs)
+
+    def log(self, *args, **kwargs):
+        """Mirror Python logging API for `log`."""
+        self.logger.log(*args, **kwargs)
+
+    def exception(self, *args, **kwargs):
+        """Mirror Python logging API for `exception`."""
+        self.logger.exception(*args, **kwargs)
 
 
 class LoggerProxy(BaseLogger):
