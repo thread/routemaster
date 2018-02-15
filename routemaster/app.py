@@ -5,7 +5,7 @@ from sqlalchemy.engine import Engine
 
 from routemaster.db import initialise_db
 from routemaster.config import Config
-from routemaster.logging import LoggerProxy, register_loggers
+from routemaster.logging import BaseLogger, SplitLogger, register_loggers
 
 
 class App(threading.local):
@@ -13,7 +13,7 @@ class App(threading.local):
 
     db: Engine
     config: Config
-    logger: LoggerProxy
+    logger: BaseLogger
 
     def __init__(
         self,
@@ -23,4 +23,4 @@ class App(threading.local):
         self.config = config
         self.db = initialise_db(self.config.database)
 
-        self.logger = LoggerProxy(register_loggers(config))
+        self.logger = SplitLogger(register_loggers(config))
