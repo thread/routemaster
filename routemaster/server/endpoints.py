@@ -1,9 +1,9 @@
 """Core API endpoints for routemaster service."""
 
+import pkg_resources
 from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
-from routemaster.version import get_version
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -26,18 +26,23 @@ def status():
                                might not be able to serve requests.
     """
     try:
+        version = pkg_resources.working_set.by_key['routemaster'].version
+    except KeyError:
+        version = 'development'
+
+    try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
             return jsonify({
                 'status': 'ok',
                 'state-machines': '/state-machines',
-                'version': get_version(),
+                'version': version,
             })
     except Exception:
         return jsonify({
             'status': 'error',
             'message': 'Cannot connect to database',
-            'version': get_version(),
+            'version': version,
         }), 503
 
 

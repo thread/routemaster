@@ -11,6 +11,7 @@ import mock
 import pytest
 import httpretty
 import dateutil.tz
+import pkg_resources
 from sqlalchemy import and_, select, create_engine
 
 from routemaster import state_machine
@@ -446,3 +447,12 @@ def make_context(app_config):
             ),
         )
     return _inner
+
+
+@pytest.fixture()
+def version():
+    """Return the package version."""
+    try:
+        return pkg_resources.working_set.by_key['routemaster'].version
+    except KeyError:
+        return 'development'

@@ -15,10 +15,10 @@ except ImportError:
 
 
 setup(
-    name='routemaster',
+    name='routemaster_sentry',
     version=version.get_version(),
     url='https://github.com/thread/routemaster',
-    description="State machines as a service.",
+    description="Sentry error reporting for Routemaster.",
     long_description=long_description,
 
     author="Thread",
@@ -45,37 +45,7 @@ setup(
     ),
 
     install_requires=(
-        'click',
-        'pyyaml',
-        'jsonschema >=2.6',
-        'flask',
-        'psycopg2',
-        'sqlalchemy',
-        'python-dateutil',
-        'alembic >=0.9.6',
-        'gunicorn >=19.7',
-        'schedule',
-        'freezegun',
-        'requests',
-        'networkx',
-        'dataclasses',
+        'routemaster',
+        'raven[flask]',
     ),
-
-    setup_requires=(
-        'pytest-runner',
-    ),
-
-    tests_require=(
-        'pytest',
-        'networkx',
-        'tox',
-        'pytest-cov',
-        'pytest-pythonpath',
-    ),
-
-    entry_points={
-        'console_scripts': (
-            'routemaster = routemaster.cli:main',
-        ),
-    },
 )
