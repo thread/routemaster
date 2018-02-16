@@ -11,18 +11,24 @@ all handle exceptions appropriately.
 """
 import contextlib
 
+import pkg_resources
+
 from raven import Client
 from raven.contrib.flask import Sentry
 
 from routemaster.logging import BaseLogger
-from routemaster.version import get_version
 
 
 class SentryLogger(BaseLogger):
     """Instruments Routemaster with Sentry."""
 
     def __init__(self, *args, dsn):
-        version = get_version()
+        try:
+            version = pkg_resources.working_set.by_key[
+                'routemaster_sentry'
+            ].version
+        except KeyError:
+            version = 'dev'
 
         self.client = Client(
             dsn,
