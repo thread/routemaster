@@ -5,13 +5,13 @@ import re
 import json
 import datetime
 import contextlib
-import pkg_resources
 from typing import Any, Dict
 
 import mock
 import pytest
 import httpretty
 import dateutil.tz
+import pkg_resources
 from sqlalchemy import and_, select, create_engine
 
 from routemaster import state_machine
