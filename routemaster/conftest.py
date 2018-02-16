@@ -5,6 +5,7 @@ import re
 import json
 import datetime
 import contextlib
+import pkg_resources
 from typing import Any, Dict
 
 import mock
@@ -446,3 +447,12 @@ def make_context(app_config):
             ),
         )
     return _inner
+
+
+@pytest.fixture()
+def version():
+    """Return the package version."""
+    try:
+        return pkg_resources.working_set.by_key['routemaster'].version
+    except KeyError:
+        return 'development'
