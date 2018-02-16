@@ -195,16 +195,16 @@ workflows:
     jobs:
       - test:
           filters:
-              tags:
-                only: /.*/
+            tags:
+              only: /.*/
       - lint:
           filters:
-              tags:
-                only: /.*/
+            tags:
+              only: /.*/
       - typecheck:
           filters:
-              tags:
-                only: /.*/
+            tags:
+              only: /.*/
       - release:
           requires:
             - test
