@@ -1,6 +1,5 @@
 """The core of the state machine logic."""
 
-import logging
 from typing import Any, Callable, Iterable
 
 from sqlalchemy import and_, not_
@@ -30,8 +29,6 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
 )
 from routemaster.state_machine.transitions import process_transitions
-
-logger = logging.getLogger(__name__)
 
 
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
@@ -249,7 +246,7 @@ def process_cron(
         relevant_labels = get_labels(state_machine, state, conn)
 
     for label_name in relevant_labels:
-        with suppress_exceptions(logger):
+        with suppress_exceptions(app.logger):
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
 

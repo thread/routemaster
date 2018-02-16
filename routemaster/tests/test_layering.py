@@ -39,6 +39,7 @@ DEPENDENCIES = (
 
     ('app', 'db'),
     ('app', 'config'),
+    ('app', 'logging'),
 
     ('server', 'state_machine'),
     ('server', 'version'),
@@ -54,6 +55,8 @@ DEPENDENCIES = (
     ('feeds', 'config'),
 
     ('webhooks', 'config'),
+
+    ('logging', 'config'),
 )
 
 EXCLUDED_MODULES = (

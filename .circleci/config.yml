@@ -47,7 +47,7 @@ jobs:
           name: Restore .tox cache
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
-          name: Test/Lint/Typecheck
+          name: Test
           command: |
             . venv/bin/activate
             TOXENV=py36 tox
@@ -93,7 +93,7 @@ jobs:
           name: Restore .tox cache
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}
       - run:
-          name: Test/Lint/Typecheck
+          name: Lint
           command: |
             . venv/bin/activate
             TOXENV=lint tox
@@ -129,7 +129,7 @@ jobs:
           name: Restore .tox cache
           key: deps-tox-{{ .Branch }}-{{ checksum "scripts/typechecking/requirements.txt" }}
       - run:
-          name: Test/Lint/Typecheck
+          name: Typecheck
           command: |
             . venv/bin/activate
             TOXENV=mypy tox
@@ -161,6 +161,12 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install twine wheel m2r
+
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
+            cd plugins/routemaster-sentry
             python setup.py sdist
             python setup.py bdist_wheel
             twine upload dist/*

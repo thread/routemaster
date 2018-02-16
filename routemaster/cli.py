@@ -22,31 +22,9 @@ logger = logging.getLogger(__name__)
     type=click.File(encoding='utf-8'),
     required=True,
 )
-@click.option(
-    '-l',
-    '--log-level',
-    help="Logging level.",
-    type=click.Choice((
-        'CRITICAL',
-        'ERROR',
-        'WARNING',
-        'INFO',
-        'DEBUG',
-    )),
-    default='INFO',
-)
 @click.pass_context
-def main(ctx, config_file, log_level):
+def main(ctx, config_file):
     """Shared entrypoint configuration."""
-    logging.basicConfig(
-        format=(
-            "[%(asctime)s] [%(process)d] [%(levelname)s] "
-            "[%(name)s] %(message)s"
-        ),
-        datefmt="%Y-%m-%d %H:%M:%S %z",
-        level=getattr(logging, log_level),
-    )
-
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
     try:
@@ -55,7 +33,7 @@ def main(ctx, config_file, log_level):
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
-    ctx.obj = App(config, log_level)
+    ctx.obj = App(config)
     _validate_config(ctx.obj)
 
 
@@ -93,16 +71,13 @@ def serve(ctx, bind, debug):  # pragma: no cover
     if debug:
         server.config['DEBUG'] = True
 
+    app.logger.init_flask(server)
+
     cron_thread = CronThread(app)
     cron_thread.start()
 
     try:
-        instance = GunicornWSGIApplication(
-            server,
-            bind=bind,
-            debug=debug,
-            log_level=ctx.obj.log_level,
-        )
+        instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
         instance.run()
     finally:
         cron_thread.stop()

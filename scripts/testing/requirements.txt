@@ -7,3 +7,4 @@ freezegun
 mypy
 mock
 httpretty
+pytest-pythonpath

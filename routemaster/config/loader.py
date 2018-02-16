@@ -28,6 +28,7 @@ from routemaster.config.model import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
 )
 from routemaster.exit_conditions import ExitConditionProgram
@@ -48,6 +49,8 @@ def load_config(yaml: Yaml) -> Config:
             "No top-level state_machines key defined.",
         ) from None
 
+    yaml_logging_plugins = yaml.get('plugins', {}).get('logging', [])
+
     return Config(
         state_machines={
             name: _load_state_machine(
@@ -58,6 +61,7 @@ def load_config(yaml: Yaml) -> Config:
             for name, yaml_state_machine in yaml_state_machines.items()
         },
         database=load_database_config(),
+        logging_plugins=_load_logging_plugins(yaml_logging_plugins),
     )
 
 
@@ -93,6 +97,18 @@ def load_database_config() -> DatabaseConfig:
         username=os.environ.get('DB_USER', 'routemaster'),
         password=os.environ.get('DB_PASS', ''),
     )
+
+
+def _load_logging_plugins(
+    yaml_logging_plugins: List[Yaml],
+) -> List[LoggingPluginConfig]:
+    return [
+        LoggingPluginConfig(
+            dotted_path=x['class'],
+            kwargs=x.get('kwargs', {}),
+        )
+        for x in yaml_logging_plugins
+    ]
 
 
 def _load_state_machine(

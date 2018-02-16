@@ -11,6 +11,7 @@ import mock
 import pytest
 import httpretty
 import dateutil.tz
+import pkg_resources
 from sqlalchemy import and_, select, create_engine
 
 from routemaster import state_machine
@@ -34,6 +35,7 @@ from routemaster.config import (
 )
 from routemaster.server import server
 from routemaster.context import Context
+from routemaster.logging import BaseLogger
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
@@ -225,6 +227,7 @@ class TestApp(App):
     def __init__(self, config):
         self.config = config
         self.database_used = False
+        self.logger = mock.MagicMock()
 
     @property
     def db(self):
@@ -246,6 +249,7 @@ def app_config(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
+        logging_plugins=kwargs.get('logging_plugins', []),
     ))
 
 
@@ -418,9 +422,18 @@ def set_metadata(app_config):
 
 
 @pytest.fixture()
-def make_context():
+def make_context(app_config):
     """Factory for Contexts that provides sane defaults for testing."""
     def _inner(**kwargs):
+        logger = BaseLogger(app_config.config)
+        state_machine = app_config.config.state_machines['test_machine']
+        state = state_machine.states[0]
+
+        @contextlib.contextmanager
+        def feed_logging_context(feed_url):
+            with logger.process_feed(state_machine, state, feed_url):
+                yield logger.feed_response
+
         return Context(
             label=kwargs['label'],
             metadata=kwargs.get('metadata', {}),
@@ -428,5 +441,18 @@ def make_context():
             feeds=kwargs.get('feeds', {}),
             accessed_variables=kwargs.get('accessed_variables', []),
             current_history_entry=kwargs.get('current_history_entry'),
+            feed_logging_context=kwargs.get(
+                'feed_logging_context',
+                feed_logging_context,
+            ),
         )
     return _inner
+
+
+@pytest.fixture()
+def version():
+    """Return the package version."""
+    try:
+        return pkg_resources.working_set.by_key['routemaster'].version
+    except KeyError:
+        return 'development'

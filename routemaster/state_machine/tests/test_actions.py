@@ -33,6 +33,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         mock.ANY,
+        mock.ANY,
     )
 
     assert_history([
@@ -64,6 +65,7 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         mock.ANY,
+        mock.ANY,
     )
 
     assert_history([
@@ -77,7 +79,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
 
     expected = {'token': None}
 
-    def persist_token(url, content_type, data, token):
+    def persist_token(url, content_type, data, token, logger):
         expected['token'] = token
         return WebhookResult.FAIL
 
@@ -96,6 +98,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         expected['token'],
+        mock.ANY,
     )
 
     with mock_webhook(WebhookResult.FAIL) as webhook:
@@ -112,6 +115,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         expected['token'],
+        mock.ANY,
     )
 
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
@@ -128,6 +132,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
         expected['token'],
+        mock.ANY,
     )
 
 
@@ -136,7 +141,7 @@ def test_different_actions_use_different_idempotency_tokens(app_config, create_l
 
     seen_tokens = set()
 
-    def persist_token(url, content_type, data, token):
+    def persist_token(url, content_type, data, token, logger):
         seen_tokens.add(token)
         return WebhookResult.SUCCESS
 
@@ -156,17 +161,20 @@ def test_different_actions_use_different_idempotency_tokens(app_config, create_l
             'application/json',
             b'{"label": "foo", "metadata": {"should_progress": true}}',
             mock.ANY,
+            mock.ANY,
         ),
         mock.call(
             'http://localhost/hook/test_machine/bar',
             'application/json',
             b'{"label": "bar", "metadata": {"should_progress": true}}',
             mock.ANY,
+            mock.ANY,
         ),
         mock.call(
             'http://localhost/hook/test_machine/baz',
             'application/json',
             b'{"label": "baz", "metadata": {"should_progress": true}}',
+            mock.ANY,
             mock.ANY,
         ),
     ))
@@ -206,6 +214,7 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
         'http://localhost/hook/test_machine/foo',
         'application/json',
         b'{"label": "foo", "metadata": {"should_progress": true}}',
+        mock.ANY,
         mock.ANY,
     )
 

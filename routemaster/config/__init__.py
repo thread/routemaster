@@ -18,6 +18,7 @@ from routemaster.config.model import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
 )
 from routemaster.config.loader import load_config, load_database_config
@@ -44,5 +45,6 @@ __all__ = (
     'MetadataTrigger',
     'ConstantNextState',
     'ContextNextStates',
+    'LoggingPluginConfig',
     'ContextNextStatesOption',
 )
