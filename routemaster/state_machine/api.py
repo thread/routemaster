@@ -1,6 +1,5 @@
 """The core of the state machine logic."""
 
-import logging
 from typing import Any, Callable, Iterable
 
 from sqlalchemy import and_, not_
@@ -13,12 +12,14 @@ from routemaster.utils import dict_merge, suppress_exceptions
 from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.types import LabelRef, Metadata
-from routemaster.state_machine.utils import \
-    get_label_metadata as get_label_metadata_internal
 from routemaster.state_machine.utils import (
     lock_label,
     get_current_state,
     get_state_machine,
+)
+from routemaster.state_machine.utils import \
+    get_label_metadata as get_label_metadata_internal
+from routemaster.state_machine.utils import (
     start_state_machine,
     needs_gate_evaluation_for_metadata_change,
 )
@@ -28,8 +29,6 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
 )
 from routemaster.state_machine.transitions import process_transitions
-
-logger = logging.getLogger(__name__)
 
 
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
@@ -213,8 +212,8 @@ def delete_label(app: App, label: LabelRef) -> None:
 
         # Record the label as having been deleted and remove its metadata
         conn.execute(labels.update().where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
+            labels.c.name == label.name,
+            labels.c.state_machine == label.state_machine,
         )).values(
             metadata={},
             deleted=True,
@@ -247,7 +246,7 @@ def process_cron(
         relevant_labels = get_labels(state_machine, state, conn)
 
     for label_name in relevant_labels:
-        with suppress_exceptions(logger):
+        with suppress_exceptions(app.logger):
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
 

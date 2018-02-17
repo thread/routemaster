@@ -147,6 +147,26 @@ properties:
                   - webhook
                   - next
                 additionalProperties: false
+  plugins:
+    type: object
+    properties:
+      logging:
+        type: array
+        uniqueItems: true
+        items:
+          title: Logging plugin config
+          type: object
+          properties:
+            class:
+              type: string
+            kwargs:
+              title: Logging plugin kwargs
+              type: object
+              additionalProperties:
+                type: string
+          required:
+            - class
+          additionalProperties: false
 required:
   - state_machines
 additionalProperties: false

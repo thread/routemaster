@@ -4,10 +4,9 @@ import functools
 from typing import Any
 
 import dateutil.tz
+from sqlalchemy import DDL, Table
 from sqlalchemy import Column as NullableColumn
 from sqlalchemy import (
-    DDL,
-    Table,
     String,
     Boolean,
     Integer,

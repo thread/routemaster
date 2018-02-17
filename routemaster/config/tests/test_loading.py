@@ -23,10 +23,15 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
     load_config,
 )
 from routemaster.exit_conditions import ExitConditionProgram
+
+
+def reset_environment():
+    return mock.patch.dict(os.environ, {}, clear=True)
 
 
 def yaml_data(name: str):
@@ -66,8 +71,10 @@ def test_trivial_config():
             username='routemaster',
             password='',
         ),
+        logging_plugins=[],
     )
-    assert load_config(data) == expected
+    with reset_environment():
+        assert load_config(data) == expected
 
 
 def test_realistic_config():
@@ -143,8 +150,19 @@ def test_realistic_config():
             username='routemaster',
             password='',
         ),
+        logging_plugins=[
+            LoggingPluginConfig(
+                dotted_path='routemaster_prometheus:PrometheusLogger',
+                kwargs={'prometheus_gateway': 'localhost'},
+            ),
+            LoggingPluginConfig(
+                dotted_path='routemaster_sentry:SentryLogger',
+                kwargs={'raven_dsn': 'nai8ioca4zeeb2ahgh4V'},
+            ),
+        ],
     )
-    assert load_config(data) == expected
+    with reset_environment():
+        assert load_config(data) == expected
 
 
 def test_raises_for_action_and_gate_state():
@@ -192,6 +210,11 @@ def test_raises_for_invalid_interval_format_in_trigger():
         load_config(yaml_data('trigger_interval_format_invalid'))
 
 
+def test_raises_for_nested_kwargs_in_logging_plugin_config():
+    with assert_config_error("Could not validate config file against schema."):
+        load_config(yaml_data('nested_kwargs_logging_plugin_invalid'))
+
+
 def test_next_states_shorthand_results_in_constant_config():
     data = yaml_data('next_states_shorthand')
     expected = Config(
@@ -223,8 +246,10 @@ def test_next_states_shorthand_results_in_constant_config():
             username='routemaster',
             password='',
         ),
+        logging_plugins=[],
     )
-    assert load_config(data) == expected
+    with reset_environment():
+        assert load_config(data) == expected
 
 
 def test_environment_variables_override_config_file_for_database_config():
@@ -300,6 +325,16 @@ def test_environment_variables_override_config_file_for_database_config():
             username='username',
             password='password',
         ),
+        logging_plugins=[
+            LoggingPluginConfig(
+                dotted_path='routemaster_prometheus:PrometheusLogger',
+                kwargs={'prometheus_gateway': 'localhost'},
+            ),
+            LoggingPluginConfig(
+                dotted_path='routemaster_sentry:SentryLogger',
+                kwargs={'raven_dsn': 'nai8ioca4zeeb2ahgh4V'},
+            ),
+        ],
     )
 
     with mock.patch.dict(os.environ, {

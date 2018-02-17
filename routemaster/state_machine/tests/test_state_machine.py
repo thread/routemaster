@@ -1,5 +1,7 @@
 import mock
+
 import pytest
+from freezegun import freeze_time
 from sqlalchemy import and_, select
 from requests.exceptions import RequestException
 
@@ -10,6 +12,7 @@ from routemaster.state_machine import (
     UnknownLabel,
     UnknownStateMachine,
 )
+from routemaster.state_machine.gates import process_gate
 
 
 def current_state(app_config, label):
@@ -22,6 +25,7 @@ def current_state(app_config, label):
                 history.c.created.desc(),
             ).limit(1)
         )
+
 
 def metadata_triggers_processed(app_config, label):
     with app_config.db.begin() as conn:
@@ -272,3 +276,90 @@ def test_maintains_updated_field_on_label(app_config, mock_test_feed):
         )
 
     assert second_updated > first_updated
+
+
+def test_continues_after_time_since_entering_gate(app_config):
+    label = LabelRef('foo', 'test_machine_timing')
+    gate = app_config.config.state_machines['test_machine_timing'].states[0]
+
+    with freeze_time('2018-01-24 12:00:00'):
+        state_machine.create_label(
+            app_config,
+            label,
+            {},
+        )
+
+    # 1 day later, not enough to progress
+    with freeze_time('2018-01-25 12:00:00'):
+        with app_config.db.begin() as conn:
+            process_gate(
+                app=app_config,
+                state=gate,
+                state_machine=state_machine,
+                label=label,
+                conn=conn,
+            )
+
+    assert current_state(app_config, label) == 'start'
+
+    # 2 days later
+    with freeze_time('2018-01-26 12:00:00'):
+        with app_config.db.begin() as conn:
+            process_gate(
+                app=app_config,
+                state=gate,
+                state_machine=state_machine,
+                label=label,
+                conn=conn,
+            )
+
+    assert current_state(app_config, label) == 'end'
+
+
+def test_delete_label(app_config, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+    with mock_test_feed():
+        state_machine.create_label(app_config, label_foo, {})
+
+    state_machine.delete_label(app_config, label_foo)
+
+    with app_config.db.begin() as conn:
+        deleted = conn.scalar(
+            select([labels.c.deleted]).where(and_(
+                labels.c.name == label_foo.name,
+                labels.c.state_machine == label_foo.state_machine,
+            )),
+        )
+        assert deleted is True
+
+    assert_history([
+        (None, 'start'),
+        ('start', None),
+    ])
+
+
+def test_delete_label_only_deletes_target_label(app_config, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+    label_bar = LabelRef('bar', 'test_machine')
+    with mock_test_feed():
+        state_machine.create_label(app_config, label_foo, {})
+        state_machine.create_label(app_config, label_bar, {})
+
+    state_machine.delete_label(app_config, label_foo)
+
+    with app_config.db.begin() as conn:
+        deleted_foo = conn.scalar(
+            select([labels.c.deleted]).where(and_(
+                labels.c.name == label_foo.name,
+                labels.c.state_machine == label_foo.state_machine,
+            )),
+        )
+        assert deleted_foo is True
+
+        deleted_bar = conn.scalar(
+            select([labels.c.deleted]).where(and_(
+                labels.c.name == label_bar.name,
+                labels.c.state_machine == label_bar.state_machine,
+            )),
+        )
+        assert deleted_bar is False

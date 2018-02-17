@@ -19,8 +19,8 @@ depends_on = None
 
 def upgrade():
     op.drop_table('edges')
-    op.drop_table('state_machines')
     op.drop_table('states')
+    op.drop_table('state_machines')
 
 
 def downgrade():
