@@ -14,6 +14,19 @@ connection through environment variables: `DB_HOST`, `DB_PORT`, `DB_NAME`,
 `DB_USER`, `DB_PASS`.
 
 
+##### Migrations
+
+Migrations are not run automatically by the Docker container. It is recommended
+that you include a migration process in your deployment. A basic version of
+this is:
+
+```shell
+docker stop routemaster
+docker run --rm thread/routemaster alembic upgrade head
+docker start routemaster
+```
+
+
 ### Python
 
 Routemaster and its plugins are packaged as Python packages and deployed to
