@@ -15,5 +15,5 @@ state machines used by multiple separate services.
  - [Hacking on Routemaster](docs/hacking.md)
  - [Deployment](docs/deployment.md)
  - [Migrations FAQ](docs/migrations.md)
- - [PyPI](https://pypi.python.org/pypi/routemaster)
- - [Docker Hub](https://hub.docker.com/r/thread/routemaster/)
+ - [Routemaster on PyPI](https://pypi.python.org/pypi/routemaster)
+ - [Routemaster on Docker Hub](https://hub.docker.com/r/thread/routemaster/)
