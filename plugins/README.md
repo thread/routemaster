@@ -14,3 +14,15 @@ In scope (and accepted plugin pull-requests) would include:
 The plugin API defined in `routemaster.logging.BaseLogger` is relatively basic
 so far, and any changes that extend the functionality of it to better support
 the above plugin use-cases would be welcomed.
+
+
+### Packaging
+
+Plugins are currently packaged as separate Python packages, and uploaded to
+PyPI. The versions track the Routemaster package version precisely.
+
+
+### Deployment
+
+Plugins in this repo are installed by default in the provided Docker image,
+although will be inactive by default.
