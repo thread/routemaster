@@ -28,21 +28,25 @@ def test_needs_gate_evaluation_for_metadata_change(app_config, create_label):
     label = create_label('foo', 'test_machine', {})
     state_machine = app_config.config.state_machines['test_machine']
 
-    with app_config.db.begin() as conn:
-        current_state = utils.get_current_state(label, state_machine, conn)
+    with app_config.new_session():
+        current_state = utils.get_current_state(
+            app_config,
+            label,
+            state_machine,
+        )
 
         assert utils.needs_gate_evaluation_for_metadata_change(
+            app_config,
             state_machine,
             label,
             {'foo': 'bar'},
-            conn,
         ) == (False, current_state)
 
         assert utils.needs_gate_evaluation_for_metadata_change(
+            app_config,
             state_machine,
             label,
             {'should_progress': 'bar'},
-            conn,
         ) == (True, current_state)
 
 
@@ -54,15 +58,19 @@ def test_does_not_need_gate_evaluation_for_metadata_change_with_action(app_confi
     with mock_webhook(WebhookResult.FAIL):
         label = create_label('foo', 'test_machine', {'should_progress': True})
 
-    with app_config.db.begin() as conn:
-        current_state = utils.get_current_state(label, state_machine, conn)
+    with app_config.new_session():
+        current_state = utils.get_current_state(
+            app_config,
+            label,
+            state_machine,
+        )
         assert current_state.name == 'perform_action'
 
         assert utils.needs_gate_evaluation_for_metadata_change(
+            app_config,
             state_machine,
             label,
             {},
-            conn,
         ) == (False, current_state)
 
 

@@ -1,8 +1,6 @@
 import mock
-
 import pytest
 from freezegun import freeze_time
-from sqlalchemy import and_, select
 from requests.exceptions import RequestException
 
 from routemaster import state_machine
@@ -22,7 +20,6 @@ def current_state(app_config, label):
     ).order_by(
         History.created.desc(),
     ).limit(1).scalar()
-
 
 
 def metadata_triggers_processed(app_config, label):
@@ -291,26 +288,24 @@ def test_continues_after_time_since_entering_gate(app_config):
 
     # 1 day later, not enough to progress
     with freeze_time('2018-01-25 12:00:00'):
-        with app_config.db.begin() as conn:
+        with app_config.new_session():
             process_gate(
                 app=app_config,
                 state=gate,
                 state_machine=state_machine,
                 label=label,
-                conn=conn,
             )
 
     assert current_state(app_config, label) == 'start'
 
     # 2 days later
     with freeze_time('2018-01-26 12:00:00'):
-        with app_config.db.begin() as conn:
+        with app_config.new_session():
             process_gate(
                 app=app_config,
                 state=gate,
                 state_machine=state_machine,
                 label=label,
-                conn=conn,
             )
 
     assert current_state(app_config, label) == 'end'
@@ -323,13 +318,12 @@ def test_delete_label(app_config, assert_history, mock_test_feed):
 
     state_machine.delete_label(app_config, label_foo)
 
-    with app_config.db.begin() as conn:
-        deleted = conn.scalar(
-            select([labels.c.deleted]).where(and_(
-                labels.c.name == label_foo.name,
-                labels.c.state_machine == label_foo.state_machine,
-            )),
+    with app_config.new_session():
+        _, deleted = state_machine.get_label_metadata_internal(
+            app_config,
+            label_foo,
         )
+
         assert deleted is True
 
     assert_history([
@@ -347,19 +341,17 @@ def test_delete_label_only_deletes_target_label(app_config, assert_history, mock
 
     state_machine.delete_label(app_config, label_foo)
 
-    with app_config.db.begin() as conn:
-        deleted_foo = conn.scalar(
-            select([labels.c.deleted]).where(and_(
-                labels.c.name == label_foo.name,
-                labels.c.state_machine == label_foo.state_machine,
-            )),
+    with app_config.new_session():
+        _, deleted_foo = state_machine.get_label_metadata_internal(
+            app_config,
+            label_foo,
         )
+
         assert deleted_foo is True
 
-        deleted_bar = conn.scalar(
-            select([labels.c.deleted]).where(and_(
-                labels.c.name == label_bar.name,
-                labels.c.state_machine == label_bar.state_machine,
-            )),
+        _, deleted_bar = state_machine.get_label_metadata_internal(
+            app_config,
+            label_bar,
         )
+
         assert deleted_bar is False
