@@ -55,15 +55,16 @@ def test_create_label(client, app_config, mock_test_feed):
     assert response.status_code == 201
     assert response.json['metadata'] == {'bar': 'baz'}
 
-    label = app_config.session.query(Label).one()
-    assert label.name == label_name
-    assert label.state_machine == state_machine.name
-    assert label.metadata == label_metadata
+    with app_config.new_session():
+        label = app_config.session.query(Label).one()
+        assert label.name == label_name
+        assert label.state_machine == state_machine.name
+        assert label.metadata == label_metadata
 
-    history = app_config.session.query(History).one()
-    assert history.label_name == label_name
-    assert history.old_state is None
-    assert history.new_state == state_machine.states[0].name
+        history = app_config.session.query(History).one()
+        assert history.label_name == label_name
+        assert history.old_state is None
+        assert history.new_state == state_machine.states[0].name
 
 
 def test_create_label_404_for_not_found_state_machine(client):
@@ -116,7 +117,9 @@ def test_update_label(client, app_config, create_label):
     assert response.status_code == 200
     assert response.json['metadata'] == label_metadata
 
-    label = app_config.session.query(Label).one()
+    with app_config.new_session():
+        label = app_config.session.query(Label).one()
+
     assert label.context == label_metadata
 
 
@@ -234,12 +237,13 @@ def test_update_label_moves_label(client, create_label, app_config, mock_webhook
     assert response.status_code == 200
     assert response.json['metadata'] == {'should_progress': True}
 
-    latest_state = app_config.session.query(History.new_state).filter_by(
-        label_name='foo',
-        label_state_machine='test_machine',
-    ).order_by(
-        History.created.desc(),
-    ).scalar()
+    with app_config.new_session():
+        latest_state = app_config.session.query(History.new_state).filter_by(
+            label_name='foo',
+            label_state_machine='test_machine',
+        ).order_by(
+            History.created.desc(),
+        ).scalar()
     assert latest_state == 'end'
 
 
