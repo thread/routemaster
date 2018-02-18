@@ -84,7 +84,7 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
 
     start_state_machine(app, state_machine, label)
 
-    with app.session.new_nested():
+    with app.session.begin_nested():
         process_transitions(app, label)
 
     return metadata
@@ -103,7 +103,7 @@ def update_metadata_for_label(
     state_machine = get_state_machine(app, label)
     needs_gate_evaluation = False
 
-    with app.new_nested():
+    with app.begin_nested():
         row = lock_label(app, label)
 
         existing_metadata, deleted = row.metadata, row.deleted

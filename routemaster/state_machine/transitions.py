@@ -33,7 +33,7 @@ def process_transitions(app: App, label: LabelRef) -> None:
     num_transitions = 0
 
     def _transition() -> bool:
-        with app.session.new_nested():
+        with app.session.begin_nested():
             lock_label(app, label)
             current_state = get_current_state(app, label, state_machine)
 
