@@ -107,6 +107,7 @@ class Label(Base):
     __table__ = labels
 
     def __repr__(self):
+        """Return a useful debug representation."""
         return (
             f"Label(state_machine={self.state_machine!r}, name={self.name!r})"
         )
@@ -118,6 +119,7 @@ class History(Base):
     __table__ = history
 
     def __repr__(self):
+        """Return a useful debug representation."""
         return (
             f"History(id={self.id!r}, "
             f"label_state_machine={self.label_state_machine!r}, "
