@@ -1,7 +1,6 @@
 import json
 
 import mock
-from sqlalchemy import and_, select
 
 from routemaster.db import Label, History
 
