@@ -4,7 +4,7 @@ import pkg_resources
 from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
-from routemaster.db import StateMachine
+from routemaster.db import Label
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -32,7 +32,7 @@ def status():
         version = 'development'
 
     try:
-        server.config.app.session.query(StateMachine).count()
+        server.config.app.session.query(Label).count()
         return jsonify({
             'status': 'ok',
             'state-machines': '/state-machines',

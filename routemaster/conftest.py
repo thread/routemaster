@@ -12,11 +12,11 @@ import pytest
 import httpretty
 import dateutil.tz
 import pkg_resources
-from sqlalchemy import and_, select, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from routemaster import state_machine
-from routemaster.db import labels, history, metadata
+from routemaster.db import Label, History, metadata
 from routemaster.app import App
 from routemaster.utils import dict_merge
 from routemaster.config import (
@@ -412,15 +412,14 @@ def mock_test_feed():
 def assert_history(app_config):
     """Assert that the database history matches what is expected."""
     def _assert(entries):
-        with app_config.db.begin() as conn:
+        with app_config.new_session():
             history_entries = [
-                tuple(x)
-                for x in conn.execute(
-                    select((
-                        history.c.old_state,
-                        history.c.new_state,
-                    )).order_by(history.c.id.asc()),
-                )
+                tuple(x.old_state, x.new_state)
+                for x in app_config.session.query(
+                    History,
+                ).order_by(
+                    History.id,
+                ).fetchall()
             ]
 
             assert history_entries == entries
@@ -431,24 +430,18 @@ def assert_history(app_config):
 def set_metadata(app_config):
     """Directly set the metadata for a label in the database."""
     def _inner(label, update):
-        with app_config.db.begin() as conn:
-            filter_ = and_(
-                labels.c.name == label.name,
-                labels.c.state_machine == label.state_machine,
-            )
+        with app_config.new_session():
+            db_label = app_config.session.query(Label).filter_by(
+                name=label.name,
+                state_machine=label.state_machine,
+            ).first()
 
-            existing_metadata = conn.scalar(
-                select([labels.c.metadata]).where(filter_),
-            )
+            db_label.metadata = dict_merge(db_label.metadata, update)
+            db_label.metadata_triggers_processed = True
 
-            new_metadata = dict_merge(existing_metadata, update)
+            app_config.session.add(db_label)
 
-            conn.execute(labels.update().where(filter_).values(
-                metadata=new_metadata,
-                metadata_triggers_processed=True,
-            ))
-
-            return new_metadata
+            return db_label.metadata
     return _inner
 
 

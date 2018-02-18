@@ -33,9 +33,9 @@ def process_transitions(app: App, label: LabelRef) -> None:
     num_transitions = 0
 
     def _transition() -> bool:
-        with app.db.begin() as conn:
-            lock_label(label, conn)
-            current_state = get_current_state(label, state_machine, conn)
+        with app.session.new_nested():
+            lock_label(app, label)
+            current_state = get_current_state(app, label, state_machine)
 
             if isinstance(current_state, Action):
                 return process_action(
@@ -43,7 +43,6 @@ def process_transitions(app: App, label: LabelRef) -> None:
                     state=current_state,
                     state_machine=state_machine,
                     label=label,
-                    conn=conn,
                 )
 
             elif isinstance(current_state, Gate):  # pragma: no branch
@@ -55,7 +54,6 @@ def process_transitions(app: App, label: LabelRef) -> None:
                     state=current_state,
                     state_machine=state_machine,
                     label=label,
-                    conn=conn,
                 )
 
             else:
