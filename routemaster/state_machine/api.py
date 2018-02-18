@@ -2,11 +2,6 @@
 
 from typing import Any, Callable, Iterable
 
-import dateutil.tz
-from sqlalchemy import and_, not_
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql import select
-
 from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.utils import dict_merge, suppress_exceptions
@@ -48,27 +43,24 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
 def get_label_state(app: App, label: LabelRef) -> State:
     """Finds the current state of a label."""
     state_machine = get_state_machine(app, label)
-
-    with app.db.begin() as conn:
-        return get_current_state(label, state_machine, conn)
+    return get_current_state(app, label, state_machine)
 
 
 def get_label_metadata(app: App, label: LabelRef) -> Metadata:
     """Returns the metadata associated with a label."""
     state_machine = get_state_machine(app, label)
 
-    row = app.session.query(Label).filter_by(
-        name=label.name,
-        state_machine=label.state_machine,
-    ).one_or_none()
+    row = get_label_metadata_internal(app, label, state_machine)
 
     if row is None:
         raise UnknownLabel(label)
 
-    if row.deleted:
+    metadata, deleted = row
+
+    if deleted:
         raise DeletedLabel(label)
 
-    return row.metadata
+    return metadata
 
 
 def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
@@ -79,7 +71,7 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
         app.session.query(Label).filter_by(
             name=label.name,
             state_machine=label.state_machine,
-        ).exists()
+        ).exists(),
     ).scalar():
         raise LabelAlreadyExists(label)
 
@@ -156,9 +148,10 @@ def _process_transitions_for_metadata_update(
     state_machine: StateMachine,
     state_pending_update: State,
 ):
+    # TODO: use a session
     with app.db.begin() as conn:
         lock_label(app, label)
-        current_state = get_current_state(label, state_machine, conn)
+        current_state = get_current_state(app, label, state_machine)
 
         if state_pending_update != current_state:
             # We have raced with another update, and are no longer in
@@ -239,9 +232,10 @@ def process_cron(
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
 
+            # TODO: use a session
             with app.db.begin() as conn:
                 lock_label(app, label)
-                current_state = get_current_state(label, state_machine, conn)
+                current_state = get_current_state(app, label, state_machine)
 
                 if current_state != state:
                     continue

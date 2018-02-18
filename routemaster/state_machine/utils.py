@@ -2,13 +2,12 @@
 
 import datetime
 import contextlib
-from typing import Any, Dict, List, Tuple, Iterable
+from typing import Any, Dict, List, Tuple
 
 import dateutil.tz
-from sqlalchemy import and_, func, not_, select
-from sqlalchemy.sql.elements import ClauseElement
+from sqlalchemy import func, false
 
-from routemaster.db import labels, history
+from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.feeds import feeds_for_state_machine
 from routemaster.config import Gate, State, StateMachine, ContextNextStates
@@ -29,7 +28,11 @@ def get_state_machine(app: App, label: LabelRef) -> StateMachine:
         raise UnknownStateMachine(label.state_machine)
 
 
-def start_state_machine(app: App, state_machine: StateMachine, label: LabelRef) -> None:
+def start_state_machine(
+    app: App,
+    state_machine: StateMachine,
+    label: LabelRef,
+) -> None:
     """Create the first history entry for a label in a state machine."""
     new_entry = History(
         label_name=label.name,
@@ -51,50 +54,35 @@ def choose_next_state(
 
 
 def get_label_metadata(
+    app: App,
     label: LabelRef,
     state_machine: StateMachine,
-    conn,
 ) -> Tuple[Dict[str, Any], bool]:
     """Get the metadata and whether the label has been deleted."""
-    return conn.execute(
-        select([labels.c.metadata, labels.c.deleted]).where(and_(
-            labels.c.name == label.name,
-            labels.c.state_machine == state_machine.name,
-        )),
-    ).fetchone()
+    return app.session.query(Label.metadata, Label.deleted).filter_by(
+        name=label.name,
+        state_machine=state_machine.name,
+    ).first()
 
 
 def get_current_state(
+    app: App,
     label: LabelRef,
     state_machine: StateMachine,
-    conn,
 ) -> State:
     """Get the current state of a label, based on its last history entry."""
-    history_entry = conn.execute(
-        select([history]).where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == state_machine.name,
-        )).order_by(
-            history.c.id.desc(),
-        ).limit(1),
-    ).fetchone()
-
-    if history_entry is None:
-        raise UnknownLabel(label)
-
+    history_entry = get_current_history(app, label)
     return state_machine.get_state(history_entry.new_state)
 
 
-def get_current_history(label: LabelRef, conn) -> Any:
+def get_current_history(app: App, label: LabelRef) -> Any:
     """Get a label's last history entry."""
-    history_entry = conn.execute(
-        select([history]).where(and_(
-            history.c.label_name == label.name,
-            history.c.label_state_machine == label.state_machine,
-        )).order_by(
-            history.c.id.desc(),
-        ).limit(1),
-    ).fetchone()
+    history_entry = app.session.query(History).filter_by(
+        label_name=label.name,
+        label_state_machine=label.state_machine,
+    ).order_by(
+        History.id.desc(),
+    ).first()
 
     if history_entry is None:
         raise UnknownLabel(label)
@@ -103,16 +91,16 @@ def get_current_history(label: LabelRef, conn) -> Any:
 
 
 def needs_gate_evaluation_for_metadata_change(
+    app: App,
     state_machine: StateMachine,
     label: LabelRef,
     update: Metadata,
-    conn,
 ) -> Tuple[bool, State]:
     """
     Given a change to the metadata, should the gate evaluation be triggered.
     """
 
-    current_state = get_current_state(label, state_machine, conn)
+    current_state = get_current_state(app, label, state_machine)
 
     if not isinstance(current_state, Gate):
         # Label is not a gate state so there's no trigger to resolve.
@@ -127,16 +115,12 @@ def needs_gate_evaluation_for_metadata_change(
     return False, current_state
 
 
-def lock_label(label: LabelRef, conn):
+def lock_label(app: App, label: LabelRef):
     """Lock a label in the current transaction."""
-    row = conn.execute(
-        labels.select().where(
-            and_(
-                labels.c.name == label.name,
-                labels.c.state_machine == label.state_machine,
-            ),
-        ).with_for_update(),
-    ).fetchone()
+    row = app.session.query(Label).filter_by(
+        name=label.name,
+        state_machine=label.state_machine,
+    ).with_for_update().first()
 
     if row is None:
         raise UnknownLabel(label)
@@ -145,23 +129,18 @@ def lock_label(label: LabelRef, conn):
 
 
 def labels_in_state(
+    app: App,
     state_machine: StateMachine,
     state: State,
-    conn,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
-    return _labels_in_state(
-        state_machine,
-        state,
-        (),
-        conn,
-    )
+    return _labels_in_state(app, state_machine, state, {})
 
 
 def labels_needing_metadata_update_retry_in_gate(
+    app: App,
     state_machine: StateMachine,
     state: State,
-    conn,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     if not isinstance(state, Gate):  # pragma: no branch
@@ -171,44 +150,38 @@ def labels_needing_metadata_update_retry_in_gate(
         )
 
     return _labels_in_state(
+        app,
         state_machine,
         state,
-        (not_(labels.c.metadata_triggers_processed),),
-        conn,
+        {'metadata_triggers_processed': false()},
     )
 
 
 def _labels_in_state(
+    app: App,
     state_machine: StateMachine,
     state: State,
-    filters: Iterable[ClauseElement],
-    conn,
+    filters: Dict[str, Any],
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
-    ranked_transitions = select((
-        history.c.label_name,
-        history.c.old_state,
-        history.c.new_state,
-        func.row_number().over(
-            order_by=history.c.id.desc(),
-            partition_by=history.c.label_name,
-        ).label('rank'),
-    )).where(
-        history.c.label_state_machine == state_machine.name,
-    ).alias('transitions')
+    rank = func.row_number().over(
+        order_by=History.id.desc(),
+        partition_by=History.label_name,
+    ).label('rank')
 
-    active_filters = (
-        ranked_transitions.c.new_state == state.name,
-        ranked_transitions.c.rank == 1,
-        ranked_transitions.c.label_name == labels.c.name,
-        labels.c.state_machine == state_machine.name,
+    ranked_transitions = app.session.query(
+        History.label_name,
+    ).add_column(
+        rank,
+    ).filter_by(
+        label_state_machine=state_machine.name,
+        new_state=state.name,
+        **filters,
+    ).from_self().filter(
+        rank=1,
     )
 
-    active_participants = select((
-        ranked_transitions.c.label_name,
-    )).where(and_(*(active_filters + tuple(filters))))
-
-    return [x for x, in conn.execute(active_participants)]
+    return [x for x, in ranked_transitions.fetchall()]
 
 
 def context_for_label(
