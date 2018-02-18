@@ -233,11 +233,6 @@ class TestApp(App):
         self._needs_rollback = False
 
     @property
-    def db(self):
-        """Get the shared DB and set the used flag."""
-        raise AssertionError("Cannot access db directly in tests")
-
-    @property
     def session(self):
         """Start if necessary and return a shared session."""
         if self._session is not None:
