@@ -261,7 +261,11 @@ class TestApp(App):
 
 @pytest.fixture()
 def app(**kwargs):
-    """Create the Flask app for testing."""
+    """
+    Create the Flask app for testing.
+
+    Required for the `client` fixture from pytest-flask to work.
+    """
     server.config.app = app_config(**kwargs)
     return server
 
