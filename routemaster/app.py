@@ -8,6 +8,7 @@ from sqlalchemy.engine import Engine
 
 from routemaster.db import initialise_db
 from routemaster.config import Config
+from routemaster.logging import BaseLogger, SplitLogger, register_loggers
 
 
 class App(threading.local):
@@ -15,12 +16,17 @@ class App(threading.local):
 
     db: Engine
     config: Config
+    logger: BaseLogger
     _current_session: Optional[Session]
 
-    def __init__(self, config: Config) -> None:
+    def __init__(
+        self,
+        config: Config,
+    ) -> None:
         """Initialisation of the app state."""
         self.config = config
         self.db = initialise_db(self.config.database)
+        self.logger = SplitLogger(config, loggers=register_loggers(config))
         self._sessionmaker = sessionmaker(self.db)
         self._current_session = None
         self._needs_rollback = False

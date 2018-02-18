@@ -39,8 +39,10 @@ DEPENDENCIES = (
 
     ('app', 'db'),
     ('app', 'config'),
+    ('app', 'logging'),
 
     ('server', 'state_machine'),
+    ('server', 'version'),
 
     ('state_machine', 'app'),
     ('state_machine', 'db'),
@@ -55,6 +57,8 @@ DEPENDENCIES = (
     ('webhooks', 'config'),
 
     ('gunicorn_application', 'utils'),
+
+    ('logging', 'config'),
 )
 
 EXCLUDED_MODULES = (

@@ -11,6 +11,7 @@ import mock
 import pytest
 import httpretty
 import dateutil.tz
+import pkg_resources
 from sqlalchemy import and_, select, create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -35,8 +36,8 @@ from routemaster.config import (
 )
 from routemaster.server import server
 from routemaster.context import Context
+from routemaster.logging import BaseLogger
 from routemaster.webhooks import WebhookResult
-from routemaster.middleware import wrap_application
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -89,7 +90,7 @@ TEST_STATE_MACHINES = {
             ),
             Action(
                 name='perform_action',
-                webhook='http://localhost/hook',
+                webhook='http://localhost/hook/<state_machine>/<label>',
                 next_states=ConstantNextState(state='end'),
             ),
             Action(
@@ -185,6 +186,29 @@ TEST_STATE_MACHINES = {
             ),
         ],
     ),
+    'test_machine_timing': StateMachine(
+        name='test_machine_timing',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='start',
+                triggers=[
+                    OnEntryTrigger(),
+                ],
+                next_states=ConstantNextState('end'),
+                exit_condition=ExitConditionProgram(
+                    '1d12h has passed since history.entered_state',
+                ),
+            ),
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    ),
 }
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
@@ -204,6 +228,7 @@ class TestApp(App):
     def __init__(self, config):
         self.config = config
         self.session_used = False
+        self.logger = mock.MagicMock()
         self._session = None
         self._needs_rollback = False
 
@@ -252,6 +277,7 @@ def app_config(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
+        logging_plugins=kwargs.get('logging_plugins', []),
     ))
 
 
@@ -427,9 +453,18 @@ def set_metadata(app_config):
 
 
 @pytest.fixture()
-def make_context():
+def make_context(app_config):
     """Factory for Contexts that provides sane defaults for testing."""
     def _inner(**kwargs):
+        logger = BaseLogger(app_config.config)
+        state_machine = app_config.config.state_machines['test_machine']
+        state = state_machine.states[0]
+
+        @contextlib.contextmanager
+        def feed_logging_context(feed_url):
+            with logger.process_feed(state_machine, state, feed_url):
+                yield logger.feed_response
+
         return Context(
             label=kwargs['label'],
             metadata=kwargs.get('metadata', {}),
@@ -437,5 +472,18 @@ def make_context():
             feeds=kwargs.get('feeds', {}),
             accessed_variables=kwargs.get('accessed_variables', []),
             current_history_entry=kwargs.get('current_history_entry'),
+            feed_logging_context=kwargs.get(
+                'feed_logging_context',
+                feed_logging_context,
+            ),
         )
     return _inner
+
+
+@pytest.fixture()
+def version():
+    """Return the package version."""
+    try:
+        return pkg_resources.working_set.by_key['routemaster'].version
+    except KeyError:
+        return 'development'

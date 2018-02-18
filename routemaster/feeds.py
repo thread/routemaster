@@ -1,10 +1,10 @@
 """Creation and fetching of feed data."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Callable, Optional
 
 import requests
 from dataclasses import InitVar, dataclass
 
-from routemaster.utils import get_path
+from routemaster.utils import get_path, template_url
 
 
 def feeds_for_state_machine(state_machine) -> Dict[str, 'Feed']:
@@ -27,20 +27,19 @@ class Feed:
     state_machine: str
     data: InitVar[Optional[Dict[str, Any]]] = None
 
-    def prefetch(self, label: str):
+    def prefetch(
+        self,
+        label: str,
+        log_response: Callable[[requests.Response], None] = lambda x: None,
+    ) -> None:
         """Trigger the fetching of a feed's data."""
         if self.data is not None:
             return
 
-        url = self.url.replace(
-            '<label>',
-            label,
-        ).replace(
-            '<state_machine>',
-            self.state_machine,
-        )
+        url = template_url(self.url, self.state_machine, label)
 
         response = requests.get(url)
+        log_response(response)
         response.raise_for_status()
         self.data = response.json()
 

@@ -61,3 +61,23 @@ def suppress_exceptions(logger):
         yield
     except Exception:
         logger.exception("Error suppressed")
+
+
+def template_url(
+    url_template: str,
+    state_machine_name: str,
+    label: str,
+) -> str:
+    """
+    Templates a URL for an external service.
+
+    Adds the label and state machine to a url that contains placeholders in the
+    format `<label>` or '<state_machine>'.
+    """
+    return url_template.replace(
+        '<label>',
+        label,
+    ).replace(
+        '<state_machine>',
+        state_machine_name,
+    )

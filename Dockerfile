@@ -4,8 +4,14 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /routemaster/app
 
-COPY . .
-RUN pip install --no-cache-dir .
+COPY routemaster/migrations/ routemaster/migrations/
+
+COPY dist/ .
+
+# Install first-party plugins (inactive by default).
+COPY plugins/routemaster-sentry/dist/ .
+
+RUN pip install --no-cache-dir *.whl
 
 COPY scripts/build/default_config.yaml config.yaml
 COPY alembic.ini alembic.ini

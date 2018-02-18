@@ -1,6 +1,6 @@
 """Processing of transitions between states."""
 
-import logging
+import textwrap
 
 from routemaster.app import App
 from routemaster.config import Gate, Action
@@ -13,8 +13,6 @@ from routemaster.state_machine.utils import (
 )
 from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import DeletedLabel
-
-logger = logging.getLogger(__name__)
 
 # The maximum transitions that may happen in a single `process_transitions`.
 # Note that later transitions above this number will still happen, but after
@@ -69,16 +67,17 @@ def process_transitions(app: App, label: LabelRef) -> None:
         num_transitions += 1
 
         if num_transitions == MAX_TRANSITIONS:
-            logger.warn(
+            app.logger.warn(textwrap.dedent(
                 f"""
-                Label {label} hit the maximum number of transitions allowed
-                in one go. This may indicate a bug, or could be negatively
-                impacting your Routemaster cron processing. If it's not a
-                bug, try using gates with time based exit conditions to
-                break up the processing, or submit an issue or pull request
-                to https://github.com/thread/routemaster with your use-case.
+                Label {label}
+                hit the maximum number of transitions allowed in one go. This
+                may indicate a bug, or could be negatively impacting your
+                Routemaster cron processing. If it's not a bug, try using gates
+                with time based exit conditions to break up the processing, or
+                submit an issue or pull request to
+                https://github.com/thread/routemaster with your use-case.
                 """,
-            )
+            ))
 
         try:
             could_progress = _transition()

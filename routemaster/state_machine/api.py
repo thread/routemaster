@@ -1,6 +1,5 @@
 """The core of the state machine logic."""
 
-import logging
 from typing import Any, Callable, Iterable
 
 import dateutil.tz
@@ -14,12 +13,14 @@ from routemaster.utils import dict_merge, suppress_exceptions
 from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.types import LabelRef, Metadata
-from routemaster.state_machine.utils import \
-    get_label_metadata as get_label_metadata_internal
 from routemaster.state_machine.utils import (
     lock_label,
     get_current_state,
     get_state_machine,
+)
+from routemaster.state_machine.utils import \
+    get_label_metadata as get_label_metadata_internal
+from routemaster.state_machine.utils import (
     start_state_machine,
     needs_gate_evaluation_for_metadata_change,
 )
@@ -29,8 +30,6 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
 )
 from routemaster.state_machine.transitions import process_transitions
-
-logger = logging.getLogger(__name__)
 
 
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
@@ -218,18 +217,6 @@ def delete_label(app: App, label: LabelRef) -> None:
         new_state=None,
     ))
 
-<<<<<<< HEAD
-=======
-
-def _choose_destination(
-    state_machine: StateMachine,
-    current_state: State,
-    context: Context,
-) -> State:
-    next_state_name = current_state.next_states.next_state_for_label(context)
-    return state_machine.get_state(next_state_name)
-
->>>>>>> flake8
 
 LabelStateProcessor = Callable[[App, State, StateMachine, LabelRef, Any], bool]
 
@@ -248,7 +235,7 @@ def process_cron(
         relevant_labels = get_labels(state_machine, state, conn)
 
     for label_name in relevant_labels:
-        with suppress_exceptions(logger):
+        with suppress_exceptions(app.logger):
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
 

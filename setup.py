@@ -1,12 +1,14 @@
+"""Package setup."""
+
+import version
 from setuptools import setup, find_packages
 
-with open('README.md', 'r', encoding='utf-8') as f:
+with open('docs/readme_pypi.rst', 'r', encoding='utf-8') as f:
     long_description = f.read()
-
 
 setup(
     name='routemaster',
-    version='0.0.2',
+    version=version.get_version(),
     url='https://github.com/thread/routemaster',
     description="State machines as a service.",
     long_description=long_description,
@@ -60,6 +62,7 @@ setup(
         'networkx',
         'tox',
         'pytest-cov',
+        'pytest-pythonpath',
     ),
 
     entry_points={

@@ -9,7 +9,13 @@ from routemaster.utils import WSGICallable
 class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
     """gunicorn application for routemaster."""
 
-    def __init__(self, app: WSGICallable, *, bind: str, debug: bool) -> None:
+    def __init__(
+        self,
+        app: WSGICallable,
+        *,
+        bind: str,
+        debug: bool,
+    ) -> None:
         self.application = app
         self.bind = bind
         self.debug = debug
