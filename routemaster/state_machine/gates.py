@@ -1,7 +1,7 @@
 """Processing for gate states."""
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 
-from routemaster.db import labels, history
+from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.types import LabelRef
@@ -21,7 +21,6 @@ def process_gate(
     state: State,
     state_machine: StateMachine,
     label: LabelRef,
-    conn,
 ) -> bool:
     """
     Process a label in a gate, continuing if necessary.
@@ -40,11 +39,11 @@ def process_gate(
     gate = state
 
     state_machine = get_state_machine(app, label)
-    metadata, deleted = get_label_metadata(label, state_machine, conn)
+    metadata, deleted = get_label_metadata(app, label, state_machine)
     if deleted:
         raise DeletedLabel(label)
 
-    history_entry = get_current_history(label, conn)
+    history_entry = get_current_history(app, label)
 
     context = context_for_label(
         label,
@@ -61,18 +60,19 @@ def process_gate(
 
     destination = choose_next_state(state_machine, gate, context)
 
-    conn.execute(history.insert().values(
-        label_name=label.name,
+    app.session.add(History(
         label_state_machine=state_machine.name,
+        label_name=label.name,
+        created=func.now(),
         old_state=gate.name,
         new_state=destination.name,
     ))
 
-    conn.execute(labels.update().where(and_(
-        labels.c.name == label.name,
-        labels.c.state_machine == label.state_machine,
-    )).values(
-        metadata_triggers_processed=True,
-    ))
+    app.session.query(Label).filter_by(
+        name=label.name,
+        state_machine=label.state_machine,
+    ).update({
+        'metadata_triggers_processed': True,
+    })
 
     return True

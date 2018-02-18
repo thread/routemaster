@@ -1,6 +1,6 @@
 """The core of the state machine logic."""
 
-from typing import Any, Callable, Iterable
+from typing import Callable, Iterable
 
 from routemaster.db import Label, History
 from routemaster.app import App
@@ -148,8 +148,7 @@ def _process_transitions_for_metadata_update(
     state_machine: StateMachine,
     state_pending_update: State,
 ):
-    # TODO: use a session
-    with app.db.begin() as conn:
+    with app.new_session():
         lock_label(app, label)
         current_state = get_current_state(app, label, state_machine)
 
@@ -172,7 +171,6 @@ def _process_transitions_for_metadata_update(
             state=current_state,
             state_machine=state_machine,
             label=label,
-            conn=conn,
         )
 
     if could_progress:
@@ -211,12 +209,12 @@ def delete_label(app: App, label: LabelRef) -> None:
     ))
 
 
-LabelStateProcessor = Callable[[App, State, StateMachine, LabelRef, Any], bool]
+LabelStateProcessor = Callable[[App, State, StateMachine, LabelRef], bool]
 
 
 def process_cron(
     process: LabelStateProcessor,
-    get_labels: Callable[[StateMachine, State, Any], Iterable[str]],
+    get_labels: Callable[[StateMachine, State], Iterable[str]],
     app: App,
     state_machine: StateMachine,
     state: State,
@@ -224,16 +222,15 @@ def process_cron(
     """
     Cron event entrypoint.
     """
-    with app.db.begin() as conn:
-        relevant_labels = get_labels(state_machine, state, conn)
+    with app.new_session():
+        relevant_labels = get_labels(state_machine, state)
 
     for label_name in relevant_labels:
         with suppress_exceptions(app.logger):
             label = LabelRef(name=label_name, state_machine=state_machine.name)
             could_progress = False
 
-            # TODO: use a session
-            with app.db.begin() as conn:
+            with app.new_session():
                 lock_label(app, label)
                 current_state = get_current_state(app, label, state_machine)
 
@@ -245,7 +242,6 @@ def process_cron(
                     state=state,
                     state_machine=state_machine,
                     label=label,
-                    conn=conn,
                 )
 
             if could_progress:
