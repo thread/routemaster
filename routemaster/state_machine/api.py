@@ -104,7 +104,7 @@ def update_metadata_for_label(
     state_machine = get_state_machine(app, label)
     needs_gate_evaluation = False
 
-    with app.begin_nested():
+    with app.session.begin_nested():
         row = lock_label(app, label)
 
         existing_metadata, deleted = row.metadata, row.deleted
