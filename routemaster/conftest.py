@@ -267,6 +267,7 @@ def app(**kwargs):
     Required for the `client` fixture from pytest-flask to work.
     """
     server.config.app = app_config(**kwargs)
+    # TODO: we need to add our middleware here.
     return server
 
 
