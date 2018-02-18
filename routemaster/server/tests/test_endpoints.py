@@ -16,7 +16,7 @@ def test_root(client, version):
 
 def test_root_error_state(client, version):
     with mock.patch(
-        'routemaster.server.endpoints.server.config.app.db.begin',
+        'routemaster.server.endpoints.server.config.app.session.query',
         side_effect=RuntimeError,
     ):
         response = client.get('/')
