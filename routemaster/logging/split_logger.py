@@ -16,6 +16,8 @@ class SplitLogger(BaseLogger):
         self.loggers = loggers
 
         for fn in (
+            'init_flask',
+
             'debug',
             'info',
             'warning',
