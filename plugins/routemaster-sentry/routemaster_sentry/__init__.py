@@ -23,9 +23,7 @@ class SentryLogger(BaseLogger):
 
     def __init__(self, *args, dsn):
         try:
-            version = pkg_resources.working_set.by_key[
-                'routemaster_sentry'
-            ].version
+            version = pkg_resources.working_set.by_key['routemaster'].version
         except KeyError:
             version = 'dev'
 
