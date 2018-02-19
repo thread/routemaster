@@ -237,3 +237,13 @@ def delete_label(state_machine_name, label_name):
         abort(404, msg)
 
     return '', 204
+
+
+@server.route('/check-loggers', methods=['GET'])
+def check_loggers():
+    """
+    Logging check endpoint.
+
+    This endpoint errors so as to verify that loggers are working.
+    """
+    raise Exception("Test exception")
