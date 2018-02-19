@@ -12,7 +12,6 @@ all handle exceptions appropriately.
 import contextlib
 
 import pkg_resources
-
 from raven import Client
 from raven.contrib.flask import Sentry
 
