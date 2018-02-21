@@ -24,7 +24,7 @@ jobs:
         # Set up a cached virtualenv in which to install tox
       - restore_cache:
           name: Restore build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1-1.2.0
+          key: deps-venv-2.9.1-1.2.0
       - run:
           name: Install tox
           command: |
@@ -34,7 +34,7 @@ jobs:
             pip install coveralls==1.2.0
       - save_cache:
           name: Save build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1-1.2.0
+          key: deps-venv-2.9.1-1.2.0
           paths:
             - "venv"
 
@@ -45,7 +45,7 @@ jobs:
       # Run tox, caching the .tox directory
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
           name: Test
           command: |
@@ -53,7 +53,7 @@ jobs:
             TOXENV=py36 tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
           paths:
             - ".tox"
 
@@ -77,7 +77,7 @@ jobs:
       - checkout
       - restore_cache:
           name: Restore build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1
+          key: deps-venv-2.9.1
       - run:
           name: Install tox
           command: |
@@ -86,12 +86,12 @@ jobs:
             pip install tox==2.9.1
       - save_cache:
           name: Save build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1
+          key: deps-venv-2.9.1
           paths:
             - "venv"
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
       - run:
           name: Lint
           command: |
@@ -99,7 +99,7 @@ jobs:
             TOXENV=lint tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
           paths:
             - ".tox"
       - store_test_results:
@@ -113,7 +113,7 @@ jobs:
       - checkout
       - restore_cache:
           name: Restore build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1
+          key: deps-venv-2.9.1
       - run:
           name: Install tox
           command: |
@@ -122,12 +122,12 @@ jobs:
             pip install tox==2.9.1
       - save_cache:
           name: Save build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1
+          key: deps-venv-2.9.1
           paths:
             - "venv"
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/typechecking/requirements.txt" }}
+          key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
       - run:
           name: Typecheck
           command: |
@@ -135,7 +135,7 @@ jobs:
             TOXENV=mypy tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/typechecking/requirements.txt" }}
+          key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
           paths:
             - ".tox"
       - store_test_results:
