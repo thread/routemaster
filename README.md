@@ -1,4 +1,4 @@
-![Routemaster](docs/logo-readme.png)
+![Routemaster](docs/logo-readme-banner.png)
 
 - - -
 
