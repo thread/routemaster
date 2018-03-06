@@ -6,8 +6,8 @@ import json
 import datetime
 import contextlib
 from typing import Any, Dict
-
 from unittest import mock
+
 import pytest
 import httpretty
 import dateutil.tz
