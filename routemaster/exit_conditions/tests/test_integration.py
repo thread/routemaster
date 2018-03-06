@@ -1,5 +1,6 @@
 import datetime
 import textwrap
+from typing import Optional, NamedTuple
 
 import pytest
 import dateutil.tz
@@ -19,13 +20,38 @@ PROGRAMS = [
     ("not true", False, ()),
     ("3h has passed since metadata.old_time", True, ('metadata.old_time',)),
     ("not 4 >= 6", True, ()),
-    ("3h has not passed since metadata.old_time", False, ('metadata.old_time',)),
+    (
+        "3h has not passed since metadata.old_time",
+        False,
+        ('metadata.old_time',),
+    ),
     ("metadata.foo is defined", True, ('metadata.foo',)),
     ("metadata.bar is defined", False, ('metadata.bar',)),
     ("null is not defined", True, ()),
     ("(1 < 2) and (2 < metadata.foo)", True, ('metadata.foo',)),
     ("3 is not in metadata.objects", True, ('metadata.objects',)),
+    (
+        "12h has passed since history.entered_state",
+        True,
+        ('history.entered_state',),
+    ),
+    (
+        "1d12h has passed since history.entered_state",
+        False,
+        ('history.entered_state',),
+    ),
+    (
+        "history.previous_state = incorrect_state",
+        False,
+        ('history.previous_state', 'incorrect_state'),
+    ),
 ]
+
+
+class FakeHistoryEntry(NamedTuple):
+    created: datetime.datetime
+    old_state: Optional[str]
+    new_state: Optional[str]
 
 
 NOW = datetime.datetime(2017, 1, 1, 12, 0, 0, tzinfo=dateutil.tz.tzutc())
@@ -34,18 +60,22 @@ VARIABLES = {
     'objects': (2, 4),
     'old_time': NOW - datetime.timedelta(hours=4),
 }
-
+HISTORY_ENTRY = FakeHistoryEntry(
+    old_state='old_state',
+    new_state='new_state',
+    created=NOW - datetime.timedelta(hours=15),
+)
 
 
 @pytest.mark.parametrize("program, expected, variables", PROGRAMS)
-def test_evaluate(program, expected, variables):
+def test_evaluate(program, expected, variables, make_context):
     program = ExitConditionProgram(program)
-    context = Context(
-        'label1',
-        VARIABLES,
-        NOW,
-        {},
-        program.accessed_variables(),
+    context = make_context(
+        label='label1',
+        metadata=VARIABLES,
+        now=NOW,
+        current_history_entry=HISTORY_ENTRY,
+        accessed_variables=program.accessed_variables(),
     )
     assert program.run(context) == expected
 
@@ -139,15 +169,15 @@ ERRORS = [
 
 
 @pytest.mark.parametrize("source, error", ERRORS)
-def test_errors(source, error):
+def test_errors(source, error, make_context):
     with pytest.raises(ValueError) as compile_error:
         program = ExitConditionProgram(source)
-        context = Context(
-            'label1',
-            VARIABLES,
-            NOW,
-            {},
-            program.accessed_variables(),
+        context = make_context(
+            label='label1',
+            metadata=VARIABLES,
+            now=NOW,
+            current_history_entry=HISTORY_ENTRY,
+            accessed_variables=program.accessed_variables(),
         )
         program.run(context)
 

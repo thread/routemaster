@@ -3,23 +3,27 @@
 import os
 import re
 import json
+import datetime
 import contextlib
 from typing import Any, Dict
 
 import mock
 import pytest
 import httpretty
-from sqlalchemy import select, create_engine
+import dateutil.tz
+import pkg_resources
+from sqlalchemy import and_, select, create_engine
 
 from routemaster import state_machine
-from routemaster.db import history, metadata
+from routemaster.db import labels, history, metadata
 from routemaster.app import App
+from routemaster.utils import dict_merge
 from routemaster.config import (
-    Feed,
     Gate,
     Action,
     Config,
     Webhook,
+    FeedConfig,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -30,6 +34,8 @@ from routemaster.config import (
     ContextNextStatesOption,
 )
 from routemaster.server import server
+from routemaster.context import Context
+from routemaster.logging import BaseLogger
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
@@ -46,7 +52,7 @@ TEST_STATE_MACHINES = {
     'test_machine': StateMachine(
         name='test_machine',
         feeds=[
-            Feed(name='tests', url='http://localhost/tests'),
+            FeedConfig(name='tests', url='http://localhost/tests'),
         ],
         webhooks=[
             Webhook(
@@ -68,10 +74,6 @@ TEST_STATE_MACHINES = {
                     destinations=[
                         ContextNextStatesOption(
                             state='perform_action',
-                            value=None,
-                        ),
-                        ContextNextStatesOption(
-                            state='perform_action',
                             value=False,
                         ),
                         ContextNextStatesOption(
@@ -79,6 +81,7 @@ TEST_STATE_MACHINES = {
                             value=True,
                         ),
                     ],
+                    default='perform_action',
                 ),
                 exit_condition=ExitConditionProgram(
                     'metadata.should_progress = true',
@@ -86,7 +89,7 @@ TEST_STATE_MACHINES = {
             ),
             Action(
                 name='perform_action',
-                webhook='http://localhost/hook',
+                webhook='http://localhost/hook/<state_machine>/<label>',
                 next_states=ConstantNextState(state='end'),
             ),
             Action(
@@ -97,10 +100,6 @@ TEST_STATE_MACHINES = {
                     destinations=[
                         ContextNextStatesOption(
                             state='end',
-                            value=None,
-                        ),
-                        ContextNextStatesOption(
-                            state='end',
                             value=False,
                         ),
                         ContextNextStatesOption(
@@ -108,6 +107,7 @@ TEST_STATE_MACHINES = {
                             value=True,
                         ),
                     ],
+                    default='end',
                 ),
             ),
             Gate(
@@ -154,6 +154,60 @@ TEST_STATE_MACHINES = {
             ),
         ],
     ),
+    # This state machine is used for testing the possibility of infinite loops.
+    'test_infinite_machine': StateMachine(
+        name='test_infinite_machine',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='gate_1',
+                triggers=[
+                    OnEntryTrigger(),
+                    MetadataTrigger(metadata_path='should_progress'),
+                ],
+                next_states=ConstantNextState('gate_2'),
+                exit_condition=ExitConditionProgram(
+                    'metadata.should_progress = true',
+                ),
+            ),
+            Gate(
+                name='gate_2',
+                triggers=[OnEntryTrigger()],
+                next_states=ConstantNextState('gate_3'),
+                exit_condition=ExitConditionProgram('true'),
+            ),
+            Gate(
+                name='gate_3',
+                triggers=[OnEntryTrigger()],
+                next_states=ConstantNextState('gate_2'),
+                exit_condition=ExitConditionProgram('true'),
+            ),
+        ],
+    ),
+    'test_machine_timing': StateMachine(
+        name='test_machine_timing',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='start',
+                triggers=[
+                    OnEntryTrigger(),
+                ],
+                next_states=ConstantNextState('end'),
+                exit_condition=ExitConditionProgram(
+                    '1d12h has passed since history.entered_state',
+                ),
+            ),
+            Gate(
+                name='end',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    ),
 }
 
 TEST_ENGINE = create_engine(TEST_DATABASE_CONFIG.connstr)
@@ -173,6 +227,7 @@ class TestApp(App):
     def __init__(self, config):
         self.config = config
         self.database_used = False
+        self.logger = mock.MagicMock()
 
     @property
     def db(self):
@@ -194,7 +249,14 @@ def app_config(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
+        logging_plugins=kwargs.get('logging_plugins', []),
     ))
+
+
+@pytest.fixture()
+def custom_app_config():
+    """Return the app config fixture directly so that we can modify config."""
+    return app_config
 
 
 @pytest.fixture()
@@ -332,3 +394,65 @@ def assert_history(app_config):
 
             assert history_entries == entries
     return _assert
+
+
+@pytest.fixture()
+def set_metadata(app_config):
+    """Directly set the metadata for a label in the database."""
+    def _inner(label, update):
+        with app_config.db.begin() as conn:
+            filter_ = and_(
+                labels.c.name == label.name,
+                labels.c.state_machine == label.state_machine,
+            )
+
+            existing_metadata = conn.scalar(
+                select([labels.c.metadata]).where(filter_),
+            )
+
+            new_metadata = dict_merge(existing_metadata, update)
+
+            conn.execute(labels.update().where(filter_).values(
+                metadata=new_metadata,
+                metadata_triggers_processed=True,
+            ))
+
+            return new_metadata
+    return _inner
+
+
+@pytest.fixture()
+def make_context(app_config):
+    """Factory for Contexts that provides sane defaults for testing."""
+    def _inner(**kwargs):
+        logger = BaseLogger(app_config.config)
+        state_machine = app_config.config.state_machines['test_machine']
+        state = state_machine.states[0]
+
+        @contextlib.contextmanager
+        def feed_logging_context(feed_url):
+            with logger.process_feed(state_machine, state, feed_url):
+                yield logger.feed_response
+
+        return Context(
+            label=kwargs['label'],
+            metadata=kwargs.get('metadata', {}),
+            now=kwargs.get('now', datetime.datetime.now(dateutil.tz.tzutc())),
+            feeds=kwargs.get('feeds', {}),
+            accessed_variables=kwargs.get('accessed_variables', []),
+            current_history_entry=kwargs.get('current_history_entry'),
+            feed_logging_context=kwargs.get(
+                'feed_logging_context',
+                feed_logging_context,
+            ),
+        )
+    return _inner
+
+
+@pytest.fixture()
+def version():
+    """Return the package version."""
+    try:
+        return pkg_resources.working_set.by_key['routemaster'].version
+    except KeyError:
+        return 'development'

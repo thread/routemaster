@@ -16,7 +16,8 @@ class WebhookResult(enum.Enum):
     FAIL = 'fail'
 
 
-WebhookRunner = Callable[[str, str, bytes], WebhookResult]
+ResponseLogger = Callable[[requests.Response], None]
+WebhookRunner = Callable[[str, str, bytes, str, ResponseLogger], WebhookResult]
 
 
 class RequestsWebhookRunner(object):
@@ -35,9 +36,14 @@ class RequestsWebhookRunner(object):
         url: str,
         content_type: str,
         data: bytes,
+        idempotency_token: str,
+        log_response: ResponseLogger = lambda x: None,
     ) -> WebhookResult:
         """Run a POST on the given webhook."""
-        headers = {'Content-Type': content_type}
+        headers = {
+            'Content-Type': content_type,
+            'X-Idempotency-Token': idempotency_token,
+        }
         headers.update(self._headers_for_url(url))
 
         try:
@@ -47,6 +53,7 @@ class RequestsWebhookRunner(object):
                 headers=headers,
                 timeout=10,
             )
+            log_response(result)
         except requests.exceptions.RequestException:
             return WebhookResult.RETRY
 

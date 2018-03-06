@@ -1,31 +1,36 @@
 """Action (webhook invocation) evaluator."""
 
 import json
+import hashlib
 
 from sqlalchemy import func
 
 from routemaster.db import history
 from routemaster.app import App
-from routemaster.config import Action, StateMachine
+from routemaster.utils import template_url
+from routemaster.config import State, Action, StateMachine
 from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
 )
-from routemaster.state_machine.types import LabelRef, Metadata
+from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
-    lock_label,
     choose_next_state,
     context_for_label,
-    get_current_state,
-    get_state_machine,
     get_label_metadata,
-    process_transitions,
-    labels_to_retry_for_action,
+    get_current_history,
 )
 from routemaster.state_machine.exceptions import DeletedLabel
 
 
-def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
+def process_action(
+    *,
+    app: App,
+    state: State,
+    state_machine: StateMachine,
+    label: LabelRef,
+    conn,
+) -> bool:
     """
     Process an action for a label.
 
@@ -35,29 +40,19 @@ def process_action(app: App, action: Action, label: LabelRef, conn) -> bool:
     Returns whether the label progressed in the state machine, for which `True`
     implies further progression should be attempted.
     """
-    state_machine = get_state_machine(app, label)
+    if not isinstance(state, Action):  # pragma: no branch
+        raise ValueError(  # pragma: no cover
+            f"process_action called with {state.name} which is not an Action",
+        )
+
+    action = state
+
     metadata, deleted = get_label_metadata(label, state_machine, conn)
     if deleted:
         raise DeletedLabel(label)
 
-    return _process_action_with_metadata(
-        app,
-        action,
-        label,
-        metadata,
-        state_machine,
-        conn,
-    )
+    latest_history = get_current_history(label, conn)
 
-
-def _process_action_with_metadata(
-    app: App,
-    action: Action,
-    label: LabelRef,
-    metadata: Metadata,
-    state_machine: StateMachine,
-    conn,
-) -> bool:
     webhook_data = json.dumps({
         'metadata': metadata,
         'label': label.name,
@@ -65,16 +60,28 @@ def _process_action_with_metadata(
 
     run_webhook = webhook_runner_for_state_machine(state_machine)
 
-    result = run_webhook(
-        action.webhook,
-        'application/json',
-        webhook_data,
-    )
+    idempotency_token = _calculate_idempotency_token(label, latest_history)
+
+    with app.logger.process_webhook(state_machine, state):
+        result = run_webhook(
+            template_url(action.webhook, state_machine.name, label.name),
+            'application/json',
+            webhook_data,
+            idempotency_token,
+            app.logger.webhook_response,
+        )
 
     if result != WebhookResult.SUCCESS:
         return False
 
-    context = context_for_label(label, metadata, state_machine, action)
+    context = context_for_label(
+        label,
+        metadata,
+        state_machine,
+        action,
+        latest_history,
+        app.logger,
+    )
     next_state = choose_next_state(state_machine, action, context)
 
     conn.execute(history.insert().values(
@@ -88,44 +95,25 @@ def _process_action_with_metadata(
     return True
 
 
-def process_retries(
-    app: App,
-    state_machine: StateMachine,
-    action: Action,
-) -> None:
+def _calculate_idempotency_token(label: LabelRef, latest_history) -> str:
     """
-    Cron retry entrypoint. This will retry all labels in a given action.
+    We want to make sure that an action is only performed once.
+
+    While we attempt to only deliver an action webhook once, we cannot
+    guarantee this in all cases, so we call webhooks with an
+    _idempotency token_. This token allows the receiver to record that it has
+    performed the appropriate action, and should not perform it again.
+
+    Idempotency tokens must represent precisely one logical call to a webhook
+    in the design of the state machine. For example:
+
+    - An action being retried _must_ use the same idempotency token, in case
+      the original failure was a network issue, and the receiver did indeed
+      process the action.
+    - An action being triggered again in a state machine that loops _must_ use
+      a different token, as loops are a supported use-case.
+
+    The label passed to this function _must_ be locked for the current
+    transaction.
     """
-    with app.db.begin() as conn:
-        relevant_labels = labels_to_retry_for_action(
-            state_machine,
-            action,
-            conn,
-        )
-
-    for label_name, metadata in relevant_labels.items():
-        label = LabelRef(name=label_name, state_machine=state_machine.name)
-        could_progress = False
-
-        with app.db.begin() as conn:
-            try:
-                lock_label(label, conn)
-                current_state = get_current_state(label, state_machine, conn)
-
-                if current_state != action:
-                    continue
-
-                could_progress = _process_action_with_metadata(
-                    app,
-                    action,
-                    label,
-                    metadata,
-                    state_machine,
-                    conn,
-                )
-            except Exception:
-                # This is allowed to error, we will retry again later.
-                pass
-
-        if could_progress:
-            process_transitions(app, label)
+    return hashlib.sha256(str(latest_history.id).encode('ascii')).hexdigest()

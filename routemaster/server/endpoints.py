@@ -1,5 +1,6 @@
 """Core API endpoints for routemaster service."""
 
+import pkg_resources
 from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
@@ -25,16 +26,23 @@ def status():
                                might not be able to serve requests.
     """
     try:
+        version = pkg_resources.working_set.by_key['routemaster'].version
+    except KeyError:
+        version = 'development'
+
+    try:
         with server.config.app.db.begin() as conn:
             conn.execute('select 1')
             return jsonify({
                 'status': 'ok',
                 'state-machines': '/state-machines',
+                'version': version,
             })
     except Exception:
         return jsonify({
             'status': 'error',
             'message': 'Cannot connect to database',
+            'version': version,
         }), 503
 
 
@@ -229,3 +237,13 @@ def delete_label(state_machine_name, label_name):
         abort(404, msg)
 
     return '', 204
+
+
+@server.route('/check-loggers', methods=['GET'])
+def check_loggers():
+    """
+    Logging check endpoint.
+
+    This endpoint errors so as to verify that loggers are working.
+    """
+    raise Exception("Test exception")

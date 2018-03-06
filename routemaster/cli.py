@@ -1,13 +1,17 @@
 """CLI handling for `routemaster`."""
+import logging
+
 import yaml
 import click
 
 from routemaster.app import App
-from routemaster.config import load_config
+from routemaster.cron import CronThread
+from routemaster.config import ConfigError, load_config
 from routemaster.server import server
 from routemaster.validation import ValidationError, validate_config
-from routemaster.record_states import record_state_machines
 from routemaster.gunicorn_application import GunicornWSGIApplication
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -21,7 +25,14 @@ from routemaster.gunicorn_application import GunicornWSGIApplication
 @click.pass_context
 def main(ctx, config_file):
     """Shared entrypoint configuration."""
-    config = load_config(yaml.load(config_file))
+    logging.getLogger('schedule').setLevel(logging.CRITICAL)
+
+    try:
+        config = load_config(yaml.load(config_file))
+    except ConfigError:
+        logger.exception("Configuration Error")
+        click.get_current_context().exit(1)
+
     ctx.obj = App(config)
     _validate_config(ctx.obj)
 
@@ -60,10 +71,16 @@ def serve(ctx, bind, debug):  # pragma: no cover
     if debug:
         server.config['DEBUG'] = True
 
-    record_state_machines(app, app.config.state_machines.values())
+    app.logger.init_flask(server)
 
-    instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
-    instance.run()
+    cron_thread = CronThread(app)
+    cron_thread.start()
+
+    try:
+        instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
+        instance.run()
+    finally:
+        cron_thread.stop()
 
 
 def _validate_config(app: App):
@@ -71,6 +88,5 @@ def _validate_config(app: App):
         validate_config(app, app.config)
     except ValidationError as e:
         msg = f"Validation Error: {e}"
-
-        click.echo(click.style(msg, bold=True, fg='red'))
+        logger.exception(msg)
         click.get_current_context().exit(1)

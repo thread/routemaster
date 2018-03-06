@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  build:
+  test:
     working_directory: ~/routemaster
     docker:
       # First container is where our steps run.
@@ -24,7 +24,7 @@ jobs:
         # Set up a cached virtualenv in which to install tox
       - restore_cache:
           name: Restore build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1-1.2.0
+          key: deps-venv-2.9.1-1.2.0
       - run:
           name: Install tox
           command: |
@@ -34,7 +34,7 @@ jobs:
             pip install coveralls==1.2.0
       - save_cache:
           name: Save build dependency cache
-          key: deps-venv-{{ .Branch }}-2.9.1-1.2.0
+          key: deps-venv-2.9.1-1.2.0
           paths:
             - "venv"
 
@@ -45,15 +45,15 @@ jobs:
       # Run tox, caching the .tox directory
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
-          name: Test/Lint/Typecheck
+          name: Test
           command: |
             . venv/bin/activate
-            tox
+            TOXENV=py36 tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ .Branch }}-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
           paths:
             - ".tox"
 
@@ -69,36 +69,149 @@ jobs:
             . venv/bin/activate
             coveralls
 
-  deploy:
+  lint:
     working_directory: ~/routemaster
     docker:
       - image: circleci/python:3.6.3
     steps:
       - checkout
+      - restore_cache:
+          name: Restore build dependency cache
+          key: deps-venv-2.9.1
+      - run:
+          name: Install tox
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install tox==2.9.1
+      - save_cache:
+          name: Save build dependency cache
+          key: deps-venv-2.9.1
+          paths:
+            - "venv"
+      - restore_cache:
+          name: Restore .tox cache
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
+      - run:
+          name: Lint
+          command: |
+            . venv/bin/activate
+            TOXENV=lint tox
+      - save_cache:
+          name: Save .tox cache
+          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
+          paths:
+            - ".tox"
+      - store_test_results:
+          path: build/results
+
+  typecheck:
+    working_directory: ~/routemaster
+    docker:
+      - image: circleci/python:3.6.3
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore build dependency cache
+          key: deps-venv-2.9.1
+      - run:
+          name: Install tox
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install tox==2.9.1
+      - save_cache:
+          name: Save build dependency cache
+          key: deps-venv-2.9.1
+          paths:
+            - "venv"
+      - restore_cache:
+          name: Restore .tox cache
+          key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
+      - run:
+          name: Typecheck
+          command: |
+            . venv/bin/activate
+            TOXENV=mypy tox
+      - save_cache:
+          name: Save .tox cache
+          key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
+          paths:
+            - ".tox"
+      - store_test_results:
+          path: build/results
+
+  release:
+    working_directory: ~/routemaster
+    docker:
+      - image: circleci/python:3.6.3
+    steps:
+      - checkout
+
+      - run:
+          name: init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+
+      - run:
+          name: PyPI Upload
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install twine wheel m2r
+
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
+            cd plugins/routemaster-sentry
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
       - setup_remote_docker
+
       - run:
           name: Build Docker thread/routemaster image
           command: docker build -t routemaster .
+
       - run:
           name: Push Docker image
           command: |
             docker tag routemaster thread/routemaster:latest
-            docker tag routemaster thread/routemaster:$CIRCLE_BUILD_NUM
+            docker tag routemaster thread/routemaster:$CIRCLE_TAG
 
             docker login -u $DOCKER_USER -p $DOCKER_PASS
 
             docker push thread/routemaster:latest
-            docker push thread/routemaster:$CIRCLE_BUILD_NUM
+            docker push thread/routemaster:$CIRCLE_TAG
 
 
 workflows:
   version: 2
-  build-deploy:
+  build-release:
     jobs:
-      - build
-      - deploy:
-          requires:
-            - build
+      - test:
           filters:
+            tags:
+              only: /.*/
+      - lint:
+          filters:
+            tags:
+              only: /.*/
+      - typecheck:
+          filters:
+            tags:
+              only: /.*/
+      - release:
+          requires:
+            - test
+            - lint
+            - typecheck
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
             branches:
-              only: master
+              ignore: /.*/

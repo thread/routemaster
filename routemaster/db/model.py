@@ -1,20 +1,44 @@
 """Database model definition."""
 import datetime
+import functools
 
+import dateutil.tz
+from sqlalchemy import DDL, Table
+from sqlalchemy import Column as NullableColumn
 from sqlalchemy import (
-    Table,
-    Column,
     String,
     Boolean,
     Integer,
     DateTime,
     MetaData,
-    ForeignKey,
+    FetchedValue,
     ForeignKeyConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
+
+Column = functools.partial(NullableColumn, nullable=False)
+
+sync_label_updated_column = DDL(
+    '''
+    CREATE OR REPLACE FUNCTION sync_label_updated_column_fn()
+        RETURNS TRIGGER AS
+            $$
+                BEGIN
+                    NEW.updated = now() AT TIME ZONE 'UTC';
+                    RETURN NEW;
+                END;
+            $$
+        LANGUAGE PLPGSQL;
+
+    CREATE TRIGGER sync_label_updated_column
+        BEFORE UPDATE ON labels
+        FOR EACH ROW
+        EXECUTE PROCEDURE sync_label_updated_column_fn();
+    ''',
+)
 
 
 """The representation of the state of a label."""
@@ -26,6 +50,15 @@ labels = Table(
     Column('metadata', JSONB),
     Column('metadata_triggers_processed', Boolean, default=True),
     Column('deleted', Boolean, default=False),
+    Column(
+        'updated',
+        DateTime(timezone=True),
+        server_default=func.now(),
+        server_onupdate=FetchedValue(),
+    ),
+    listeners=[
+        ('after_create', sync_label_updated_column),
+    ],
 )
 
 
@@ -42,82 +75,19 @@ history = Table(
         ['labels.name', 'labels.state_machine'],
     ),
 
-    Column('created', DateTime, default=datetime.datetime.utcnow),
+    Column(
+        'created',
+        DateTime(timezone=True),
+        default=lambda: datetime.datetime.now(dateutil.tz.tzutc()),
+    ),
 
     # `forced = True` represents a manual transition that may not be in
     # accordance with the state machine logic.
     Column('forced', Boolean, default=False),
 
     # Null indicates starting a state machine
-    Column('old_state', String, nullable=True),
-    Column('new_state', String),
+    NullableColumn('old_state', String),
 
-    # Can we get foreign key constraints on these as well?
-    # Currently: no, because those columns are not unique themselves, however
-    # we could add `old_state_state_machine` and `new_state_state_machine`, add
-    # the constraints with them, and then add a constraint that the three
-    # state machine references are all identical.
-    # ForeignKeyConstraint(
-    #     ['old_state'],
-    #     ['states.name'],
-    # ),
-    # ForeignKeyConstraint(
-    #     ['new_state'],
-    #     ['states.name'],
-    # ),
-)
-
-
-"""
-Represents a state machine.
-
-We serialise versions of the configuration into the database so that:
-- The structure of the state machines can be exported to a data warehouse.
-- We don't rely on stringly-typed fields in rest of the data model.
-"""
-state_machines = Table(
-    'state_machines',
-    metadata,
-
-    Column('name', String, primary_key=True),
-    Column('updated', DateTime),
-)
-
-
-"""Represents a state in a state machine."""
-states = Table(
-    'states',
-    metadata,
-    Column('name', String, primary_key=True),
-    Column(
-        'state_machine',
-        String,
-        ForeignKey('state_machines.name'),
-        primary_key=True,
-    ),
-
-    # `deprecated = True` represents a state that is no longer accessible.
-    Column('deprecated', Boolean, default=False),
-
-    Column('updated', DateTime),
-)
-
-
-"""Represents an edge between states in a state machine."""
-edges = Table(
-    'edges',
-    metadata,
-    Column('state_machine', String, primary_key=True, nullable=False),
-    Column('from_state', String, primary_key=True, nullable=False),
-    Column('to_state', String, primary_key=True, nullable=False),
-    Column('deprecated', Boolean, default=False, nullable=False),
-    Column('updated', DateTime, nullable=False),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'from_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
-    ForeignKeyConstraint(
-        columns=('state_machine', 'to_state'),
-        refcolumns=(states.c.state_machine, states.c.name),
-    ),
+    # Null indicates being deleted from a state machine
+    NullableColumn('new_state', String),
 )

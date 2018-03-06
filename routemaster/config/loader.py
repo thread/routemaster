@@ -11,13 +11,13 @@ import pkg_resources
 import jsonschema.exceptions
 
 from routemaster.config.model import (
-    Feed,
     Gate,
     State,
     Action,
     Config,
     Trigger,
     Webhook,
+    FeedConfig,
     NextStates,
     TimeTrigger,
     NoNextStates,
@@ -28,6 +28,7 @@ from routemaster.config.model import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
 )
 from routemaster.exit_conditions import ExitConditionProgram
@@ -48,6 +49,8 @@ def load_config(yaml: Yaml) -> Config:
             "No top-level state_machines key defined.",
         ) from None
 
+    yaml_logging_plugins = yaml.get('plugins', {}).get('logging', [])
+
     return Config(
         state_machines={
             name: _load_state_machine(
@@ -58,6 +61,7 @@ def load_config(yaml: Yaml) -> Config:
             for name, yaml_state_machine in yaml_state_machines.items()
         },
         database=load_database_config(),
+        logging_plugins=_load_logging_plugins(yaml_logging_plugins),
     )
 
 
@@ -95,16 +99,29 @@ def load_database_config() -> DatabaseConfig:
     )
 
 
+def _load_logging_plugins(
+    yaml_logging_plugins: List[Yaml],
+) -> List[LoggingPluginConfig]:
+    return [
+        LoggingPluginConfig(
+            dotted_path=x['class'],
+            kwargs=x.get('kwargs', {}),
+        )
+        for x in yaml_logging_plugins
+    ]
+
+
 def _load_state_machine(
     path: Path,
     name: str,
     yaml_state_machine: Yaml,
 ) -> StateMachine:
-    feeds = [_load_feed(x) for x in yaml_state_machine.get('feeds', [])]
+    feeds = [_load_feed_config(x) for x in yaml_state_machine.get('feeds', [])]
 
     if len(set(x.name for x in feeds)) < len(feeds):
         raise ConfigError(
-            f"Feeds must have unique names at {'.'.join(path + ['feeds'])}",
+            f"FeedConfigs must have unique names at "
+            f"{'.'.join(path + ['feeds'])}",
         )
 
     return StateMachine(
@@ -128,8 +145,8 @@ def _load_webhook(yaml: Yaml) -> Webhook:
     )
 
 
-def _load_feed(yaml: Yaml) -> Feed:
-    return Feed(name=yaml['name'], url=yaml['url'])
+def _load_feed_config(yaml: Yaml) -> FeedConfig:
+    return FeedConfig(name=yaml['name'], url=yaml['url'])
 
 
 def _load_state(path: Path, yaml_state: Yaml) -> State:
@@ -292,6 +309,7 @@ def _load_context_next_states(
             )
             for idx, yaml_option in enumerate(yaml_next_states['destinations'])
         ],
+        default=yaml_next_states['default'],
     )
 
 

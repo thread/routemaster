@@ -79,6 +79,7 @@ class ContextNextStates(NamedTuple):
     """Defined a choice based on a path in the given `label_context`."""
     path: str
     destinations: Iterable[ContextNextStatesOption]
+    default: str  # noqa: E704 misidentified "multiple statements on one line"
 
     def next_state_for_label(self, label_context: 'Context') -> str:
         """Returns next state based on context value at `self.path`."""
@@ -86,11 +87,11 @@ class ContextNextStates(NamedTuple):
         for destination in self.destinations:
             if destination.value == val:
                 return destination.state
-        raise RuntimeError("Handle this gracefully.")
+        return self.default
 
     def all_destinations(self) -> Iterable[str]:
         """Returns all possible destination states."""
-        return [x.state for x in self.destinations]
+        return [x.state for x in self.destinations] + [self.default]
 
 
 class NoNextStates(NamedTuple):
@@ -149,7 +150,7 @@ class Action(NamedTuple):
 State = Union[Action, Gate]
 
 
-class Feed(NamedTuple):
+class FeedConfig(NamedTuple):
     """
     The definition of a feed of dynamic data to be included in a context.
     """
@@ -167,12 +168,18 @@ class StateMachine(NamedTuple):
     """A state machine."""
     name: str
     states: List[State]
-    feeds: List[Feed]
+    feeds: List[FeedConfig]
     webhooks: List[Webhook]
 
     def get_state(self, state_name: str) -> State:
         """Get the state object for a given state name."""
         return [x for x in self.states if x.name == state_name][0]
+
+
+class LoggingPluginConfig(NamedTuple):
+    """The configuration for a single logging plugin."""
+    dotted_path: str
+    kwargs: Dict[str, str]
 
 
 class DatabaseConfig(NamedTuple):
@@ -206,3 +213,4 @@ class Config(NamedTuple):
     """
     state_machines: Mapping[str, StateMachine]
     database: DatabaseConfig
+    logging_plugins: List[LoggingPluginConfig]
