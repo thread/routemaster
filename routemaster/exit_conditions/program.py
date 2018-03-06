@@ -1,6 +1,6 @@
 """Top-level utility for exit condition programs."""
 
-import typing
+from typing import TYPE_CHECKING, Any, Iterable
 
 from routemaster.exit_conditions.parser import parse
 from routemaster.exit_conditions.analysis import find_accessed_keys
@@ -11,7 +11,7 @@ from routemaster.exit_conditions.error_display import (
     format_parse_error_message,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from routemaster.context import Context  # noqa
 
 
@@ -36,7 +36,7 @@ class ExitConditionProgram(object):
 
         self.source = source
 
-    def accessed_variables(self) -> typing.Iterable[str]:
+    def accessed_variables(self) -> Iterable[str]:
         """Iterable of names of variables accessed in this program."""
         for accessed_key in find_accessed_keys(self._instructions):
             yield '.'.join(accessed_key)
@@ -49,7 +49,7 @@ class ExitConditionProgram(object):
             context.property_handler,
         )
 
-    def __eq__(self, other_program: typing.Any) -> bool:
+    def __eq__(self, other_program: Any) -> bool:
         """
         Equality test.
 

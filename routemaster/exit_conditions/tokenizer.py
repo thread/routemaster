@@ -2,8 +2,8 @@
 
 import re
 import enum
-import typing
 import unicodedata
+from typing import Any, Tuple, Iterable, NamedTuple
 
 from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.prepositions import Preposition
@@ -47,20 +47,20 @@ RAW_TOKEN_KIND_TO_TOKEN_KIND = {
 }
 
 
-class RawToken(typing.NamedTuple):
+class RawToken(NamedTuple):
     """A single raw (in-text, undigested) token."""
 
     kind: RawTokenKind
     value: str
-    location: typing.Tuple[int, int]
+    location: Tuple[int, int]
 
 
-class Token(typing.NamedTuple):
+class Token(NamedTuple):
     """A single digested (usable) token."""
 
     kind: TokenKind
-    value: typing.Any
-    location: typing.Tuple[int, int]
+    value: Any
+    location: Tuple[int, int]
 
 
 LITERALS = {
@@ -151,7 +151,7 @@ STATE_MACHINE = {
 }
 
 
-def raw_tokenize(src: str) -> typing.Iterable[RawToken]:
+def raw_tokenize(src: str) -> Iterable[RawToken]:
     """
     Split the string `src` into an iterable of `RawToken`s.
 
@@ -272,7 +272,7 @@ def _digest_atom(raw_token: RawToken) -> Token:
     )
 
 
-def tokenize(src: str) -> typing.Iterable[Token]:
+def tokenize(src: str) -> Iterable[Token]:
     """Split the string `src` into an iterable of `Token`s."""
     for raw_token in raw_tokenize(src):
         if (
