@@ -22,12 +22,14 @@ DEPENDENCIES = (
     ('cli', 'gunicorn_application'),
     ('cli', 'validation'),
 
+    ('exit_conditions', 'context'),
     ('exit_conditions', 'utils'),
 
     ('context', 'utils'),
     ('context', 'feeds'),
 
     ('config', 'exit_conditions'),
+    ('config', 'context'),
     ('config', 'utils'),
     ('db', 'config'),
 
