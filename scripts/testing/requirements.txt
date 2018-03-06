@@ -5,6 +5,5 @@ pytest-flask
 pytest-faulthandler
 freezegun
 mypy
-mock
 httpretty
 pytest-pythonpath

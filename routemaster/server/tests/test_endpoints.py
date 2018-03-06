@@ -1,6 +1,6 @@
 import json
 
-import mock
+from unittest import mock
 from sqlalchemy import and_, select
 
 from routemaster.db import labels, history

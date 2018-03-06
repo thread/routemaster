@@ -3,7 +3,7 @@ import re
 import datetime
 import contextlib
 
-import mock
+from unittest import mock
 import yaml
 import pytest
 

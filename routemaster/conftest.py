@@ -7,7 +7,7 @@ import datetime
 import contextlib
 from typing import Any, Dict
 
-import mock
+from unittest import mock
 import pytest
 import httpretty
 import dateutil.tz
