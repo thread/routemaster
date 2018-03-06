@@ -1,6 +1,6 @@
 import hashlib
+from unittest import mock
 
-import mock
 import pytest
 
 from routemaster.webhooks import WebhookResult

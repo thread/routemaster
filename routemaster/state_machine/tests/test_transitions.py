@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from routemaster.state_machine.exceptions import DeletedLabel
 from routemaster.state_machine.transitions import process_transitions

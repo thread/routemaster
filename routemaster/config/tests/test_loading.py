@@ -2,8 +2,8 @@ import os
 import re
 import datetime
 import contextlib
+from unittest import mock
 
-import mock
 import yaml
 import pytest
 
