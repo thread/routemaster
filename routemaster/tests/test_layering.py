@@ -52,7 +52,7 @@ DEPENDENCIES = (
     ('state_machine', 'context'),
     ('state_machine', 'webhooks'),
 
-    ('feeds', 'config'),
+    ('feeds', 'utils'),
 
     ('webhooks', 'config'),
 
