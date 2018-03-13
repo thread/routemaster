@@ -2,7 +2,7 @@ state_machines:
   user_lifecycle:
     feeds:
       - name: jacquard
-        url: http://localhost:1212/<label_id>
+        url: http://localhost:1212/<label>
 
     states:
       - gate: start
