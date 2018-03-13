@@ -9,10 +9,10 @@ state_machines:
         triggers:
           - interval: 1m
         exit_condition: >
-          jacquard.has_redesigned_first_two_drip_emails is defined
+          feeds.jacquard.has_redesigned_first_two_drip_emails is defined
         next:
           type: context
-          path: jacquard.has_redesigned_first_two_drip_emails
+          path: feeds.jacquard.has_redesigned_first_two_drip_emails
           destinations:
             - value: false
               state: send_welcome_email
@@ -42,10 +42,10 @@ state_machines:
           - metadata: metadata.recs.has_first_recommendations
         exit_condition: >
           recs.has_first_recommendations and
-          (jacquard.has_redesigned_first_two_drip_emails is defined)
+          (feeds.jacquard.has_redesigned_first_two_drip_emails is defined)
         next:
           type: context
-          path: jacquard.has_redesigned_first_two_drip_emails
+          path: feeds.jacquard.has_redesigned_first_two_drip_emails
           destinations:
             - value: false
               state: send_stylist_onboarding_email
