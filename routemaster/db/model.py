@@ -27,7 +27,7 @@ sync_label_updated_column = DDL(
         RETURNS TRIGGER AS
             $$
                 BEGIN
-                    NEW.updated = now() AT TIME ZONE 'UTC';
+                    NEW.updated = now();
                     RETURN NEW;
                 END;
             $$
