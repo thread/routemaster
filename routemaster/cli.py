@@ -62,8 +62,14 @@ def validate(ctx):
     help="Enable debugging mode.",
     default=False,
 )
+@click.option(
+    '--workers',
+    help="Number of gunicorn workers to run.",
+    type=int,
+    default=1,
+)
 @click.pass_context
-def serve(ctx, bind, debug):  # pragma: no cover
+def serve(ctx, bind, debug, workers):  # pragma: no cover
     """Entrypoint for serving the Routemaster HTTP service."""
     app = ctx.obj
 
@@ -77,7 +83,12 @@ def serve(ctx, bind, debug):  # pragma: no cover
     cron_thread.start()
 
     try:
-        instance = GunicornWSGIApplication(server, bind=bind, debug=debug)
+        instance = GunicornWSGIApplication(
+            server,
+            bind=bind,
+            debug=debug,
+            workers=workers,
+        )
         instance.run()
     finally:
         cron_thread.stop()
