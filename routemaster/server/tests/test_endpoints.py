@@ -103,15 +103,16 @@ def test_create_label_409_for_already_existing_label(client, create_label):
     assert response.status_code == 409
 
 
-def test_update_label(client, app_config, create_label):
+def test_update_label(client, app_config, create_label, mock_webhook, mock_test_feed):
     create_label('foo', 'test_machine', {})
 
     label_metadata = {'bar': 'baz'}
-    response = client.patch(
-        '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'metadata': label_metadata}),
-        content_type='application/json',
-    )
+    with mock_webhook(), mock_test_feed():
+        response = client.patch(
+            '/state-machines/test_machine/labels/foo',
+            data=json.dumps({'metadata': label_metadata}),
+            content_type='application/json',
+        )
 
     assert response.status_code == 200
     assert response.json['metadata'] == label_metadata
