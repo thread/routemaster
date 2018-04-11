@@ -2,6 +2,7 @@
 
 import datetime
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -17,7 +18,7 @@ from dataclasses import dataclass
 
 from routemaster.exit_conditions import ExitConditionProgram
 
-if False:  # typing
+if TYPE_CHECKING:
     from routemaster.context import Context  # noqa
 
 

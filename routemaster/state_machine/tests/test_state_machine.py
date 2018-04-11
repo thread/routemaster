@@ -1,4 +1,5 @@
-import mock
+from unittest import mock
+
 import pytest
 from freezegun import freeze_time
 from requests.exceptions import RequestException

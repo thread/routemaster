@@ -1,6 +1,5 @@
 import json
-
-import mock
+from unittest import mock
 
 from routemaster.db import Label, History
 

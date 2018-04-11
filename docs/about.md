@@ -198,3 +198,4 @@ cannot be progressed from.
 [action]: docs/glossary.md
 [gate]: docs/glossary.md
 [exit-condition]: docs/glossary.md
+[context]: docs/glossary.md
