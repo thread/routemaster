@@ -67,26 +67,23 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     """Creates a label and starts it in a state machine."""
     state_machine = get_state_machine(app, label)
 
-    with app.session.begin_nested():
-        if app.session.query(
-            app.session.query(Label).filter_by(
-                name=label.name,
-                state_machine=label.state_machine,
-            ).exists(),
-        ).scalar():
-            raise LabelAlreadyExists(label)
-
-        app.session.add(Label(
+    if app.session.query(
+        app.session.query(Label).filter_by(
             name=label.name,
-            state_machine=state_machine.name,
-            metadata=metadata,
-        ))
-        app.session.flush()
+            state_machine=label.state_machine,
+        ).exists(),
+    ).scalar():
+        raise LabelAlreadyExists(label)
 
-        start_state_machine(app, state_machine, label)
+    app.session.add(Label(
+        name=label.name,
+        state_machine=state_machine.name,
+        metadata=metadata,
+    ))
+    start_state_machine(app, state_machine, label)
+    app.session.flush()
 
-    with app.session.begin_nested():
-        process_transitions(app, label)
+    process_transitions(app, label)
 
     return metadata
 
