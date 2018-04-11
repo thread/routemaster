@@ -148,7 +148,7 @@ def _process_transitions_for_metadata_update(
     state_machine: StateMachine,
     state_pending_update: State,
 ):
-    with app.new_session():
+    with app.session.begin_nested():
         lock_label(app, label)
         current_state = get_current_state(app, label, state_machine)
 
