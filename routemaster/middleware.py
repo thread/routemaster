@@ -1,6 +1,6 @@
 """WSGI middlewares used in routemaster."""
 
-from typing import Dict, List, Callable, Iterable
+from typing import Any, Dict, List, Callable, Iterable, Optional
 
 from routemaster.app import App
 from routemaster.utils import WSGICallable, StartResponse, WSGIEnvironment
@@ -37,7 +37,7 @@ def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
         def wrapped_start_response(
             status: str,
             headers: Dict[str, str],
-            exc_info: None,
+            exc_info: Optional[Any] = None,
         ) -> None:
             if exc_info is not None:
                 app.set_rollback()
