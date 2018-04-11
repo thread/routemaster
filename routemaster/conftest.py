@@ -15,6 +15,7 @@ import pkg_resources
 from sqlalchemy import create_engine
 from werkzeug.test import Client
 from sqlalchemy.orm import sessionmaker
+from werkzeug.wrappers import BaseResponse
 
 from routemaster import state_machine
 from routemaster.db import Label, History, metadata
@@ -243,12 +244,21 @@ class TestApp(App):
         return super().session
 
 
+class TestClientResponse(BaseResponse):
+    """Test client response format."""
+
+    @property
+    def json(self):
+        """Util property for json responses."""
+        return json.loads(self.data)
+
+
 @pytest.fixture()
 def client():
     """Create a werkzeug test client."""
     app = app_config()
     server.config.app = app
-    return Client(wrap_application(app, server))
+    return Client(wrap_application(app, server), TestClientResponse)
 
 
 @pytest.fixture()
