@@ -13,6 +13,7 @@ import httpretty
 import dateutil.tz
 import pkg_resources
 from sqlalchemy import create_engine
+from werkzeug.test import Client
 from sqlalchemy.orm import sessionmaker
 
 from routemaster import state_machine
@@ -38,6 +39,7 @@ from routemaster.server import server
 from routemaster.context import Context
 from routemaster.logging import BaseLogger
 from routemaster.webhooks import WebhookResult
+from routemaster.middleware import wrap_application
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -231,6 +233,7 @@ class TestApp(App):
         self.logger = mock.MagicMock()
         self._session = None
         self._needs_rollback = False
+        self._current_session = None
 
     @property
     def session(self):
@@ -241,34 +244,13 @@ class TestApp(App):
         self._session = sessionmaker(bind=TEST_ENGINE)()
         return self._session
 
-    @contextlib.contextmanager
-    def new_session(self):
-        """We make this do nothing in tests except rollbacks."""
-        try:
-            yield
-            if self._needs_rollback:
-                self.session.rollback()
-        except Exception:
-            self.session.rollback()
-            raise
-        finally:
-            self._needs_rollback = False
-
-    def set_rollback(self):
-        """Set the rollback flag for leaving `new_session`."""
-        self._needs_rollback = True
-
 
 @pytest.fixture()
-def app(**kwargs):
-    """
-    Create the Flask app for testing.
-
-    Required for the `client` fixture from pytest-flask to work.
-    """
-    server.config.app = app_config(**kwargs)
-    # TODO: we need to add our middleware here.
-    return server
+def client():
+    """Create a werkzeug test client."""
+    app = app_config()
+    server.config.app = app
+    return Client(wrap_application(app, server))
 
 
 @pytest.fixture()
@@ -316,11 +298,12 @@ def database_clear(app_config):
     """Truncate all tables after each test."""
     yield
     if app_config.session_used:
-        # This does not necessarily imply `databased_used` if everything was
-        # done through the ORM session. In that case we can just roll back
-        # rather than doing separate truncations.
-        app_config.session.rollback()
-        app_config.session.close()
+        with app_config.new_session():
+            for table in metadata.tables:
+                app_config.session.execute(
+                    f'truncate table {table} cascade',
+                    {},
+                )
 
 
 @pytest.fixture()
