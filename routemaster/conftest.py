@@ -234,15 +234,13 @@ class TestApp(App):
         self._session = None
         self._needs_rollback = False
         self._current_session = None
+        self._sessionmaker = sessionmaker(bind=TEST_ENGINE)
 
     @property
     def session(self):
         """Start if necessary and return a shared session."""
-        if self._session is not None:
-            return self._session
         self.session_used = True
-        self._session = sessionmaker(bind=TEST_ENGINE)()
-        return self._session
+        return super().session
 
 
 @pytest.fixture()
