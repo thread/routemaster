@@ -1,6 +1,5 @@
 """WSGI middlewares used in routemaster."""
 
-import logging
 from typing import Dict, List, Callable, Iterable
 
 from routemaster.app import App
@@ -10,8 +9,6 @@ WSGIMiddleware = Callable[[App, WSGICallable], WSGICallable]
 
 ACTIVE_MIDDLEWARES: List[WSGIMiddleware]
 ACTIVE_MIDDLEWARES = []
-
-LOGGER = logging.getLogger("routemaster.middleware")
 
 
 def middleware(fn: WSGIMiddleware):
