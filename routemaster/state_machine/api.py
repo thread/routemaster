@@ -136,7 +136,9 @@ def update_metadata_for_label(
             # This is allowed to fail here. We have successfully saved the new
             # metadata, and it has a metadata_triggers_processed=False flag so
             # will be picked up again for processing later.
-            pass
+            app.logger.exception(
+                f"Failed to progress label {label!r} after metadata update.",
+            )
 
     return new_metadata
 
