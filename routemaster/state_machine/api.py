@@ -101,26 +101,25 @@ def update_metadata_for_label(
     state_machine = get_state_machine(app, label)
     needs_gate_evaluation = False
 
-    with app.session.begin_nested():
-        row = lock_label(app, label)
+    row = lock_label(app, label)
 
-        existing_metadata, deleted = row.metadata, row.deleted
-        if deleted:
-            raise DeletedLabel(label)
+    existing_metadata, deleted = row.metadata, row.deleted
+    if deleted:
+        raise DeletedLabel(label)
 
-        needs_gate_evaluation, current_state = \
-            needs_gate_evaluation_for_metadata_change(
-                app,
-                state_machine,
-                label,
-                update,
-            )
+    needs_gate_evaluation, current_state = \
+        needs_gate_evaluation_for_metadata_change(
+            app,
+            state_machine,
+            label,
+            update,
+        )
 
-        new_metadata = dict_merge(existing_metadata, update)
+    new_metadata = dict_merge(existing_metadata, update)
 
-        row.metadata = new_metadata
-        row.metadata_triggers_processed = not needs_gate_evaluation
-        app.session.add(row)
+    row.metadata = new_metadata
+    row.metadata_triggers_processed = not needs_gate_evaluation
+    app.session.add(row)
 
     # Try to move the label forward, but this is not a hard requirement as
     # the cron will come back around to progress the label later.
