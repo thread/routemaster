@@ -20,9 +20,10 @@ def validate_config(app: App, config: Config):
 
 def _validate_state_machine(app: App, state_machine: StateMachine):
     """Validate that a given state machine is internally consistent."""
-    _validate_route_start_to_end(state_machine)
-    _validate_all_states_exist(state_machine)
-    _validate_no_labels_in_nonexistent_states(state_machine, app)
+    with app.new_session():
+        _validate_route_start_to_end(state_machine)
+        _validate_all_states_exist(state_machine)
+        _validate_no_labels_in_nonexistent_states(state_machine, app)
 
 
 def _build_graph(state_machine: StateMachine) -> networkx.Graph:
