@@ -11,6 +11,7 @@ from typing import (
     Pattern,
     Iterable,
     Sequence,
+    Collection,
     NamedTuple,
 )
 
@@ -64,7 +65,7 @@ class ConstantNextState(NamedTuple):
         """Returns the constant next state."""
         return self.state
 
-    def all_destinations(self) -> Iterable[str]:
+    def all_destinations(self) -> Collection[str]:
         """Returns the constant next state."""
         return [self.state]
 
