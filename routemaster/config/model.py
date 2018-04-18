@@ -90,7 +90,7 @@ class ContextNextStates(NamedTuple):
                 return destination.state
         return self.default
 
-    def all_destinations(self) -> Iterable[str]:
+    def all_destinations(self) -> Collection[str]:
         """Returns all possible destination states."""
         return [x.state for x in self.destinations] + [self.default]
 
@@ -104,7 +104,7 @@ class NoNextStates(NamedTuple):
             "Attempted to progress from a state with no next state",
         )
 
-    def all_destinations(self) -> Iterable[str]:
+    def all_destinations(self) -> Collection[str]:
         """Returns no states."""
         return []
 
