@@ -323,7 +323,7 @@ def create_label(app_config, mock_test_feed):
         state_machine_name: str,
         metadata: Dict[str, Any],
     ) -> LabelRef:
-        with mock_test_feed():
+        with mock_test_feed(), app_config.new_session():
             state_machine.create_label(
                 app_config,
                 LabelRef(name, state_machine_name),
@@ -410,7 +410,7 @@ def assert_history(app_config):
                     History,
                 ).order_by(
                     History.id,
-                ).fetchall()
+                )
             ]
 
             assert history_entries == entries
