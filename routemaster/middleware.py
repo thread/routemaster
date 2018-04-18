@@ -39,9 +39,9 @@ def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
             headers: Dict[str, str],
             exc_info: Optional[Any] = None,
         ) -> None:
+            start_response(status, headers, exc_info)
             if exc_info is not None:
                 app.set_rollback()
-            start_response(status, headers, exc_info)
 
         with app.new_session():
             yield from wsgi(environ, wrapped_start_response)
