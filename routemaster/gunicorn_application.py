@@ -32,10 +32,12 @@ class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
         *,
         bind: str,
         debug: bool,
+        workers: int,
     ) -> None:
         self.application = app
         self.bind = bind
         self.debug = debug
+        self.workers = workers
         super().__init__()
 
     def load_config(self) -> None:
@@ -46,7 +48,7 @@ class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
         known values inline.
         """
         self.cfg.set('bind', self.bind)
-        self.cfg.set('workers', 1)
+        self.cfg.set('workers', self.workers)
 
         if self.debug:
             self.cfg.set('reload', True)
