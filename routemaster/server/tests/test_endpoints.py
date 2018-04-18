@@ -120,7 +120,7 @@ def test_update_label(client, app_config, create_label, mock_webhook, mock_test_
     with app_config.new_session():
         label = app_config.session.query(Label).one()
 
-    assert label.context == label_metadata
+    assert label.metadata == label_metadata
 
 
 def test_update_label_404_for_not_found_label(client):
@@ -227,6 +227,7 @@ def test_list_labels_when_many(client, create_label):
 
 def test_update_label_moves_label(client, create_label, app_config, mock_webhook, mock_test_feed):
     create_label('foo', 'test_machine', {})
+
     with mock_webhook() as webhook, mock_test_feed():
         response = client.patch(
             '/state-machines/test_machine/labels/foo',
@@ -234,16 +235,20 @@ def test_update_label_moves_label(client, create_label, app_config, mock_webhook
             content_type='application/json',
         )
         webhook.assert_called_once()
+
     assert response.status_code == 200
     assert response.json['metadata'] == {'should_progress': True}
 
     with app_config.new_session():
-        latest_state = app_config.session.query(History.new_state).filter_by(
+        latest_state = app_config.session.query(
+            History.new_state,
+        ).filter_by(
             label_name='foo',
             label_state_machine='test_machine',
         ).order_by(
             History.created.desc(),
-        ).scalar()
+        ).limit(1).scalar()
+
     assert latest_state == 'end'
 
 
