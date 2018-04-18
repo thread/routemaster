@@ -341,10 +341,11 @@ def delete_label(app_config):
     """
 
     def _delete(name: str, state_machine_name: str) -> None:
-        state_machine.delete_label(
-            app_config,
-            LabelRef(name, state_machine_name),
-        )
+        with app_config.new_session():
+            state_machine.delete_label(
+                app_config,
+                LabelRef(name, state_machine_name),
+            )
 
     return _delete
 
@@ -405,7 +406,7 @@ def assert_history(app_config):
     def _assert(entries):
         with app_config.new_session():
             history_entries = [
-                tuple(x.old_state, x.new_state)
+                (x.old_state, x.new_state)
                 for x in app_config.session.query(
                     History,
                 ).order_by(

@@ -21,6 +21,7 @@ DEPENDENCIES = (
     ('cli', 'app'),
     ('cli', 'gunicorn_application'),
     ('cli', 'validation'),
+    ('cli', 'middleware'),
 
     ('exit_conditions', 'context'),
     ('exit_conditions', 'utils'),
@@ -61,6 +62,9 @@ DEPENDENCIES = (
     ('gunicorn_application', 'utils'),
 
     ('logging', 'config'),
+
+    ('middleware', 'utils'),
+    ('middleware', 'app'),
 )
 
 EXCLUDED_MODULES = (

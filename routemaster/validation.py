@@ -72,7 +72,7 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
     ).all()
 
     if invalid_labels_and_states:
-        raise ValueError(
+        raise ValidationError(
             f"{len(invalid_labels_and_states)} nodes in states that no "
             f"longer exist",
         )

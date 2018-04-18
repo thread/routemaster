@@ -30,7 +30,7 @@ def test_valid(app_config):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     ))
 
 
@@ -52,7 +52,7 @@ def test_disconnected_state_machine_invalid(app_config):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
     with pytest.raises(ValidationError):
         _validate_state_machine(app_config, state_machine)
@@ -114,7 +114,7 @@ def test_nonexistent_node_destination_invalid(app_config):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
     with pytest.raises(ValidationError):
         _validate_state_machine(app_config, state_machine)
@@ -134,7 +134,7 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
     with pytest.raises(ValidationError):
         _validate_state_machine(app_config, state_machine)
@@ -158,7 +158,7 @@ def test_label_in_deleted_state_on_per_state_machine_basis(
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
     with pytest.raises(ValidationError):
         _validate_state_machine(app_config, state_machine)
