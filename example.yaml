@@ -13,9 +13,8 @@ state_machines:
         next:
           type: context
           path: feeds.jacquard.has_redesigned_first_two_drip_emails
+          default: send_welcome_email
           destinations:
-            - value: false
-              state: send_welcome_email
             - value: true
               state: send_welcome_email_test
 
@@ -46,9 +45,8 @@ state_machines:
         next:
           type: context
           path: feeds.jacquard.has_redesigned_first_two_drip_emails
+          default: send_stylist_onboarding_email
           destinations:
-            - value: false
-              state: send_stylist_onboarding_email
             - value: true
               state: send_stylist_onboarding_email_test
 
