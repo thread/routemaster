@@ -36,6 +36,7 @@ def test_enumerate_state_machines(client, app_config):
         {
             'name': state_machine.name,
             'labels': f'/state-machines/{state_machine.name}/labels',
+            'view': f'/state-machines/{state_machine.name}/view',
         }
         for state_machine in app_config.config.state_machines.values()
     ]}
