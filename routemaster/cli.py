@@ -22,31 +22,9 @@ logger = logging.getLogger(__name__)
     type=click.File(encoding='utf-8'),
     required=True,
 )
-@click.option(
-    '-l',
-    '--log-level',
-    help="Logging level.",
-    type=click.Choice((
-        'CRITICAL',
-        'ERROR',
-        'WARNING',
-        'INFO',
-        'DEBUG',
-    )),
-    default='INFO',
-)
 @click.pass_context
-def main(ctx, config_file, log_level):
+def main(ctx, config_file):
     """Shared entrypoint configuration."""
-    logging.basicConfig(
-        format=(
-            "[%(asctime)s] [%(process)d] [%(levelname)s] "
-            "[%(name)s] %(message)s"
-        ),
-        datefmt="%Y-%m-%d %H:%M:%S %z",
-        level=getattr(logging, log_level),
-    )
-
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
     try:
@@ -55,7 +33,7 @@ def main(ctx, config_file, log_level):
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
-    ctx.obj = App(config, log_level)
+    ctx.obj = App(config)
     _validate_config(ctx.obj)
 
 
@@ -84,14 +62,22 @@ def validate(ctx):
     help="Enable debugging mode.",
     default=False,
 )
+@click.option(
+    '--workers',
+    help="Number of gunicorn workers to run.",
+    type=int,
+    default=1,
+)
 @click.pass_context
-def serve(ctx, bind, debug):  # pragma: no cover
+def serve(ctx, bind, debug, workers):  # pragma: no cover
     """Entrypoint for serving the Routemaster HTTP service."""
     app = ctx.obj
 
     server.config.app = app
     if debug:
         server.config['DEBUG'] = True
+
+    app.logger.init_flask(server)
 
     cron_thread = CronThread(app)
     cron_thread.start()
@@ -101,7 +87,7 @@ def serve(ctx, bind, debug):  # pragma: no cover
             server,
             bind=bind,
             debug=debug,
-            log_level=ctx.obj.log_level,
+            workers=workers,
         )
         instance.run()
     finally:

@@ -3,10 +3,9 @@ import datetime
 import functools
 
 import dateutil.tz
+from sqlalchemy import DDL, Table
 from sqlalchemy import Column as NullableColumn
 from sqlalchemy import (
-    DDL,
-    Table,
     String,
     Boolean,
     Integer,
@@ -28,7 +27,7 @@ sync_label_updated_column = DDL(
         RETURNS TRIGGER AS
             $$
                 BEGIN
-                    NEW.updated = now() AT TIME ZONE 'UTC';
+                    NEW.updated = now();
                     RETURN NEW;
                 END;
             $$

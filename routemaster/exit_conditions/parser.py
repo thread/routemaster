@@ -82,10 +82,10 @@ def _parse_and_expr(source):
     while source.try_eat_next(TokenKind.AND):
         if not already_bool_converted:
             already_bool_converted = True
-            yield Operation.TO_BOOL,
+            yield (Operation.TO_BOOL,)
         yield from _parse_or_expr(source)
-        yield Operation.TO_BOOL,
-        yield Operation.AND,
+        yield (Operation.TO_BOOL,)
+        yield (Operation.AND,)
 
 
 def _parse_or_expr(source):
@@ -96,10 +96,10 @@ def _parse_or_expr(source):
     while source.try_eat_next(TokenKind.OR):
         if not already_bool_converted:
             already_bool_converted = True
-            yield Operation.TO_BOOL,
+            yield (Operation.TO_BOOL,)
         yield from _parse_base_expr(source)
-        yield Operation.TO_BOOL,
-        yield Operation.OR,
+        yield (Operation.TO_BOOL,)
+        yield (Operation.OR,)
 
 
 def _parse_base_expr(source):
@@ -175,11 +175,11 @@ def _parse_base_expr(source):
         source.eat_next(TokenKind.OPERATOR)
 
         yield from _parse_value(source)
-        yield operator,
+        yield (operator,)
 
     if negated:
-        yield Operation.TO_BOOL,
-        yield Operation.NOT,
+        yield (Operation.TO_BOOL,)
+        yield (Operation.NOT,)
 
 
 def _parse_value(source):
@@ -246,7 +246,7 @@ def _parse_tokens(token_stream):
     source = _TokenSource(token_stream)
     yield from _parse_and_expr(source)
     # Always end in a final TO_BOOL
-    yield Operation.TO_BOOL,
+    yield (Operation.TO_BOOL,)
 
     # Verify that this is actually the entire stream
     if source.head is not None:

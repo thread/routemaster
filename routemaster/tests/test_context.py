@@ -1,11 +1,10 @@
 import datetime
+from unittest import mock
 
-import mock
 import pytest
 import httpretty
 
 from routemaster.feeds import Feed
-from routemaster.context import Context
 
 
 def test_context_does_not_accept_naive_datetimes(make_context):

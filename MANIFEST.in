@@ -1,2 +1,3 @@
-include README.md
+include docs/readme_pypi.rst
 include routemaster/config/schema.yaml
+include version.py

@@ -1,6 +1,6 @@
 import datetime
+from unittest import mock
 
-import mock
 import pytest
 import dateutil
 import freezegun
@@ -85,6 +85,7 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
             state_machine,
             state,
             history_entry,
+            app_config.logger,
         )
         mock_constructor.assert_called_once_with(
             label=label.name,
@@ -96,6 +97,7 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
                 'feeds.tests.should_do_alternate_action',
             ],
             current_history_entry=history_entry,
+            feed_logging_context=mock.ANY,
         )
 
 
@@ -118,6 +120,7 @@ def test_context_for_label_in_action_created_with_correct_variables(app_config):
             state_machine,
             state,
             history_entry,
+            app_config.logger,
         )
         mock_constructor.assert_called_once_with(
             label=label.name,
@@ -126,4 +129,5 @@ def test_context_for_label_in_action_created_with_correct_variables(app_config):
             feeds={'tests': Feed('http://localhost/tests', 'test_machine')},
             accessed_variables=['feeds.tests.should_loop'],
             current_history_entry=history_entry,
+            feed_logging_context=mock.ANY,
         )

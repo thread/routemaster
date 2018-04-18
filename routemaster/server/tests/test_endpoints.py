@@ -1,22 +1,21 @@
 import json
+from unittest import mock
 
-import mock
 from sqlalchemy import and_, select
 
-from routemaster import VERSION
 from routemaster.db import labels, history
 
 
-def test_root(client):
+def test_root(client, version):
     response = client.get('/')
     assert response.json == {
         'status': 'ok',
         'state-machines': '/state-machines',
-        'version': VERSION,
+        'version': version,
     }
 
 
-def test_root_error_state(client):
+def test_root_error_state(client, version):
     with mock.patch(
         'routemaster.server.endpoints.server.config.app.db.begin',
         side_effect=RuntimeError,
@@ -26,7 +25,7 @@ def test_root_error_state(client):
         assert response.json == {
             'status': 'error',
             'message': 'Cannot connect to database',
-            'version': VERSION,
+            'version': version,
         }
 
 

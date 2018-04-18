@@ -1,0 +1,12 @@
+state_machines:
+  example:
+    states:
+      - gate: start
+        exit_condition: false
+
+plugins:
+  logging:
+    - class: foobar.FooLogger
+      kwargs:
+        foo:
+          bar: 1
