@@ -41,6 +41,7 @@ def start_state_machine(
         new_state=state_machine.states[0].name,
     )
     app.session.add(new_entry)
+    app.session.flush()
 
 
 def choose_next_state(

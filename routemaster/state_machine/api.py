@@ -80,9 +80,9 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
         state_machine=state_machine.name,
         metadata=metadata,
     ))
-    start_state_machine(app, state_machine, label)
     app.session.flush()
 
+    start_state_machine(app, state_machine, label)
     process_transitions(app, label)
 
     return metadata
