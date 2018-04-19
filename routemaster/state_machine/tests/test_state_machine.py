@@ -45,7 +45,8 @@ def test_label_get_state(app_config, mock_test_feed):
             {'foo': 'bar'},
         )
 
-    assert state_machine.get_label_state(app_config, label).name == 'start'
+    with app_config.new_session():
+        assert state_machine.get_label_state(app_config, label).name == 'start'
 
 
 def test_label_get_state_raises_for_unknown_label(app_config):
