@@ -119,8 +119,7 @@ def test_update_label(client, app_config, create_label, mock_webhook, mock_test_
 
     with app_config.new_session():
         label = app_config.session.query(Label).one()
-
-    assert label.metadata == label_metadata
+        assert label.metadata == label_metadata
 
 
 def test_update_label_404_for_not_found_label(client):
@@ -265,17 +264,18 @@ def test_delete_existing_label(client, app_config, create_label):
 
     assert response.status_code == 204
 
-    label = app_config.session.query(Label).one()
-    assert label.name == label_name
-    assert label.state_machine == state_machine.name
-    assert label.metadata == {}
+    with app_config.new_session():
+        label = app_config.session.query(Label).one()
+        assert label.name == label_name
+        assert label.state_machine == state_machine.name
+        assert label.metadata == {}
 
-    history = app_config.session.query(History).order_by(
-        History.created.desc(),
-    ).first()
-    assert history.label_name == label_name
-    assert history.old_state == state_machine.states[0].name
-    assert history.new_state is None
+        history = app_config.session.query(History).order_by(
+            History.created.desc(),
+        ).first()
+        assert history.label_name == label_name
+        assert history.old_state == state_machine.states[0].name
+        assert history.new_state is None
 
 
 def test_delete_non_existent_label(client, app_config):
@@ -288,8 +288,9 @@ def test_delete_non_existent_label(client, app_config):
 
     assert response.status_code == 204
 
-    assert not app_config.session.query(Label).exists().scalar()
-    assert not app_config.session.query(History).exists().scalar()
+    with app_config.new_session():
+        assert app_config.session.query(Label).count() == 0
+        assert app_config.session.query(History).count() == 0
 
 
 def test_delete_label_404_for_not_found_state_machine(client):
