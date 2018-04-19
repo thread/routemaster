@@ -36,7 +36,10 @@ from routemaster.config import (
 from routemaster.server import server
 from routemaster.context import Context
 from routemaster.logging import BaseLogger
-from routemaster.webhooks import WebhookResult
+from routemaster.webhooks import (
+    WebhookResult,
+    webhook_runner_for_state_machine,
+)
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -228,6 +231,10 @@ class TestApp(App):
         self.config = config
         self.database_used = False
         self.logger = mock.MagicMock()
+        self._webhook_runners = {
+            x: webhook_runner_for_state_machine(y)
+            for x, y in self.config.state_machines.items()
+        }
 
     @property
     def db(self):
@@ -348,7 +355,7 @@ def mock_webhook():
     def _mock(result=WebhookResult.SUCCESS):
         runner = mock.Mock(return_value=result)
         with mock.patch(
-            'routemaster.webhooks.RequestsWebhookRunner',
+            'routemaster.app.App.get_webhook_runner',
             return_value=runner,
         ):
             yield runner
