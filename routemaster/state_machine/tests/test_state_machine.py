@@ -16,7 +16,9 @@ from routemaster.state_machine.gates import process_gate
 
 def current_state(app_config, label):
     with app_config.new_session():
-        return app_config.session.query(History.new_state).filter_by(
+        return app_config.session.query(
+            History.new_state,
+        ).filter_by(
             label_name=label.name,
             label_state_machine=label.state_machine,
         ).order_by(
