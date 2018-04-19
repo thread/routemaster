@@ -19,7 +19,7 @@ class App(threading.local):
     db: Engine
     config: Config
     logger: BaseLogger
-    _webhook_runners: Dict[StateMachine, WebhookRunner]
+    _webhook_runners: Dict[str, WebhookRunner]
 
     def __init__(
         self,
@@ -40,4 +40,4 @@ class App(threading.local):
 
     def get_webhook_runner(self, state_machine: StateMachine) -> WebhookRunner:
         """Get the webhook runner for a state machine."""
-        return self._webhook_runners.get(state_machine.name)
+        return self._webhook_runners[state_machine.name]
