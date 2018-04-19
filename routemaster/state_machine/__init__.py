@@ -31,7 +31,6 @@ __all__ = (
     'process_cron',
     'process_gate',
     'UnknownLabel',
-    'IsExitingCheck',
     'process_action',
     'get_label_state',
     'labels_in_state',
