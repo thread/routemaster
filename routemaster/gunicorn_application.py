@@ -1,6 +1,5 @@
 """Top-level gunicorn application for `routemaster serve`."""
 
-import werkzeug.debug
 import gunicorn.app.base
 
 from routemaster.utils import WSGICallable
@@ -44,6 +43,8 @@ class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
         Luckily little loading is needed since this is available inline.
         """
         if self.debug:
+            # Inline import so we don't depend on this in production.
+            import werkzeug.debug
             return werkzeug.debug.DebuggedApplication(
                 self.application,
                 evalex=False,
