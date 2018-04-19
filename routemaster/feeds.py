@@ -25,6 +25,8 @@ _feed_sessions = threading.local()
 
 
 def _get_feed_session():
+    # We cache sessions per thread so that we can use `requests.Session`'s
+    # underlying `urllib3` connection pooling.
     if not hasattr(_feed_sessions, 'session'):
         _feed_sessions.session = requests.Session()
     return _feed_sessions.session
