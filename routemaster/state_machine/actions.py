@@ -9,10 +9,7 @@ from routemaster.db import history
 from routemaster.app import App
 from routemaster.utils import template_url
 from routemaster.config import State, Action, StateMachine
-from routemaster.webhooks import (
-    WebhookResult,
-    webhook_runner_for_state_machine,
-)
+from routemaster.webhooks import WebhookResult
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
     choose_next_state,
@@ -58,7 +55,7 @@ def process_action(
         'label': label.name,
     }, sort_keys=True).encode('utf-8')
 
-    run_webhook = webhook_runner_for_state_machine(state_machine)
+    run_webhook = app.get_webhook_runner(state_machine)
 
     idempotency_token = _calculate_idempotency_token(label, latest_history)
 

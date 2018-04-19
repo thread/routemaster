@@ -42,6 +42,7 @@ DEPENDENCIES = (
     ('app', 'db'),
     ('app', 'config'),
     ('app', 'logging'),
+    ('app', 'webhooks'),
 
     ('server', 'state_machine'),
     ('server', 'version'),
