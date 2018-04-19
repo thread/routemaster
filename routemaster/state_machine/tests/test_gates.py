@@ -27,7 +27,7 @@ def test_wont_process_deleted_label(app_config, create_deleted_label, assert_his
 
 
 def test_process_gate_eligible(app_config, mock_test_feed, assert_history):
-    with mock_test_feed():
+    with mock_test_feed(), app_config.new_session():
         state_machine.create_label(
             app_config,
             LabelRef('foo', 'test_machine'),
@@ -41,7 +41,7 @@ def test_process_gate_eligible(app_config, mock_test_feed, assert_history):
 
 
 def test_process_gate_not_eligible(app_config, mock_test_feed, assert_history):
-    with mock_test_feed():
+    with mock_test_feed(), app_config.new_session():
         state_machine.create_label(
             app_config,
             LabelRef('foo', 'test_machine'),
