@@ -6,3 +6,4 @@ freezegun
 mypy
 httpretty
 pytest-pythonpath
+git+https://github.com/danpalmer/werkzeug
