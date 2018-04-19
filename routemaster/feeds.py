@@ -1,5 +1,5 @@
 """Creation and fetching of feed data."""
-import functools
+import threading
 from typing import Any, Dict, Callable, Optional
 
 import requests
@@ -21,9 +21,13 @@ class FeedNotFetched(Exception):
     pass
 
 
-@functools.lru_cache()
+_feed_sessions = threading.local()
+
+
 def _get_feed_session():
-    return requests.Session()
+    if not hasattr(_feed_sessions, 'session'):
+        _feed_sessions.session = requests.Session()
+    return _feed_sessions.session
 
 
 @dataclass
