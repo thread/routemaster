@@ -31,8 +31,8 @@ def metadata_triggers_processed(app_config, label):
         return app_config.session.query(
             Label.metadata_triggers_processed,
         ).filter_by(
-            label_name=label.name,
-            label_state_machine=label.state_machine,
+            name=label.name,
+            state_machine=label.state_machine,
         ).scalar()
 
 
