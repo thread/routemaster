@@ -179,10 +179,10 @@ def _labels_in_state(
         new_state=state.name,
         **filters,
     ).from_self().filter(
-        rank=1,
+        rank == 1,
     )
 
-    return [x for x, in ranked_transitions.fetchall()]
+    return [x for x, _ in ranked_transitions]
 
 
 def context_for_label(
