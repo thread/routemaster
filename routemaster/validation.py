@@ -2,7 +2,7 @@
 import networkx
 from sqlalchemy import func
 
-from routemaster.db import History
+from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.config import Config, StateMachine
 
@@ -69,6 +69,7 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
     ).filter(
         states_by_rank.c.rank == 1,
         ~states_by_rank.c.new_state.in_(states),
+        Label.deleted == func.false(),
     ).all()
 
     if invalid_labels_and_states:
