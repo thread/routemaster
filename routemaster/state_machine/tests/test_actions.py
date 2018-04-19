@@ -1,4 +1,4 @@
-import hashlib
+import functools
 from unittest import mock
 
 import pytest
@@ -22,7 +22,7 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         process_cron(
             process_action,
-            labels_in_state,
+            functools.partial(labels_in_state, app_config),
             app_config,
             state_machine,
             state_machine.states[1],
@@ -54,7 +54,7 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
     with mock_webhook(WebhookResult.FAIL) as webhook:
         process_cron(
             process_action,
-            labels_in_state,
+            functools.partial(labels_in_state, app_config),
             app_config,
             state_machine,
             state_machine.states[1],
@@ -104,7 +104,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     with mock_webhook(WebhookResult.FAIL) as webhook:
         process_cron(
             process_action,
-            labels_in_state,
+            functools.partial(labels_in_state, app_config),
             app_config,
             state_machine,
             state_machine.states[1],
@@ -121,7 +121,7 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         process_cron(
             process_action,
-            labels_in_state,
+            functools.partial(labels_in_state, app_config),
             app_config,
             state_machine,
             state_machine.states[1],
@@ -199,7 +199,7 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
         ) as mock_process_transitions:
             process_cron(
                 process_action,
-                labels_in_state,
+                functools.partial(labels_in_state, app_config),
                 app_config,
                 state_machine,
                 state_machine.states[1],
@@ -329,7 +329,7 @@ def test_process_action_fails_retry_works(app_config, create_label, mock_webhook
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         process_cron(
             process_action,
-            labels_in_state,
+            functools.partial(labels_in_state, app_config),
             app_config,
             state_machine,
             action,
