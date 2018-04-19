@@ -8,6 +8,7 @@ from routemaster import state_machine
 from routemaster.db import Label, History
 from routemaster.state_machine import (
     LabelRef,
+    DeletedLabel,
     UnknownLabel,
     UnknownStateMachine,
 )
@@ -327,12 +328,11 @@ def test_delete_label(app_config, assert_history, mock_test_feed):
         state_machine.delete_label(app_config, label_foo)
 
     with app_config.new_session():
-        _, deleted = state_machine.get_label_metadata(
-            app_config,
-            label_foo,
-        )
-
-        assert deleted is True
+        with pytest.raises(DeletedLabel):
+            state_machine.get_label_metadata(
+                app_config,
+                label_foo,
+            )
 
     assert_history([
         (None, 'start'),
@@ -350,16 +350,13 @@ def test_delete_label_only_deletes_target_label(app_config, assert_history, mock
         state_machine.delete_label(app_config, label_foo)
 
     with app_config.new_session():
-        _, deleted_foo = state_machine.get_label_metadata(
-            app_config,
-            label_foo,
-        )
+        with pytest.raises(DeletedLabel):
+            state_machine.get_label_metadata(
+                app_config,
+                label_foo,
+            )
 
-        assert deleted_foo is True
-
-        _, deleted_bar = state_machine.get_label_metadata(
+        state_machine.get_label_metadata(
             app_config,
             label_bar,
         )
-
-        assert deleted_bar is False
