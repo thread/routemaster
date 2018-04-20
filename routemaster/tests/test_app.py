@@ -47,3 +47,10 @@ def test_app_caches_webhook_runners(app_config):
 def test_no_session_when_not_in_transaction(app_config):
     with pytest.raises(RuntimeError):
         app_config.session
+
+
+def test_cannot_nest_sessions(app_config):
+    with app_config.new_session():
+        with pytest.raises(RuntimeError):
+            with app_config.new_session():
+                pass
