@@ -165,6 +165,14 @@ ERRORS = [
                 ~~~
         """,
     ),
+    (
+        "true and",
+        """
+        Error on line 1: Expected a value, but the EOF was reached
+        true and
+             ~~~
+        """,
+    ),
 ]
 
 
