@@ -23,7 +23,7 @@ def current_state(app_config, label):
             label_name=label.name,
             label_state_machine=label.state_machine,
         ).order_by(
-            History.created.desc(),
+            History.id.desc(),
         ).limit(1).scalar()
 
 
