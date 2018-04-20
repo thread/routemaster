@@ -28,7 +28,7 @@ def status():
     """
     try:
         version = pkg_resources.working_set.by_key['routemaster'].version
-    except KeyError:
+    except KeyError:  # pragma: no cover
         version = 'development'
 
     try:
