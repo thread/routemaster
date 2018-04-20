@@ -40,7 +40,7 @@ def test_session_middleware_commits_transaction(app_config):
         assert app_config.session.query(Label).count() == 1
 
 
-def test_session_middleware_rolls_back_transaction(app_config):
+def test_session_middleware_rolls_back_transaction_unhandled(app_config):
     def server(environ, start_response):
         start_response(200, {})
 
@@ -52,6 +52,26 @@ def test_session_middleware_rolls_back_transaction(app_config):
         app_config.session.flush()
 
         raise RuntimeError()
+
+    wrapped_server = session_middleware(app_config, server)
+
+    with pytest.raises(RuntimeError):
+        run_wsgi_app(wrapped_server, {})
+
+    with app_config.new_session():
+        assert app_config.session.query(Label).count() == 0
+
+
+def test_session_middleware_rolls_back_transaction_passed_to_start_response(app_config):
+    def server(environ, start_response):
+        app_config.session.add(Label(
+            name='foo',
+            state_machine='test_machine',
+            metadata={},
+        ))
+        app_config.session.flush()
+
+        start_response(200, {}, (RuntimeError, RuntimeError(), None))
 
     wrapped_server = session_middleware(app_config, server)
 
