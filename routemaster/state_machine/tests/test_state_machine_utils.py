@@ -12,62 +12,62 @@ from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.exceptions import UnknownStateMachine
 
 
-def test_get_state_machine(app_config):
+def test_get_state_machine(app):
     label = LabelRef(name='foo', state_machine='test_machine')
-    state_machine = app_config.config.state_machines['test_machine']
-    assert utils.get_state_machine(app_config, label) == state_machine
+    state_machine = app.config.state_machines['test_machine']
+    assert utils.get_state_machine(app, label) == state_machine
 
 
-def test_get_state_machine_not_found(app_config):
+def test_get_state_machine_not_found(app):
     label = LabelRef(name='foo', state_machine='nonexistent_machine')
     with pytest.raises(UnknownStateMachine):
-        utils.get_state_machine(app_config, label)
+        utils.get_state_machine(app, label)
 
 
-def test_needs_gate_evaluation_for_metadata_change(app_config, create_label):
+def test_needs_gate_evaluation_for_metadata_change(app, create_label):
     label = create_label('foo', 'test_machine', {})
-    state_machine = app_config.config.state_machines['test_machine']
+    state_machine = app.config.state_machines['test_machine']
 
-    with app_config.new_session():
+    with app.new_session():
         current_state = utils.get_current_state(
-            app_config,
+            app,
             label,
             state_machine,
         )
 
         assert utils.needs_gate_evaluation_for_metadata_change(
-            app_config,
+            app,
             state_machine,
             label,
             {'foo': 'bar'},
         ) == (False, current_state)
 
         assert utils.needs_gate_evaluation_for_metadata_change(
-            app_config,
+            app,
             state_machine,
             label,
             {'should_progress': 'bar'},
         ) == (True, current_state)
 
 
-def test_does_not_need_gate_evaluation_for_metadata_change_with_action(app_config, create_label, mock_webhook):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_does_not_need_gate_evaluation_for_metadata_change_with_action(app, create_label, mock_webhook):
+    state_machine = app.config.state_machines['test_machine']
 
     # Force the action to fail here so that the label is left in the action
     # state.
     with mock_webhook(WebhookResult.FAIL):
         label = create_label('foo', 'test_machine', {'should_progress': True})
 
-    with app_config.new_session():
+    with app.new_session():
         current_state = utils.get_current_state(
-            app_config,
+            app,
             label,
             state_machine,
         )
         assert current_state.name == 'perform_action'
 
         assert utils.needs_gate_evaluation_for_metadata_change(
-            app_config,
+            app,
             state_machine,
             label,
             {},
@@ -75,10 +75,10 @@ def test_does_not_need_gate_evaluation_for_metadata_change_with_action(app_confi
 
 
 @freezegun.freeze_time('2018-01-07 00:00:01')
-def test_context_for_label_in_gate_created_with_correct_variables(app_config):
+def test_context_for_label_in_gate_created_with_correct_variables(app):
     label = LabelRef('foo', 'test_machine')
     metadata = {'should_progress': True}
-    state_machine = app_config.config.state_machines['test_machine']
+    state_machine = app.config.state_machines['test_machine']
     state = state_machine.states[0]
     dt = datetime.datetime.now(dateutil.tz.tzutc())
     history_entry = mock.Mock()
@@ -93,7 +93,7 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
             state_machine,
             state,
             history_entry,
-            app_config.logger,
+            app.logger,
         )
         mock_constructor.assert_called_once_with(
             label=label.name,
@@ -110,10 +110,10 @@ def test_context_for_label_in_gate_created_with_correct_variables(app_config):
 
 
 @freezegun.freeze_time('2018-01-07 00:00:01')
-def test_context_for_label_in_action_created_with_correct_variables(app_config):
+def test_context_for_label_in_action_created_with_correct_variables(app):
     label = LabelRef('foo', 'test_machine')
     metadata = {'should_progress': True}
-    state_machine = app_config.config.state_machines['test_machine']
+    state_machine = app.config.state_machines['test_machine']
     state = state_machine.states[2]
     dt = datetime.datetime.now(dateutil.tz.tzutc())
     history_entry = mock.Mock()
@@ -128,7 +128,7 @@ def test_context_for_label_in_action_created_with_correct_variables(app_config):
             state_machine,
             state,
             history_entry,
-            app_config.logger,
+            app.logger,
         )
         mock_constructor.assert_called_once_with(
             label=label.name,

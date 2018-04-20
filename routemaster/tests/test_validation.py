@@ -12,8 +12,8 @@ from routemaster.validation import ValidationError, _validate_state_machine
 from routemaster.exit_conditions import ExitConditionProgram
 
 
-def test_valid(app_config):
-    _validate_state_machine(app_config, StateMachine(
+def test_valid(app):
+    _validate_state_machine(app, StateMachine(
         name='example',
         feeds=[],
         webhooks=[],
@@ -34,7 +34,7 @@ def test_valid(app_config):
     ))
 
 
-def test_disconnected_state_machine_invalid(app_config):
+def test_disconnected_state_machine_invalid(app):
     state_machine = StateMachine(
         name='example',
         feeds=[],
@@ -55,10 +55,10 @@ def test_disconnected_state_machine_invalid(app_config):
         ],
     )
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
-def test_no_path_from_start_to_end_state_machine_invalid(app_config):
+def test_no_path_from_start_to_end_state_machine_invalid(app):
     state_machine = StateMachine(
         name='example',
         feeds=[],
@@ -80,10 +80,10 @@ def test_no_path_from_start_to_end_state_machine_invalid(app_config):
     )
 
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
-def test_nonexistent_node_destination_invalid(app_config):
+def test_nonexistent_node_destination_invalid(app):
     state_machine = StateMachine(
         name='example',
         feeds=[],
@@ -117,10 +117,10 @@ def test_nonexistent_node_destination_invalid(app_config):
         ],
     )
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
-def test_label_in_deleted_state_invalid(app_config, create_label):
+def test_label_in_deleted_state_invalid(app, create_label):
     create_label('foo', 'test_machine', {})  # Created in "start" implicitly
     state_machine = StateMachine(
         name='test_machine',
@@ -137,11 +137,11 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
         ],
     )
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
 def test_label_in_deleted_state_on_per_state_machine_basis(
-    app_config,
+    app,
     create_label,
 ):
     create_label('foo', 'test_machine', {})  # Created in "start" implicitly
@@ -162,4 +162,4 @@ def test_label_in_deleted_state_on_per_state_machine_basis(
     )
 
     # Should not care about our label as it is in a different state machine.
-    _validate_state_machine(app_config, state_machine)
+    _validate_state_machine(app, state_machine)

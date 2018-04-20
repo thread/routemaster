@@ -15,9 +15,9 @@ from routemaster.state_machine import (
 from routemaster.state_machine.gates import process_gate
 
 
-def metadata_triggers_processed(app_config, label):
-    with app_config.new_session():
-        return app_config.session.query(
+def metadata_triggers_processed(app, label):
+    with app.new_session():
+        return app.session.query(
             Label.metadata_triggers_processed,
         ).filter_by(
             name=label.name,
@@ -25,86 +25,86 @@ def metadata_triggers_processed(app_config, label):
         ).scalar()
 
 
-def test_label_get_state(app_config, mock_test_feed):
+def test_label_get_state(app, mock_test_feed):
     label = LabelRef('foo', 'test_machine')
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {'foo': 'bar'},
         )
 
-    with app_config.new_session():
-        assert state_machine.get_label_state(app_config, label).name == 'start'
+    with app.new_session():
+        assert state_machine.get_label_state(app, label).name == 'start'
 
 
-def test_label_get_state_raises_for_unknown_label(app_config):
+def test_label_get_state_raises_for_unknown_label(app):
     label = LabelRef('unknown', 'test_machine')
-    with pytest.raises(UnknownLabel), app_config.new_session():
-        assert state_machine.get_label_state(app_config, label)
+    with pytest.raises(UnknownLabel), app.new_session():
+        assert state_machine.get_label_state(app, label)
 
 
-def test_label_get_state_raises_for_unknown_state_machine(app_config):
+def test_label_get_state_raises_for_unknown_state_machine(app):
     label = LabelRef('foo', 'unknown_machine')
-    with pytest.raises(UnknownStateMachine), app_config.new_session():
-        assert state_machine.get_label_state(app_config, label)
+    with pytest.raises(UnknownStateMachine), app.new_session():
+        assert state_machine.get_label_state(app, label)
 
 
-def test_state_machine_simple(app_config, mock_test_feed):
+def test_state_machine_simple(app, mock_test_feed):
     label = LabelRef('foo', 'test_machine')
 
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {},
         )
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'foo': 'bar'},
         )
 
-    with app_config.new_session():
-        assert state_machine.get_label_metadata(app_config, label) == {'foo': 'bar'}
+    with app.new_session():
+        assert state_machine.get_label_metadata(app, label) == {'foo': 'bar'}
 
 
-def test_update_metadata_for_label_raises_for_unknown_state_machine(app_config):
+def test_update_metadata_for_label_raises_for_unknown_state_machine(app):
     label = LabelRef('foo', 'nonexistent_machine')
-    with pytest.raises(UnknownStateMachine), app_config.new_session():
-        state_machine.update_metadata_for_label(app_config, label, {})
+    with pytest.raises(UnknownStateMachine), app.new_session():
+        state_machine.update_metadata_for_label(app, label, {})
 
 
-def test_state_machine_progresses_on_update(app_config, mock_webhook, mock_test_feed, current_state):
+def test_state_machine_progresses_on_update(app, mock_webhook, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {},
         )
 
     assert current_state(label) == 'start'
 
-    with mock_webhook() as webhook, mock_test_feed(), app_config.new_session():
+    with mock_webhook() as webhook, mock_test_feed(), app.new_session():
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'should_progress': True},
         )
         webhook.assert_called_once()
 
-    assert metadata_triggers_processed(app_config, label) is True
+    assert metadata_triggers_processed(app, label) is True
     assert current_state(label) == 'end'
 
 
-def test_state_machine_progresses_automatically(app_config, mock_webhook, mock_test_feed, current_state):
+def test_state_machine_progresses_automatically(app, mock_webhook, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
-    with mock_webhook() as webhook, mock_test_feed(), app_config.new_session():
+    with mock_webhook() as webhook, mock_test_feed(), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {'should_progress': True},
         )
@@ -113,21 +113,21 @@ def test_state_machine_progresses_automatically(app_config, mock_webhook, mock_t
     assert current_state(label) == 'end'
 
 
-def test_state_machine_does_not_progress_when_not_eligible(app_config, mock_test_feed, current_state):
+def test_state_machine_does_not_progress_when_not_eligible(app, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {},
         )
 
     assert current_state(label) == 'start'
 
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'should_progress': False},
         )
@@ -135,12 +135,12 @@ def test_state_machine_does_not_progress_when_not_eligible(app_config, mock_test
     assert current_state(label) == 'start'
 
 
-def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed, current_state):
+def test_stays_in_gate_if_gate_processing_fails(app, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {},
         )
@@ -150,26 +150,26 @@ def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed, curr
     with mock_test_feed(), mock.patch(
         'routemaster.context.Context._pre_warm_feeds',
         side_effect=RequestException,
-    ), app_config.new_session():
+    ), app.new_session():
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'should_progress': True},
         )
 
-    assert metadata_triggers_processed(app_config, label) is False
+    assert metadata_triggers_processed(app, label) is False
     assert current_state(label) == 'start'
 
 
-def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app_config, assert_history, current_state):
-    test_machine_2 = app_config.config.state_machines['test_machine_2']
+def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app, assert_history, current_state):
+    test_machine_2 = app.config.state_machines['test_machine_2']
     gate_1 = test_machine_2.states[0]
 
     label = create_label('foo', 'test_machine_2', {})
 
-    with app_config.new_session():
+    with app.new_session():
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'should_progress': True},
         )
@@ -179,9 +179,9 @@ def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app
     with mock.patch(
         'routemaster.state_machine.api.needs_gate_evaluation_for_metadata_change',
         return_value=(True, gate_1),
-    ), app_config.new_session():
+    ), app.new_session():
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'should_progress': True},
         )
@@ -192,12 +192,12 @@ def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app
     ])
 
 
-def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_triggered_gate(create_label, app_config, assert_history, current_state):
+def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_triggered_gate(create_label, app, assert_history, current_state):
     label = create_label('foo', 'test_machine_2', {})
 
-    with app_config.new_session():
+    with app.new_session():
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'should_progress': True},
         )
@@ -212,8 +212,8 @@ def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_trigg
     ])
 
 
-def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metadata_triggered_gate(create_label, app_config, assert_history):
-    test_machine_2 = app_config.config.state_machines['test_machine_2']
+def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metadata_triggered_gate(create_label, app, assert_history):
+    test_machine_2 = app.config.state_machines['test_machine_2']
     gate_1 = test_machine_2.states[0]
     gate_2 = test_machine_2.states[1]
 
@@ -225,10 +225,10 @@ def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metada
     ), mock.patch(
         'routemaster.state_machine.api.get_current_state',
         return_value=gate_2,
-    ), app_config.new_session():
+    ), app.new_session():
 
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'should_progress': True},
         )
@@ -240,31 +240,31 @@ def test_metadata_update_gate_evaluations_dont_race_processing_subsequent_metada
     ])
 
 
-def test_maintains_updated_field_on_label(app_config, mock_test_feed):
+def test_maintains_updated_field_on_label(app, mock_test_feed):
     label = LabelRef('foo', 'test_machine')
 
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {},
         )
 
-        first_updated = app_config.session.query(
+        first_updated = app.session.query(
             Label.updated,
         ).filter_by(
             name=label.name,
             state_machine=label.state_machine,
         ).scalar()
 
-    with mock_test_feed(), app_config.new_session():
+    with mock_test_feed(), app.new_session():
         state_machine.update_metadata_for_label(
-            app_config,
+            app,
             label,
             {'foo': 'bar'},
         )
 
-        second_updated = app_config.session.query(
+        second_updated = app.session.query(
             Label.updated,
         ).filter_by(
             name=label.name,
@@ -274,21 +274,21 @@ def test_maintains_updated_field_on_label(app_config, mock_test_feed):
     assert second_updated > first_updated
 
 
-def test_continues_after_time_since_entering_gate(app_config, current_state):
+def test_continues_after_time_since_entering_gate(app, current_state):
     label = LabelRef('foo', 'test_machine_timing')
-    gate = app_config.config.state_machines['test_machine_timing'].states[0]
+    gate = app.config.state_machines['test_machine_timing'].states[0]
 
-    with freeze_time('2018-01-24 12:00:00'), app_config.new_session():
+    with freeze_time('2018-01-24 12:00:00'), app.new_session():
         state_machine.create_label(
-            app_config,
+            app,
             label,
             {},
         )
 
     # 1 day later, not enough to progress
-    with freeze_time('2018-01-25 12:00:00'), app_config.new_session():
+    with freeze_time('2018-01-25 12:00:00'), app.new_session():
         process_gate(
-            app=app_config,
+            app=app,
             state=gate,
             state_machine=state_machine,
             label=label,
@@ -297,9 +297,9 @@ def test_continues_after_time_since_entering_gate(app_config, current_state):
     assert current_state(label) == 'start'
 
     # 2 days later
-    with freeze_time('2018-01-26 12:00:00'), app_config.new_session():
+    with freeze_time('2018-01-26 12:00:00'), app.new_session():
         process_gate(
-            app=app_config,
+            app=app,
             state=gate,
             state_machine=state_machine,
             label=label,
@@ -308,17 +308,17 @@ def test_continues_after_time_since_entering_gate(app_config, current_state):
     assert current_state(label) == 'end'
 
 
-def test_delete_label(app_config, assert_history, mock_test_feed):
+def test_delete_label(app, assert_history, mock_test_feed):
     label_foo = LabelRef('foo', 'test_machine')
 
-    with mock_test_feed(), app_config.new_session():
-        state_machine.create_label(app_config, label_foo, {})
-        state_machine.delete_label(app_config, label_foo)
+    with mock_test_feed(), app.new_session():
+        state_machine.create_label(app, label_foo, {})
+        state_machine.delete_label(app, label_foo)
 
-    with app_config.new_session():
+    with app.new_session():
         with pytest.raises(DeletedLabel):
             state_machine.get_label_metadata(
-                app_config,
+                app,
                 label_foo,
             )
 
@@ -328,23 +328,23 @@ def test_delete_label(app_config, assert_history, mock_test_feed):
     ])
 
 
-def test_delete_label_only_deletes_target_label(app_config, assert_history, mock_test_feed):
+def test_delete_label_only_deletes_target_label(app, assert_history, mock_test_feed):
     label_foo = LabelRef('foo', 'test_machine')
     label_bar = LabelRef('bar', 'test_machine')
 
-    with mock_test_feed(), app_config.new_session():
-        state_machine.create_label(app_config, label_foo, {})
-        state_machine.create_label(app_config, label_bar, {})
-        state_machine.delete_label(app_config, label_foo)
+    with mock_test_feed(), app.new_session():
+        state_machine.create_label(app, label_foo, {})
+        state_machine.create_label(app, label_bar, {})
+        state_machine.delete_label(app, label_foo)
 
-    with app_config.new_session():
+    with app.new_session():
         with pytest.raises(DeletedLabel):
             state_machine.get_label_metadata(
-                app_config,
+                app,
                 label_foo,
             )
 
         state_machine.get_label_metadata(
-            app_config,
+            app,
             label_bar,
         )

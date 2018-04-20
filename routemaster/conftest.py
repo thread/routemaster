@@ -263,13 +263,13 @@ class TestClientResponse(BaseResponse):
 @pytest.fixture()
 def client():
     """Create a werkzeug test client."""
-    app = app_config()
-    server.config.app = app
-    return Client(wrap_application(app, server), TestClientResponse)
+    _app = app()
+    server.config.app = _app
+    return Client(wrap_application(_app, server), TestClientResponse)
 
 
 @pytest.fixture()
-def app_config(**kwargs):
+def app(**kwargs):
     """Create an `App` config object for testing."""
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
@@ -279,9 +279,9 @@ def app_config(**kwargs):
 
 
 @pytest.fixture()
-def custom_app_config():
+def custom_app():
     """Return the app config fixture directly so that we can modify config."""
-    return app_config
+    return app
 
 
 @pytest.fixture()
@@ -309,20 +309,20 @@ def database_creation(request):
 
 
 @pytest.yield_fixture(autouse=True)
-def database_clear(app_config):
+def database_clear(app):
     """Truncate all tables after each test."""
     yield
-    if app_config.session_used:
-        with app_config.new_session():
+    if app.session_used:
+        with app.new_session():
             for table in metadata.tables:
-                app_config.session.execute(
+                app.session.execute(
                     f'truncate table {table} cascade',
                     {},
                 )
 
 
 @pytest.fixture()
-def create_label(app_config, mock_test_feed):
+def create_label(app, mock_test_feed):
     """Create a label in the database."""
 
     def _create(
@@ -330,9 +330,9 @@ def create_label(app_config, mock_test_feed):
         state_machine_name: str,
         metadata: Dict[str, Any],
     ) -> LabelRef:
-        with mock_test_feed(), app_config.new_session():
+        with mock_test_feed(), app.new_session():
             state_machine.create_label(
-                app_config,
+                app,
                 LabelRef(name, state_machine_name),
                 metadata,
             )
@@ -342,15 +342,15 @@ def create_label(app_config, mock_test_feed):
 
 
 @pytest.fixture()
-def delete_label(app_config):
+def delete_label(app):
     """
     Mark a label in the database as deleted.
     """
 
     def _delete(name: str, state_machine_name: str) -> None:
-        with app_config.new_session():
+        with app.new_session():
             state_machine.delete_label(
-                app_config,
+                app,
                 LabelRef(name, state_machine_name),
             )
 
@@ -408,13 +408,13 @@ def mock_test_feed():
 
 
 @pytest.fixture()
-def assert_history(app_config):
+def assert_history(app):
     """Assert that the database history matches what is expected."""
     def _assert(entries):
-        with app_config.new_session():
+        with app.new_session():
             history_entries = [
                 (x.old_state, x.new_state)
-                for x in app_config.session.query(
+                for x in app.session.query(
                     History,
                 ).order_by(
                     History.id,
@@ -426,11 +426,11 @@ def assert_history(app_config):
 
 
 @pytest.fixture()
-def set_metadata(app_config):
+def set_metadata(app):
     """Directly set the metadata for a label in the database."""
     def _inner(label, update):
-        with app_config.new_session():
-            db_label = app_config.session.query(Label).filter_by(
+        with app.new_session():
+            db_label = app.session.query(Label).filter_by(
                 name=label.name,
                 state_machine=label.state_machine,
             ).first()
@@ -438,18 +438,18 @@ def set_metadata(app_config):
             db_label.metadata = dict_merge(db_label.metadata, update)
             db_label.metadata_triggers_processed = True
 
-            app_config.session.add(db_label)
+            app.session.add(db_label)
 
             return db_label.metadata
     return _inner
 
 
 @pytest.fixture()
-def make_context(app_config):
+def make_context(app):
     """Factory for Contexts that provides sane defaults for testing."""
     def _inner(**kwargs):
-        logger = BaseLogger(app_config.config)
-        state_machine = app_config.config.state_machines['test_machine']
+        logger = BaseLogger(app.config)
+        state_machine = app.config.state_machines['test_machine']
         state = state_machine.states[0]
 
         @contextlib.contextmanager
@@ -482,11 +482,11 @@ def version():
 
 
 @pytest.fixture()
-def current_state(app_config):
+def current_state(app):
     """Get the current state of a label."""
     def _inner(label):
-        with app_config.new_session():
-            return app_config.session.query(
+        with app.new_session():
+            return app.session.query(
                 History.new_state,
             ).filter_by(
                 label_name=label.name,

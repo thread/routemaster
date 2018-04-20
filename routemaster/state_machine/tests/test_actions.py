@@ -10,8 +10,8 @@ from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import DeletedLabel
 
 
-def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_actions_are_run_and_states_advanced(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
 
     # First get the label into the action state by failing the automatic
     # progression through the machine.
@@ -22,8 +22,8 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         process_cron(
             process_action,
-            functools.partial(labels_in_state, app_config),
-            app_config,
+            functools.partial(labels_in_state, app),
+            app,
             state_machine,
             state_machine.states[1],
         )
@@ -43,8 +43,8 @@ def test_actions_are_run_and_states_advanced(app_config, create_label, mock_webh
     ])
 
 
-def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_actions_do_not_advance_state_on_fail(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
 
     # First get the label into the action state by failing the automatic
     # progression through the machine.
@@ -54,8 +54,8 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
     with mock_webhook(WebhookResult.FAIL) as webhook:
         process_cron(
             process_action,
-            functools.partial(labels_in_state, app_config),
-            app_config,
+            functools.partial(labels_in_state, app),
+            app,
             state_machine,
             state_machine.states[1],
         )
@@ -74,8 +74,8 @@ def test_actions_do_not_advance_state_on_fail(app_config, create_label, mock_web
     ])
 
 
-def test_actions_retries_use_same_idempotency_token(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_actions_retries_use_same_idempotency_token(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
 
     expected = {'token': None}
 
@@ -104,8 +104,8 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     with mock_webhook(WebhookResult.FAIL) as webhook:
         process_cron(
             process_action,
-            functools.partial(labels_in_state, app_config),
-            app_config,
+            functools.partial(labels_in_state, app),
+            app,
             state_machine,
             state_machine.states[1],
         )
@@ -121,8 +121,8 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         process_cron(
             process_action,
-            functools.partial(labels_in_state, app_config),
-            app_config,
+            functools.partial(labels_in_state, app),
+            app,
             state_machine,
             state_machine.states[1],
         )
@@ -136,8 +136,8 @@ def test_actions_retries_use_same_idempotency_token(app_config, create_label, mo
     )
 
 
-def test_different_actions_use_different_idempotency_tokens(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_different_actions_use_different_idempotency_tokens(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
 
     seen_tokens = set()
 
@@ -180,8 +180,8 @@ def test_different_actions_use_different_idempotency_tokens(app_config, create_l
     ))
 
 
-def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_action_retry_trigger_continues_as_far_as_possible(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
 
     # First get the label into the action state by failing the automatic
     # progression through the machine.
@@ -199,14 +199,14 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
         ) as mock_process_transitions:
             process_cron(
                 process_action,
-                functools.partial(labels_in_state, app_config),
-                app_config,
+                functools.partial(labels_in_state, app),
+                app,
                 state_machine,
                 state_machine.states[1],
             )
 
     mock_process_transitions.assert_called_once_with(
-        app_config,
+        app,
         label,
     )
 
@@ -225,15 +225,15 @@ def test_action_retry_trigger_continues_as_far_as_possible(app_config, create_la
     ])
 
 
-def test_process_action_does_not_work_for_deleted_label(app_config, create_deleted_label, assert_history):
+def test_process_action_does_not_work_for_deleted_label(app, create_deleted_label, assert_history):
     deleted_label = create_deleted_label('foo', 'test_machine')
-    state_machine = app_config.config.state_machines['test_machine']
+    state_machine = app.config.state_machines['test_machine']
     action = state_machine.states[1]
 
     with pytest.raises(DeletedLabel):
-        with app_config.new_session():
+        with app.new_session():
             process_action(
-                app=app_config,
+                app=app,
                 state=action,
                 state_machine=state_machine,
                 label=deleted_label,
@@ -245,8 +245,8 @@ def test_process_action_does_not_work_for_deleted_label(app_config, create_delet
     ])
 
 
-def test_process_action(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_process_action(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
     action = state_machine.states[1]
 
     # First get the label into the action state by failing the automatic
@@ -259,9 +259,9 @@ def test_process_action(app_config, create_label, mock_webhook, assert_history):
         )
 
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
-        with app_config.new_session():
+        with app.new_session():
             process_action(
-                app=app_config,
+                app=app,
                 state=action,
                 state_machine=state_machine,
                 label=label,
@@ -276,8 +276,8 @@ def test_process_action(app_config, create_label, mock_webhook, assert_history):
     ])
 
 
-def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_process_action_leaves_label_in_action_if_webhook_fails(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
     action = state_machine.states[1]
 
     # First get the label into the action state by failing the automatic
@@ -290,9 +290,9 @@ def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, crea
         )
 
     with mock_webhook(WebhookResult.FAIL) as webhook:
-        with app_config.new_session():
+        with app.new_session():
             process_action(
-                app=app_config,
+                app=app,
                 state=action,
                 state_machine=state_machine,
                 label=label,
@@ -306,8 +306,8 @@ def test_process_action_leaves_label_in_action_if_webhook_fails(app_config, crea
     ])
 
 
-def test_process_action_fails_retry_works(app_config, create_label, mock_webhook, assert_history):
-    state_machine = app_config.config.state_machines['test_machine']
+def test_process_action_fails_retry_works(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
     action = state_machine.states[1]
 
     # First get the label into the action state by failing the automatic
@@ -329,8 +329,8 @@ def test_process_action_fails_retry_works(app_config, create_label, mock_webhook
     with mock_webhook(WebhookResult.SUCCESS) as webhook:
         process_cron(
             process_action,
-            functools.partial(labels_in_state, app_config),
-            app_config,
+            functools.partial(labels_in_state, app),
+            app,
             state_machine,
             action,
         )
