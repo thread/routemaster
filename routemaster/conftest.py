@@ -477,7 +477,7 @@ def version():
     """Return the package version."""
     try:
         return pkg_resources.working_set.by_key['routemaster'].version
-    except KeyError:
+    except KeyError:  # pragma: no cover
         return 'development'
 
 
