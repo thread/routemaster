@@ -328,6 +328,27 @@ def test_delete_label(app, assert_history, mock_test_feed):
     ])
 
 
+def test_delete_label_idempotent(app, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+
+    with mock_test_feed(), app.new_session():
+        state_machine.create_label(app, label_foo, {})
+        state_machine.delete_label(app, label_foo)
+        state_machine.delete_label(app, label_foo)
+
+    with app.new_session():
+        with pytest.raises(DeletedLabel):
+            state_machine.get_label_metadata(
+                app,
+                label_foo,
+            )
+
+    assert_history([
+        (None, 'start'),
+        ('start', None),
+    ])
+
+
 def test_delete_label_only_deletes_target_label(app, assert_history, mock_test_feed):
     label_foo = LabelRef('foo', 'test_machine')
     label_bar = LabelRef('bar', 'test_machine')
