@@ -167,7 +167,7 @@ def test_cron_job_gracefully_exit_signalling(custom_app_config):
     def is_terminating():
         return len(items_to_process) == 1
 
-    def processor(app, state, state_machine, label, conn):
+    def processor(app, state, state_machine, label):
         for item in items_to_process:
             items_to_process.pop(0)
 
