@@ -69,7 +69,7 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
     ).filter(
         states_by_rank.c.rank == 1,
         ~states_by_rank.c.new_state.in_(states),
-        Label.deleted == func.false(),
+        ~Label.deleted,
     ).all()
 
     if invalid_labels_and_states:
