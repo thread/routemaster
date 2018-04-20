@@ -5,7 +5,7 @@ import contextlib
 from typing import Any, Dict, List, Tuple
 
 import dateutil.tz
-from sqlalchemy import func, false
+from sqlalchemy import func
 
 from routemaster.db import Label, History
 from routemaster.app import App
