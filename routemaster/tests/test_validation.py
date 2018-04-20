@@ -160,5 +160,6 @@ def test_label_in_deleted_state_on_per_state_machine_basis(
             ),
         ],
     )
-    with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+
+    # Should not care about our label as it is in a different state machine.
+    _validate_state_machine(app_config, state_machine)
