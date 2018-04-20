@@ -1,14 +1,18 @@
 """Core App singleton that holds state for the application."""
 import threading
 import contextlib
-from typing import Optional
+from typing import Dict, Optional
 
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.engine import Engine
 
 from routemaster.db import initialise_db
-from routemaster.config import Config
+from routemaster.config import Config, StateMachine
 from routemaster.logging import BaseLogger, SplitLogger, register_loggers
+from routemaster.webhooks import (
+    WebhookRunner,
+    webhook_runner_for_state_machine,
+)
 
 
 class App(threading.local):
@@ -18,6 +22,7 @@ class App(threading.local):
     config: Config
     logger: BaseLogger
     _current_session: Optional[Session]
+    _webhook_runners: Dict[str, WebhookRunner]
 
     def __init__(
         self,
@@ -30,6 +35,13 @@ class App(threading.local):
         self._sessionmaker = sessionmaker(self._db)
         self._current_session = None
         self._needs_rollback = False
+
+        # Webhook runners may choose to persist a session, so we instantiate
+        # up-front to ensure we re-use state.
+        self._webhook_runners = {
+            x: webhook_runner_for_state_machine(y)
+            for x, y in self.config.state_machines.items()
+        }
 
     @property
     def session(self) -> Session:
@@ -72,3 +84,7 @@ class App(threading.local):
             self._current_session.close()
             self._current_session = None
             self._needs_rollback = False
+
+    def get_webhook_runner(self, state_machine: StateMachine) -> WebhookRunner:
+        """Get the webhook runner for a state machine."""
+        return self._webhook_runners[state_machine.name]

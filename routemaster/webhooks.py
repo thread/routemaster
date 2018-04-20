@@ -28,6 +28,8 @@ class RequestsWebhookRunner(object):
     """
 
     def __init__(self, webhook_configs: Iterable[Webhook]=()) -> None:
+        # Use a session so that we can take advantage of connection pooling in
+        # `urllib3`.
         self.session = requests.Session()
         self.webhook_configs = webhook_configs
 
