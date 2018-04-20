@@ -4,7 +4,9 @@ from unittest import mock
 import pytest
 import dateutil
 import freezegun
+from requests.exceptions import RequestException
 
+from routemaster import state_machine
 from routemaster.feeds import Feed
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import utils
@@ -139,3 +141,34 @@ def test_context_for_label_in_action_created_with_correct_variables(app):
             current_history_entry=history_entry,
             feed_logging_context=mock.ANY,
         )
+
+
+def test_labels_needing_metadata_update_retry_in_gate(app, mock_test_feed, create_label, current_state):
+    label_unprocessed = create_label('foo', 'test_machine', {})
+    label_processed = create_label('bar', 'test_machine', {})
+
+    test_machine = app.config.state_machines['test_machine']
+    gate = test_machine.states[0]
+
+    with mock_test_feed(), app.new_session():
+        with mock.patch(
+            'routemaster.context.Context._pre_warm_feeds',
+            side_effect=RequestException,
+        ):
+            state_machine.update_metadata_for_label(
+                app,
+                label_unprocessed,
+                {'should_progress': True},
+            )
+
+    # Both should be in the start state...
+    assert current_state(label_processed) == 'start'
+    assert current_state(label_unprocessed) == 'start'
+
+    # But only label_unprocessed should be pending a metadata update
+    with app.new_session():
+        assert utils.labels_needing_metadata_update_retry_in_gate(
+            app,
+            test_machine,
+            gate,
+        ) == [label_unprocessed.name]
