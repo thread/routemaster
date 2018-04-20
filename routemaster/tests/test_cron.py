@@ -198,7 +198,12 @@ def test_cron_job_does_not_forward_exceptions(custom_app):
     app = create_app(custom_app, [gate])
     state_machine = app.config.state_machines['test_machine']
 
+    # To get aroung inability to change reference in this scope from
+    # `raise_value_error`.
+    raised = {'raised': False}
+
     def raise_value_error(*args):
+        raised['raised'] = True
         raise ValueError()
 
     def processor(*args, **kwargs):
@@ -208,12 +213,14 @@ def test_cron_job_does_not_forward_exceptions(custom_app):
         'routemaster.state_machine.api.get_current_state',
         return_value=gate,
     ), mock.patch('routemaster.state_machine.api.lock_label'):
-
         process_job(
             app=app,
             is_terminating=raise_value_error,
             fn=processor,
-            label_provider=lambda x, y, z: [],
+            label_provider=lambda x, y, z: [1],
             state=gate,
             state_machine=state_machine,
         )
+
+    assert raised['raised'], \
+        "Test did not trigger exception correctly in cron system"
