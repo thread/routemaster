@@ -56,7 +56,7 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
         History.label_name,
         History.new_state,
         func.row_number().over(
-            order_by=History.created.desc(),
+            order_by=History.id.desc(),
             partition_by=History.label_name,
         ).label('rank'),
     ).filter_by(

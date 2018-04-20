@@ -479,3 +479,19 @@ def version():
         return pkg_resources.working_set.by_key['routemaster'].version
     except KeyError:
         return 'development'
+
+
+@pytest.fixture()
+def current_state(app_config):
+    """Get the current state of a label."""
+    def _inner(label):
+        with app_config.new_session():
+            return app_config.session.query(
+                History.new_state,
+            ).filter_by(
+                label_name=label.name,
+                label_state_machine=label.state_machine,
+            ).order_by(
+                History.id.desc(),
+            ).limit(1).scalar()
+    return _inner

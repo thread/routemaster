@@ -224,8 +224,8 @@ def test_list_labels_when_many(client, create_label):
     assert response.json['labels'] == [{'name': 'foo'}, {'name': 'quox'}]
 
 
-def test_update_label_moves_label(client, create_label, app_config, mock_webhook, mock_test_feed):
-    create_label('foo', 'test_machine', {})
+def test_update_label_moves_label(client, create_label, app_config, mock_webhook, mock_test_feed, current_state):
+    label = create_label('foo', 'test_machine', {})
 
     with mock_webhook() as webhook, mock_test_feed():
         response = client.patch(
@@ -237,18 +237,7 @@ def test_update_label_moves_label(client, create_label, app_config, mock_webhook
 
     assert response.status_code == 200
     assert response.json['metadata'] == {'should_progress': True}
-
-    with app_config.new_session():
-        latest_state = app_config.session.query(
-            History.new_state,
-        ).filter_by(
-            label_name='foo',
-            label_state_machine='test_machine',
-        ).order_by(
-            History.created.desc(),
-        ).limit(1).scalar()
-
-    assert latest_state == 'end'
+    assert current_state(label) == 'end'
 
 
 def test_delete_existing_label(client, app_config, create_label):
@@ -271,7 +260,7 @@ def test_delete_existing_label(client, app_config, create_label):
         assert label.metadata == {}
 
         history = app_config.session.query(History).order_by(
-            History.created.desc(),
+            History.id.desc(),
         ).first()
         assert history.label_name == label_name
         assert history.old_state == state_machine.states[0].name

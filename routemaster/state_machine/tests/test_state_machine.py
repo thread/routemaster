@@ -5,7 +5,7 @@ from freezegun import freeze_time
 from requests.exceptions import RequestException
 
 from routemaster import state_machine
-from routemaster.db import Label, History
+from routemaster.db import Label
 from routemaster.state_machine import (
     LabelRef,
     DeletedLabel,
@@ -13,18 +13,6 @@ from routemaster.state_machine import (
     UnknownStateMachine,
 )
 from routemaster.state_machine.gates import process_gate
-
-
-def current_state(app_config, label):
-    with app_config.new_session():
-        return app_config.session.query(
-            History.new_state,
-        ).filter_by(
-            label_name=label.name,
-            label_state_machine=label.state_machine,
-        ).order_by(
-            History.id.desc(),
-        ).limit(1).scalar()
 
 
 def metadata_triggers_processed(app_config, label):
@@ -87,7 +75,7 @@ def test_update_metadata_for_label_raises_for_unknown_state_machine(app_config):
         state_machine.update_metadata_for_label(app_config, label, {})
 
 
-def test_state_machine_progresses_on_update(app_config, mock_webhook, mock_test_feed):
+def test_state_machine_progresses_on_update(app_config, mock_webhook, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
     with mock_test_feed(), app_config.new_session():
@@ -97,7 +85,7 @@ def test_state_machine_progresses_on_update(app_config, mock_webhook, mock_test_
             {},
         )
 
-    assert current_state(app_config, label) == 'start'
+    assert current_state(label) == 'start'
 
     with mock_webhook() as webhook, mock_test_feed(), app_config.new_session():
         state_machine.update_metadata_for_label(
@@ -108,10 +96,10 @@ def test_state_machine_progresses_on_update(app_config, mock_webhook, mock_test_
         webhook.assert_called_once()
 
     assert metadata_triggers_processed(app_config, label) is True
-    assert current_state(app_config, label) == 'end'
+    assert current_state(label) == 'end'
 
 
-def test_state_machine_progresses_automatically(app_config, mock_webhook, mock_test_feed):
+def test_state_machine_progresses_automatically(app_config, mock_webhook, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
     with mock_webhook() as webhook, mock_test_feed(), app_config.new_session():
@@ -122,10 +110,10 @@ def test_state_machine_progresses_automatically(app_config, mock_webhook, mock_t
         )
         webhook.assert_called_once()
 
-    assert current_state(app_config, label) == 'end'
+    assert current_state(label) == 'end'
 
 
-def test_state_machine_does_not_progress_when_not_eligible(app_config, mock_test_feed):
+def test_state_machine_does_not_progress_when_not_eligible(app_config, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
     with mock_test_feed(), app_config.new_session():
@@ -135,7 +123,7 @@ def test_state_machine_does_not_progress_when_not_eligible(app_config, mock_test
             {},
         )
 
-    assert current_state(app_config, label) == 'start'
+    assert current_state(label) == 'start'
 
     with mock_test_feed(), app_config.new_session():
         state_machine.update_metadata_for_label(
@@ -144,10 +132,10 @@ def test_state_machine_does_not_progress_when_not_eligible(app_config, mock_test
             {'should_progress': False},
         )
 
-    assert current_state(app_config, label) == 'start'
+    assert current_state(label) == 'start'
 
 
-def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed):
+def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed, current_state):
     label = LabelRef('foo', 'test_machine')
 
     with mock_test_feed(), app_config.new_session():
@@ -157,7 +145,7 @@ def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed):
             {},
         )
 
-    assert current_state(app_config, label) == 'start'
+    assert current_state(label) == 'start'
 
     with mock_test_feed(), mock.patch(
         'routemaster.context.Context._pre_warm_feeds',
@@ -170,10 +158,10 @@ def test_stays_in_gate_if_gate_processing_fails(app_config, mock_test_feed):
         )
 
     assert metadata_triggers_processed(app_config, label) is False
-    assert current_state(app_config, label) == 'start'
+    assert current_state(label) == 'start'
 
 
-def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app_config, assert_history):
+def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app_config, assert_history, current_state):
     test_machine_2 = app_config.config.state_machines['test_machine_2']
     gate_1 = test_machine_2.states[0]
 
@@ -186,7 +174,7 @@ def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app
             {'should_progress': True},
         )
 
-    assert current_state(app_config, label) == 'gate_2'
+    assert current_state(label) == 'gate_2'
 
     with mock.patch(
         'routemaster.state_machine.api.needs_gate_evaluation_for_metadata_change',
@@ -204,7 +192,7 @@ def test_concurrent_metadata_update_gate_evaluations_dont_race(create_label, app
     ])
 
 
-def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_triggered_gate(create_label, app_config, assert_history):
+def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_triggered_gate(create_label, app_config, assert_history, current_state):
     label = create_label('foo', 'test_machine_2', {})
 
     with app_config.new_session():
@@ -214,7 +202,7 @@ def test_metadata_update_gate_evaluations_dont_process_subsequent_metadata_trigg
             {'should_progress': True},
         )
 
-    assert current_state(app_config, label) == 'gate_2'
+    assert current_state(label) == 'gate_2'
     assert_history([
         (None, 'gate_1'),
         ('gate_1', 'gate_2'),
@@ -286,7 +274,7 @@ def test_maintains_updated_field_on_label(app_config, mock_test_feed):
     assert second_updated > first_updated
 
 
-def test_continues_after_time_since_entering_gate(app_config):
+def test_continues_after_time_since_entering_gate(app_config, current_state):
     label = LabelRef('foo', 'test_machine_timing')
     gate = app_config.config.state_machines['test_machine_timing'].states[0]
 
@@ -306,7 +294,7 @@ def test_continues_after_time_since_entering_gate(app_config):
             label=label,
         )
 
-    assert current_state(app_config, label) == 'start'
+    assert current_state(label) == 'start'
 
     # 2 days later
     with freeze_time('2018-01-26 12:00:00'), app_config.new_session():
@@ -317,7 +305,7 @@ def test_continues_after_time_since_entering_gate(app_config):
             label=label,
         )
 
-    assert current_state(app_config, label) == 'end'
+    assert current_state(label) == 'end'
 
 
 def test_delete_label(app_config, assert_history, mock_test_feed):
