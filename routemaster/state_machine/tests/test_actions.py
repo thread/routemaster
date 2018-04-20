@@ -74,6 +74,29 @@ def test_actions_do_not_advance_state_on_fail(app, create_label, mock_webhook, a
     ])
 
 
+def test_actions_do_not_advance_if_label_in_wrong_state(app, create_label, mock_webhook, assert_history):
+    state_machine = app.config.state_machines['test_machine']
+
+    # Set should_progress=False so that the label will remain in start.
+    label = create_label('foo', state_machine.name, {'should_progress': False})
+
+    with mock_webhook(WebhookResult.SUCCESS) as webhook:
+        process_cron(
+            process_action,
+            # Return our target label for processing even though it shouldn't
+            # be here. Simulates changes to labels where we aren't expecting.
+            lambda x, y: [label.name],
+            app,
+            state_machine,
+            state_machine.states[1],
+        )
+
+    webhook.assert_not_called()
+    assert_history([
+        (None, 'start'),
+    ])
+
+
 def test_actions_retries_use_same_idempotency_token(app, create_label, mock_webhook, assert_history):
     state_machine = app.config.state_machines['test_machine']
 
