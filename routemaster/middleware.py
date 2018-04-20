@@ -40,8 +40,8 @@ def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
             exc_info: Optional[Any] = None,
         ) -> None:
             start_response(status, headers, exc_info)
-            if exc_info is not None:
-                app.set_rollback()
+            if exc_info is not None:  # pragma: no branch
+                app.set_rollback()  # pragma: no cover
 
         with app.new_session():
             yield from wsgi(environ, wrapped_start_response)
