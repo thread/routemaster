@@ -68,8 +68,10 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
         states_by_rank.c.new_state,
     ).filter(
         states_by_rank.c.rank == 1,
-        ~states_by_rank.c.new_state.in_(states) |
-        states_by_rank.c.new_state.is_(None),
+        ~(
+            states_by_rank.c.new_state.in_(states) |
+            states_by_rank.c.new_state.is_(None)
+        ),
     ).all()
 
     if invalid_labels_and_states:
