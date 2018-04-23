@@ -51,6 +51,13 @@ def test_logger(app_config, logger, kwargs):
         with logger.process_webhook(state_machine, state):
             raise RuntimeError("Error must propagate")
 
+    with logger.process_request({}):
+        pass
+
+    with pytest.raises(RuntimeError):
+        with logger.process_request({}):
+            raise RuntimeError("Error must propagate")
+
     logger.debug("test")
     logger.info("test")
     logger.warning("test")

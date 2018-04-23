@@ -28,6 +28,15 @@ class BaseLogger:
         """Wraps the processing of a webhook for logging purposes."""
         yield
 
+    @contextlib.contextmanager
+    def process_request(self, environ):
+        """
+        Wraps the processing of a request for logging purposes.
+
+        Note, this wraps at the WSGI level, not the Flask level.
+        """
+        yield
+
     def webhook_response(self, response):
         """Logs the receipt of a response from a webhook."""
         pass
