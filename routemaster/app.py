@@ -77,7 +77,7 @@ class App(threading.local):
                 self._current_session.rollback()
             else:
                 self._current_session.commit()
-        except BaseException:
+        except:  # noqa: B901, E722 - Unconditional re-raise
             self._current_session.rollback()
             raise
         finally:
