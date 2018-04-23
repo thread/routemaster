@@ -79,3 +79,18 @@ state_machines:
 
       - gate: end
         exit_condition: false
+
+plugins:
+  logging:
+
+    - class: routemaster.logging:PythonLogger
+      kwargs:
+        log_level: DEBUG
+
+    - class: routemaster_prometheus:PrometheusLogger
+      kwargs:
+        path: /metrics
+
+    - class: routemaster_sentry:SentryLogger
+      kwargs:
+        dsn: https://xxxxxxx:xxxxxxx@sentry.io/xxxxxxx
