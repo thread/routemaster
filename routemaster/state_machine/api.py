@@ -16,7 +16,6 @@ from routemaster.state_machine.utils import (
 from routemaster.state_machine.utils import \
     get_label_metadata as get_label_metadata_internal
 from routemaster.state_machine.utils import (
-    start_state_machine,
     needs_gate_evaluation_for_metadata_change,
 )
 from routemaster.state_machine.exceptions import (
@@ -75,14 +74,25 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     ).scalar():
         raise LabelAlreadyExists(label)
 
-    app.session.add(Label(
+    dblabel = Label(
         name=label.name,
         state_machine=state_machine.name,
         metadata=metadata,
-    ))
-    app.session.flush()
+    )
 
-    start_state_machine(app, state_machine, label)
+    new_entry = History(
+        label_name=dblabel.name,
+        label_state_machine=dblabel.state_machine,
+        old_state=None,
+        new_state=state_machine.states[0].name,
+    )
+
+    # Use foreign keys correctly with SQLAlchemy so that this intermediate
+    # flush can go away. Careful about ordering for now.
+    app.session.add(dblabel)
+    app.session.flush()
+    app.session.add(new_entry)
+
     process_transitions(app, label)
 
     return metadata
