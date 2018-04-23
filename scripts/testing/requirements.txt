@@ -1,9 +1,9 @@
 tox
 pytest
 pytest-cov
-pytest-flask
 pytest-faulthandler
 freezegun
 mypy
 httpretty
 pytest-pythonpath
+git+https://github.com/danpalmer/werkzeug

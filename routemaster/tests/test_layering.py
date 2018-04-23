@@ -21,6 +21,7 @@ DEPENDENCIES = (
     ('cli', 'app'),
     ('cli', 'gunicorn_application'),
     ('cli', 'validation'),
+    ('cli', 'middleware'),
 
     ('exit_conditions', 'context'),
     ('exit_conditions', 'utils'),
@@ -42,6 +43,7 @@ DEPENDENCIES = (
     ('app', 'db'),
     ('app', 'config'),
     ('app', 'logging'),
+    ('app', 'webhooks'),
 
     ('server', 'state_machine'),
     ('server', 'version'),
@@ -58,7 +60,12 @@ DEPENDENCIES = (
 
     ('webhooks', 'config'),
 
+    ('gunicorn_application', 'utils'),
+
     ('logging', 'config'),
+
+    ('middleware', 'utils'),
+    ('middleware', 'app'),
 )
 
 EXCLUDED_MODULES = (

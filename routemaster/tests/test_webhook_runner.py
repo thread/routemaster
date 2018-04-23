@@ -5,7 +5,6 @@ import httpretty
 from routemaster.webhooks import (
     WebhookResult,
     RequestsWebhookRunner,
-    webhook_runner_for_state_machine,
 )
 
 
@@ -90,7 +89,7 @@ def test_requests_webhook_runner_passes_post_data_through():
 
 
 @httpretty.activate
-def test_requests_webhook_runner_for_state_machine_uses_webhook_config(app_config):
+def test_requests_webhook_runner_for_state_machine_uses_webhook_config(app):
     httpretty.register_uri(
         httpretty.POST,
         'http://example.com/',
@@ -98,8 +97,8 @@ def test_requests_webhook_runner_for_state_machine_uses_webhook_config(app_confi
         content_type='application/json',
     )
 
-    state_machine = app_config.config.state_machines['test_machine']
-    runner = webhook_runner_for_state_machine(state_machine)
+    state_machine = app.config.state_machines['test_machine']
+    runner = app.get_webhook_runner(state_machine)
     runner('http://example.com', 'application/test-data', b'\0\xff', '')
 
     last_request = httpretty.last_request()
@@ -108,7 +107,7 @@ def test_requests_webhook_runner_for_state_machine_uses_webhook_config(app_confi
 
 
 @httpretty.activate
-def test_requests_webhook_runner_for_state_machine_does_not_apply_headers_for_non_matching_url(app_config):
+def test_requests_webhook_runner_for_state_machine_does_not_apply_headers_for_non_matching_url(app):
     httpretty.register_uri(
         httpretty.POST,
         'http://not-example.com/',
@@ -116,8 +115,8 @@ def test_requests_webhook_runner_for_state_machine_does_not_apply_headers_for_no
         content_type='application/json',
     )
 
-    state_machine = app_config.config.state_machines['test_machine']
-    runner = webhook_runner_for_state_machine(state_machine)
+    state_machine = app.config.state_machines['test_machine']
+    runner = app.get_webhook_runner(state_machine)
     runner('http://not-example.com', 'application/test-data', b'\0\xff', '')
 
     last_request = httpretty.last_request()

@@ -5,14 +5,11 @@ import hashlib
 
 from sqlalchemy import func
 
-from routemaster.db import history
+from routemaster.db import History
 from routemaster.app import App
 from routemaster.utils import template_url
 from routemaster.config import State, Action, StateMachine
-from routemaster.webhooks import (
-    WebhookResult,
-    webhook_runner_for_state_machine,
-)
+from routemaster.webhooks import WebhookResult
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
     choose_next_state,
@@ -29,7 +26,6 @@ def process_action(
     state: State,
     state_machine: StateMachine,
     label: LabelRef,
-    conn,
 ) -> bool:
     """
     Process an action for a label.
@@ -47,18 +43,18 @@ def process_action(
 
     action = state
 
-    metadata, deleted = get_label_metadata(label, state_machine, conn)
+    metadata, deleted = get_label_metadata(app, label, state_machine)
     if deleted:
         raise DeletedLabel(label)
 
-    latest_history = get_current_history(label, conn)
+    latest_history = get_current_history(app, label)
 
     webhook_data = json.dumps({
         'metadata': metadata,
         'label': label.name,
     }, sort_keys=True).encode('utf-8')
 
-    run_webhook = webhook_runner_for_state_machine(state_machine)
+    run_webhook = app.get_webhook_runner(state_machine)
 
     idempotency_token = _calculate_idempotency_token(label, latest_history)
 
@@ -84,7 +80,7 @@ def process_action(
     )
     next_state = choose_next_state(state_machine, action, context)
 
-    conn.execute(history.insert().values(
+    app.session.add(History(
         label_state_machine=state_machine.name,
         label_name=label.name,
         created=func.now(),
