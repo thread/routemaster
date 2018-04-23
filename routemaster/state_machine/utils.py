@@ -28,22 +28,6 @@ def get_state_machine(app: App, label: LabelRef) -> StateMachine:
         raise UnknownStateMachine(label.state_machine)
 
 
-def start_state_machine(
-    app: App,
-    state_machine: StateMachine,
-    label: LabelRef,
-) -> None:
-    """Create the first history entry for a label in a state machine."""
-    new_entry = History(
-        label_name=label.name,
-        label_state_machine=label.state_machine,
-        old_state=None,
-        new_state=state_machine.states[0].name,
-    )
-    app.session.add(new_entry)
-    app.session.flush()
-
-
 def choose_next_state(
     state_machine: StateMachine,
     current_state: State,
@@ -135,7 +119,7 @@ def labels_in_state(
     state: State,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
-    return _labels_in_state(app, state_machine, state, [])
+    return _labels_in_state(app, state_machine, state, True)
 
 
 def labels_needing_metadata_update_retry_in_gate(
@@ -154,7 +138,7 @@ def labels_needing_metadata_update_retry_in_gate(
         app,
         state_machine,
         state,
-        [Label.metadata_triggers_processed == False],  # noqa
+        ~Label.metadata_triggers_processed,
     )
 
 
@@ -162,7 +146,7 @@ def _labels_in_state(
     app: App,
     state_machine: StateMachine,
     state: State,
-    filters: List[Any],
+    filter_: Any,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     rank = func.row_number().over(
@@ -179,7 +163,7 @@ def _labels_in_state(
         new_state=state.name,
     ).from_self().filter(
         rank == 1,
-    ).join(Label).filter(*filters)
+    ).join(Label).filter(filter_)
 
     return [x for x, _ in ranked_transitions]
 

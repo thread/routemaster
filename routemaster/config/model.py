@@ -18,8 +18,8 @@ from dataclasses import dataclass
 
 from routemaster.exit_conditions import ExitConditionProgram
 
-if TYPE_CHECKING:  # pragma: no branch
-    from routemaster.context import Context  # noqa pragma: no cover
+if TYPE_CHECKING:
+    from routemaster.context import Context  # noqa
 
 
 class TimeTrigger(NamedTuple):

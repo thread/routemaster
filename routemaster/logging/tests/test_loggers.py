@@ -22,9 +22,9 @@ TEST_CASES = (
 
 
 @pytest.mark.parametrize('logger, kwargs', TEST_CASES)
-def test_logger(app_config, logger, kwargs):
-    logger = logger(app_config.config, **kwargs)
-    state_machine = app_config.config.state_machines['test_machine']
+def test_logger(app, logger, kwargs):
+    logger = logger(app.config, **kwargs)
+    state_machine = app.config.state_machines['test_machine']
     state = state_machine.states[0]
     feed_url = 'https://localhost'
 

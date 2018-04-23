@@ -2,6 +2,7 @@ import os
 import re
 import datetime
 import contextlib
+from pathlib import Path
 from unittest import mock
 
 import yaml
@@ -356,3 +357,31 @@ def test_raises_for_unparseable_database_port_in_environment_variable():
 def test_multiple_feeds_same_name_invalid():
     with assert_config_error("FeedConfigs must have unique names at state_machines.example.feeds"):
         load_config(yaml_data('multiple_feeds_same_name_invalid'))
+
+
+def test_example_config_loads():
+    """
+    Test that the example.yaml in this repo can be loaded.
+
+    This ensures that the example file itself is valid and is not intended as a
+    test of the system.
+    """
+
+    repo_root = Path(__file__).parent.parent.parent.parent
+    example_yaml = repo_root / 'example.yaml'
+
+    assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
+
+    example_config = load_config(yaml.load(example_yaml.read_text()))
+
+    # Some basic assertions that we got the right thing loaded
+    assert list(example_config.state_machines.keys()) == ['user_lifecycle']
+
+    user_lifecycle_machine = example_config.state_machines['user_lifecycle']
+
+    jacquard_feed = FeedConfig('jacquard', 'http://localhost:1212/<label>')
+    assert user_lifecycle_machine.feeds == [jacquard_feed]
+
+    assert len(user_lifecycle_machine.states) == 10
+    assert user_lifecycle_machine.states[0].name == 'start'
+    assert user_lifecycle_machine.states[9].name == 'end'
