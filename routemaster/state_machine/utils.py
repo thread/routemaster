@@ -138,7 +138,7 @@ def labels_needing_metadata_update_retry_in_gate(
         app,
         state_machine,
         state,
-        Label.metadata_triggers_processed == False,  # noqa
+        ~Label.metadata_triggers_processed,
     )
 
 
