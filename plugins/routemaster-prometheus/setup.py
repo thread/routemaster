@@ -47,5 +47,6 @@ setup(
     install_requires=(
         'routemaster',
         'prometheus_client',
+        'prometheus_flask_exporter',
     ),
 )
