@@ -1,9 +1,7 @@
 import json
 from unittest import mock
 
-from sqlalchemy import and_, select
-
-from routemaster.db import labels, history
+from routemaster.db import Label, History
 
 
 def test_root(client, version):
@@ -17,7 +15,7 @@ def test_root(client, version):
 
 def test_root_error_state(client, version):
     with mock.patch(
-        'routemaster.server.endpoints.server.config.app.db.begin',
+        'sqlalchemy.orm.query.Query.count',
         side_effect=RuntimeError,
     ):
         response = client.get('/')
@@ -29,7 +27,7 @@ def test_root_error_state(client, version):
         }
 
 
-def test_enumerate_state_machines(client, app_config):
+def test_enumerate_state_machines(client, app):
     response = client.get('/state-machines')
     assert response.status_code == 200
     assert response.json == {'state-machines': [
@@ -37,13 +35,13 @@ def test_enumerate_state_machines(client, app_config):
             'name': state_machine.name,
             'labels': f'/state-machines/{state_machine.name}/labels',
         }
-        for state_machine in app_config.config.state_machines.values()
+        for state_machine in app.config.state_machines.values()
     ]}
 
 
-def test_create_label(client, app_config, mock_test_feed):
+def test_create_label(client, app, mock_test_feed):
     label_name = 'foo'
-    state_machine = app_config.config.state_machines['test_machine']
+    state_machine = app.config.state_machines['test_machine']
     label_metadata = {'bar': 'baz'}
 
     with mock_test_feed():
@@ -56,17 +54,16 @@ def test_create_label(client, app_config, mock_test_feed):
     assert response.status_code == 201
     assert response.json['metadata'] == {'bar': 'baz'}
 
-    with app_config.db.begin() as conn:
-        assert conn.scalar(labels.count()) == 1
-        label = conn.execute(labels.select()).fetchone()
+    with app.new_session():
+        label = app.session.query(Label).one()
         assert label.name == label_name
         assert label.state_machine == state_machine.name
         assert label.metadata == label_metadata
 
-        history_entry = conn.execute(history.select()).fetchone()
-        assert history_entry.label_name == label_name
-        assert history_entry.old_state is None
-        assert history_entry.new_state == state_machine.states[0].name
+        history = app.session.query(History).one()
+        assert history.label_name == label_name
+        assert history.old_state is None
+        assert history.new_state == state_machine.states[0].name
 
 
 def test_create_label_404_for_not_found_state_machine(client):
@@ -106,22 +103,22 @@ def test_create_label_409_for_already_existing_label(client, create_label):
     assert response.status_code == 409
 
 
-def test_update_label(client, app_config, create_label):
+def test_update_label(client, app, create_label, mock_webhook, mock_test_feed):
     create_label('foo', 'test_machine', {})
 
     label_metadata = {'bar': 'baz'}
-    response = client.patch(
-        '/state-machines/test_machine/labels/foo',
-        data=json.dumps({'metadata': label_metadata}),
-        content_type='application/json',
-    )
+    with mock_webhook(), mock_test_feed():
+        response = client.patch(
+            '/state-machines/test_machine/labels/foo',
+            data=json.dumps({'metadata': label_metadata}),
+            content_type='application/json',
+        )
 
     assert response.status_code == 200
     assert response.json['metadata'] == label_metadata
 
-    with app_config.db.begin() as conn:
-        result = conn.execute(labels.select())
-        label = result.fetchone()
+    with app.new_session():
+        label = app.session.query(Label).one()
         assert label.metadata == label_metadata
 
 
@@ -153,7 +150,7 @@ def test_update_label_400_for_invalid_body(client, create_label):
     assert response.status_code == 400
 
 
-def test_update_label_400_for_no_metadata(client, app_config, create_label):
+def test_update_label_400_for_no_metadata(client, app, create_label):
     create_label('foo', 'test_machine', {})
 
     label_metadata = {'bar': 'baz'}
@@ -227,8 +224,9 @@ def test_list_labels_when_many(client, create_label):
     assert response.json['labels'] == [{'name': 'foo'}, {'name': 'quox'}]
 
 
-def test_update_label_moves_label(client, create_label, app_config, mock_webhook, mock_test_feed):
-    create_label('foo', 'test_machine', {})
+def test_update_label_moves_label(client, create_label, app, mock_webhook, mock_test_feed, current_state):
+    label = create_label('foo', 'test_machine', {})
+
     with mock_webhook() as webhook, mock_test_feed():
         response = client.patch(
             '/state-machines/test_machine/labels/foo',
@@ -236,24 +234,15 @@ def test_update_label_moves_label(client, create_label, app_config, mock_webhook
             content_type='application/json',
         )
         webhook.assert_called_once()
+
     assert response.status_code == 200
     assert response.json['metadata'] == {'should_progress': True}
-
-    with app_config.db.begin() as conn:
-        latest_state = conn.scalar(
-            select([history.c.new_state]).where(and_(
-                history.c.label_name == 'foo',
-                history.c.label_state_machine == 'test_machine',
-            )).order_by(
-                history.c.created.desc(),
-            ).limit(1)
-        )
-        assert latest_state == 'end'
+    assert current_state(label) == 'end'
 
 
-def test_delete_existing_label(client, app_config, create_label):
+def test_delete_existing_label(client, app, create_label):
     label_name = 'foo'
-    state_machine = app_config.config.state_machines['test_machine']
+    state_machine = app.config.state_machines['test_machine']
 
     create_label(label_name, state_machine.name, {'bar': 'baz'})
 
@@ -264,22 +253,22 @@ def test_delete_existing_label(client, app_config, create_label):
 
     assert response.status_code == 204
 
-    with app_config.db.begin() as conn:
-        assert conn.scalar(labels.count()) == 1
-        label = conn.execute(labels.select()).fetchone()
+    with app.new_session():
+        label = app.session.query(Label).one()
         assert label.name == label_name
         assert label.state_machine == state_machine.name
         assert label.metadata == {}
 
-        history_entry = conn.execute(
-            history.select().order_by(history.c.created.desc()),
-        ).fetchone()
-        assert history_entry.label_name == label_name
-        assert history_entry.old_state == state_machine.states[0].name
-        assert history_entry.new_state is None
+        history = app.session.query(History).order_by(
+            History.id.desc(),
+        ).first()
+        assert history is not None
+        assert history.label_name == label_name
+        assert history.old_state == state_machine.states[0].name
+        assert history.new_state is None
 
 
-def test_delete_non_existent_label(client, app_config):
+def test_delete_non_existent_label(client, app):
     # When deleting a non-existent label, we do nothing.
 
     response = client.delete(
@@ -289,9 +278,9 @@ def test_delete_non_existent_label(client, app_config):
 
     assert response.status_code == 204
 
-    with app_config.db.begin() as conn:
-        assert conn.scalar(labels.count()) == 0
-        assert conn.scalar(history.count()) == 0
+    with app.new_session():
+        assert app.session.query(Label).count() == 0
+        assert app.session.query(History).count() == 0
 
 
 def test_delete_label_404_for_not_found_state_machine(client):
@@ -306,7 +295,7 @@ def test_list_labels_excludes_deleted_labels(
     client,
     create_label,
     create_deleted_label,
-    app_config,
+    app,
 ):
     create_deleted_label('foo', 'test_machine')
     create_label('quox', 'test_machine', {'spam': 'ham'})
@@ -319,7 +308,7 @@ def test_list_labels_excludes_deleted_labels(
 def test_get_label_410_for_deleted_label(
     client,
     create_deleted_label,
-    app_config,
+    app,
 ):
     create_deleted_label('foo', 'test_machine')
 
@@ -340,7 +329,7 @@ def test_create_label_409_for_deleted_label(client, create_label):
 def test_update_label_410_for_deleted_label(
     client,
     create_deleted_label,
-    app_config,
+    app,
 ):
     create_deleted_label('foo', 'test_machine')
 
@@ -350,3 +339,8 @@ def test_update_label_410_for_deleted_label(
         content_type='application/json',
     )
     assert response.status_code == 410
+
+
+def test_check_loggers(client):
+    response = client.get('/check-loggers')
+    assert response.status_code == 500

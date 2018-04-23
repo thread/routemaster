@@ -4,6 +4,7 @@ import pkg_resources
 from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
+from routemaster.db import Label
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -27,17 +28,16 @@ def status():
     """
     try:
         version = pkg_resources.working_set.by_key['routemaster'].version
-    except KeyError:
+    except KeyError:  # pragma: no cover
         version = 'development'
 
     try:
-        with server.config.app.db.begin() as conn:
-            conn.execute('select 1')
-            return jsonify({
-                'status': 'ok',
-                'state-machines': '/state-machines',
-                'version': version,
-            })
+        server.config.app.session.query(Label).count()
+        return jsonify({
+            'status': 'ok',
+            'state-machines': '/state-machines',
+            'version': version,
+        })
     except Exception:
         return jsonify({
             'status': 'error',

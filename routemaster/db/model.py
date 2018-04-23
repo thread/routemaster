@@ -1,6 +1,7 @@
 """Database model definition."""
 import datetime
 import functools
+from typing import Any
 
 import dateutil.tz
 from sqlalchemy import DDL, Table
@@ -15,9 +16,13 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     func,
 )
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
+
+Base: Any  # Workaround for https://github.com/python/mypy/issues/2477
+Base = declarative_base(metadata=metadata)
 
 Column = functools.partial(NullableColumn, nullable=False)
 
@@ -91,3 +96,32 @@ history = Table(
     # Null indicates being deleted from a state machine
     NullableColumn('new_state', String),
 )
+
+
+# ORM classes
+
+
+class Label(Base):
+    """A single label including context."""
+
+    __table__ = labels
+
+    def __repr__(self):
+        """Return a useful debug representation."""
+        return (
+            f"Label(state_machine={self.state_machine!r}, name={self.name!r})"
+        )
+
+
+class History(Base):
+    """A single historical state transition of a label."""
+
+    __table__ = history
+
+    def __repr__(self):
+        """Return a useful debug representation."""
+        return (
+            f"History(id={self.id!r}, "
+            f"label_state_machine={self.label_state_machine!r}, "
+            f"label_name={self.label_name!r})"
+        )
