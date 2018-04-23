@@ -2,7 +2,7 @@
 import networkx
 from sqlalchemy import func
 
-from routemaster.db import Label, History
+from routemaster.db import History
 from routemaster.app import App
 from routemaster.config import Config, StateMachine
 
