@@ -262,6 +262,7 @@ def test_delete_existing_label(client, app_config, create_label):
         history = app_config.session.query(History).order_by(
             History.id.desc(),
         ).first()
+        assert history is not None
         assert history.label_name == label_name
         assert history.old_state == state_machine.states[0].name
         assert history.new_state is None
