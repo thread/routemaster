@@ -119,7 +119,7 @@ def labels_in_state(
     state: State,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
-    return _labels_in_state(app, state_machine, state, [])
+    return _labels_in_state(app, state_machine, state, True)
 
 
 def labels_needing_metadata_update_retry_in_gate(
@@ -138,7 +138,7 @@ def labels_needing_metadata_update_retry_in_gate(
         app,
         state_machine,
         state,
-        [Label.metadata_triggers_processed == False],  # noqa
+        Label.metadata_triggers_processed == False,  # noqa
     )
 
 
@@ -146,7 +146,7 @@ def _labels_in_state(
     app: App,
     state_machine: StateMachine,
     state: State,
-    filters: List[Any],
+    filter_: Any,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     rank = func.row_number().over(
@@ -163,7 +163,7 @@ def _labels_in_state(
         new_state=state.name,
     ).from_self().filter(
         rank == 1,
-    ).join(Label).filter(*filters)
+    ).join(Label).filter(filter_)
 
     return [x for x, _ in ranked_transitions]
 
