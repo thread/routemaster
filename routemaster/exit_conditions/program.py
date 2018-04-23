@@ -11,8 +11,8 @@ from routemaster.exit_conditions.error_display import (
     format_parse_error_message,
 )
 
-if TYPE_CHECKING:  # pragma: no branch
-    from routemaster.context import Context  # noqa pragma: no cover
+if TYPE_CHECKING:
+    from routemaster.context import Context  # noqa
 
 
 class ExitConditionProgram(object):
