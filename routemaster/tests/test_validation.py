@@ -173,7 +173,7 @@ def test_label_in_deleted_state_on_per_state_machine_basis(
     _validate_state_machine(app, state_machine)
 
 
-def test_example_config_is_valid(app_config):
+def test_example_config_is_valid(app):
     """
     Test that the example.yaml in this repo is valid.
 
@@ -191,4 +191,4 @@ def test_example_config_is_valid(app_config):
     # quick check that we've loaded the config we expect
     assert list(example_config.state_machines.keys()) == ['user_lifecycle']
 
-    validate_config(app_config, example_config)
+    validate_config(app, example_config)
