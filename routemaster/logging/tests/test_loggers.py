@@ -69,5 +69,5 @@ def test_logger(app, logger, kwargs):
         logger.non_existent_logging_fn("test")
 
     response = requests.Response()
-    logger.webhook_response(response)
+    logger.webhook_response(state_machine, state, response)
     logger.feed_response(state_machine, state, feed_url, response)

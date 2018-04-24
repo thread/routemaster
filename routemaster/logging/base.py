@@ -37,7 +37,12 @@ class BaseLogger:
         """
         yield
 
-    def webhook_response(self, response):
+    def webhook_response(
+        self,
+        state_machine,
+        state,
+        response,
+    ):
         """Logs the receipt of a response from a webhook."""
         pass
 
