@@ -10,3 +10,7 @@ def test_program_equality():
 def test_program_hash():
     assert hash(ExitConditionProgram('true')) == hash(ExitConditionProgram('true'))
     assert hash(ExitConditionProgram('true')) != hash(ExitConditionProgram('false'))
+
+
+def test_program_repr():
+    assert repr(ExitConditionProgram('true')) == "ExitConditionProgram('true')"
