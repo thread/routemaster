@@ -23,16 +23,16 @@ cron_jobs_processed = Counter(
     ('fn_name', 'state_machine', 'state'),
 )
 
-webhooks_triggered = Counter(
-    'webhooks_triggered',
-    "Webhooks triggered",
-    ('state_machine', 'state'),
-)
-
 feed_requests = Counter(
     'feed_requests',
     "Feed requests",
-    ('feed_url', 'state_machine', 'state'),
+    ('feed_url', 'state_machine', 'state', 'status_code'),
+)
+
+webhook_requests = Counter(
+    'feed_requests',
+    "Feed requests",
+    ('state_machine', 'state', 'status_code'),
 )
 
 
@@ -63,18 +63,37 @@ class PrometheusLogger(BaseLogger):
         """Send webhook request exceptions to Prometheus."""
         with exceptions.labels(type='webhook').count_exceptions():
             yield
-            webhooks_triggered.labels(
-                state_machine=state_machine.name,
-                state=state.name,
-            ).inc()
 
     @contextlib.contextmanager
     def process_feed(self, state_machine, state, feed_url):
         """Send feed request exceptions to Prometheus."""
         with exceptions.labels(type='feed').count_exceptions():
             yield
-            feed_requests.labels(
-                feed_url=feed_url,
-                state_machine=state_machine.name,
-                state=state.name,
-            ).inc()
+
+    def feed_response(
+        self,
+        state_machine,
+        state,
+        feed_url,
+        response,
+    ):
+        """Log feed response with status code to Prometheus."""
+        feed_requests.labels(
+            feed_url=feed_url,
+            state_machine=state_machine.name,
+            state=state.name,
+            status_code=response.status_code,
+        ).inc()
+
+    def webhook_response(
+        self,
+        state_machine,
+        state,
+        response,
+    ):
+        """Log webhook response with status code to Prometheus."""
+        webhook_requests.labels(
+            state_machine=state_machine.name,
+            state=state.name,
+            status_code=response.status_code,
+        ).inc()
