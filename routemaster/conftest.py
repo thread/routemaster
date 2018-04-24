@@ -35,6 +35,7 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
 )
 from routemaster.server import server
@@ -275,7 +276,12 @@ def app(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
-        logging_plugins=kwargs.get('logging_plugins', []),
+        logging_plugins=kwargs.get('logging_plugins', [
+            LoggingPluginConfig(
+                dotted_path='routemaster.logging:PythonLogger',
+                kwargs={'log_level': 'DEBUG'},
+            ),
+        ]),
     ))
 
 
