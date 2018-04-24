@@ -29,7 +29,6 @@ def test_session_middleware_commits_transaction(app):
             state_machine='test_machine',
             metadata={},
         ))
-        app.session.flush()
 
         return b''
 
@@ -49,7 +48,6 @@ def test_session_middleware_rolls_back_transaction(app):
             state_machine='test_machine',
             metadata={},
         ))
-        app.session.flush()
 
         raise RuntimeError()
 

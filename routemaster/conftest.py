@@ -438,8 +438,6 @@ def set_metadata(app):
             db_label.metadata = dict_merge(db_label.metadata, update)
             db_label.metadata_triggers_processed = True
 
-            app.session.add(db_label)
-
             return db_label.metadata
     return _inner
 

@@ -60,7 +60,7 @@ def get_current_state(
     return state_machine.get_state(history_entry.new_state)
 
 
-def get_current_history(app: App, label: LabelRef) -> Any:
+def get_current_history(app: App, label: LabelRef) -> History:
     """Get a label's last history entry."""
     history_entry = app.session.query(History).filter_by(
         label_name=label.name,
@@ -100,7 +100,7 @@ def needs_gate_evaluation_for_metadata_change(
     return False, current_state
 
 
-def lock_label(app: App, label: LabelRef):
+def lock_label(app: App, label: LabelRef) -> Label:
     """Lock a label in the current transaction."""
     row = app.session.query(Label).filter_by(
         name=label.name,

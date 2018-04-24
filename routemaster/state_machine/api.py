@@ -74,24 +74,19 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     ).scalar():
         raise LabelAlreadyExists(label)
 
-    dblabel = Label(
-        name=label.name,
-        state_machine=state_machine.name,
-        metadata=metadata,
+    app.session.add(
+        Label(
+            name=label.name,
+            state_machine=state_machine.name,
+            metadata=metadata,
+            history=[
+                History(
+                    old_state=None,
+                    new_state=state_machine.states[0].name,
+                ),
+            ],
+        ),
     )
-
-    new_entry = History(
-        label_name=dblabel.name,
-        label_state_machine=dblabel.state_machine,
-        old_state=None,
-        new_state=state_machine.states[0].name,
-    )
-
-    # Use foreign keys correctly with SQLAlchemy so that this intermediate
-    # flush can go away. Careful about ordering for now.
-    app.session.add(dblabel)
-    app.session.flush()
-    app.session.add(new_entry)
 
     process_transitions(app, label)
 
@@ -129,7 +124,6 @@ def update_metadata_for_label(
 
     row.metadata = new_metadata
     row.metadata_triggers_processed = not needs_gate_evaluation
-    app.session.add(row)
 
     # Try to move the label forward, but this is not a hard requirement as
     # the cron will come back around to progress the label later.
@@ -207,13 +201,10 @@ def delete_label(app: App, label: LabelRef) -> None:
     # Record the label as having been deleted and remove its metadata
     row.metadata = {}
     row.deleted = True
-    app.session.add(row)
 
     # Add a history entry for the deletion
     current_state = get_current_state(app, label, state_machine)
-    app.session.add(History(
-        label_name=label.name,
-        label_state_machine=label.state_machine,
+    row.history.append(History(
         old_state=current_state.name,
         new_state=None,
     ))
