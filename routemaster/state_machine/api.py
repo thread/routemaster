@@ -74,24 +74,19 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     ).scalar():
         raise LabelAlreadyExists(label)
 
-    dblabel = Label(
-        name=label.name,
-        state_machine=state_machine.name,
-        metadata=metadata,
+    app.session.add(
+        Label(
+            name=label.name,
+            state_machine=state_machine.name,
+            metadata=metadata,
+            history=[
+                History(
+                    old_state=None,
+                    new_state=state_machine.states[0].name,
+                ),
+            ],
+        ),
     )
-
-    new_entry = History(
-        label_name=dblabel.name,
-        label_state_machine=dblabel.state_machine,
-        old_state=None,
-        new_state=state_machine.states[0].name,
-    )
-
-    # Use foreign keys correctly with SQLAlchemy so that this intermediate
-    # flush can go away. Careful about ordering for now.
-    app.session.add(dblabel)
-    app.session.flush()
-    app.session.add(new_entry)
 
     process_transitions(app, label)
 
