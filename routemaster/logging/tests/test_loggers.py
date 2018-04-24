@@ -20,12 +20,12 @@ TEST_CASES: Iterable[Tuple[Type[BaseLogger], Dict[str, Any]]] = [
         PythonLogger(None, log_level='WARN'),
         BaseLogger(None, {}),
     ]}),
-)
+]
 
 
-@pytest.mark.parametrize('logger, kwargs', TEST_CASES)
-def test_logger(app, logger, kwargs):
-    logger = logger(app.config, **kwargs)
+@pytest.mark.parametrize('klass, kwargs', TEST_CASES)
+def test_logger(app, klass, kwargs):
+    logger = klass(app.config, **kwargs)
     state_machine = app.config.state_machines['test_machine']
     state = state_machine.states[0]
     feed_url = 'https://localhost'
