@@ -1,10 +1,10 @@
 """Core API endpoints for routemaster service."""
 
+import sqlalchemy
 import pkg_resources
 from flask import Flask, abort, jsonify, request
 
 from routemaster import state_machine
-from routemaster.db import Label
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -32,7 +32,7 @@ def status():
         version = 'development'
 
     try:
-        server.config.app.session.query(Label).count()
+        server.config.app.session.query(sqlalchemy.literal(1)).one()
         return jsonify({
             'status': 'ok',
             'state-machines': '/state-machines',

@@ -15,7 +15,7 @@ def test_root(client, version):
 
 def test_root_error_state(client, version):
     with mock.patch(
-        'sqlalchemy.orm.query.Query.count',
+        'sqlalchemy.orm.query.Query.one',
         side_effect=RuntimeError,
     ):
         response = client.get('/')
