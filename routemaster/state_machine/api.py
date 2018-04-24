@@ -209,9 +209,7 @@ def delete_label(app: App, label: LabelRef) -> None:
 
     # Add a history entry for the deletion
     current_state = get_current_state(app, label, state_machine)
-    app.session.add(History(
-        label_name=label.name,
-        label_state_machine=label.state_machine,
+    row.history.append(History(
         old_state=current_state.name,
         new_state=None,
     ))
