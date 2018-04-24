@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     func,
 )
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -117,6 +118,8 @@ class History(Base):
     """A single historical state transition of a label."""
 
     __table__ = history
+
+    label = relationship(Label, backref='history')
 
     def __repr__(self):
         """Return a useful debug representation."""
