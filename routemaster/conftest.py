@@ -4,6 +4,7 @@ import os
 import re
 import json
 import datetime
+import functools
 import contextlib
 from typing import Any, Dict
 from unittest import mock
@@ -453,7 +454,12 @@ def make_context(app):
         @contextlib.contextmanager
         def feed_logging_context(feed_url):
             with logger.process_feed(state_machine, state, feed_url):
-                yield logger.feed_response
+                yield functools.partial(
+                    logger.feed_response,
+                    state_machine,
+                    state,
+                    feed_url,
+                )
 
         return Context(
             label=kwargs['label'],

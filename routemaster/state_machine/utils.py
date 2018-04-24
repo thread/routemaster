@@ -1,6 +1,7 @@
 """Utilities for state machine execution."""
 
 import datetime
+import functools
 import contextlib
 from typing import Any, Dict, List, Tuple
 
@@ -188,7 +189,12 @@ def context_for_label(
     @contextlib.contextmanager
     def feed_logging_context(feed_url):
         with logger.process_feed(state_machine, state, feed_url):
-            yield logger.feed_response
+            yield functools.partial(
+                logger.feed_response,
+                state_machine,
+                state,
+                feed_url,
+            )
 
     return Context(
         label=label.name,

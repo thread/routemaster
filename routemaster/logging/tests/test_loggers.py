@@ -70,4 +70,4 @@ def test_logger(app, logger, kwargs):
 
     response = requests.Response()
     logger.webhook_response(response)
-    logger.feed_response(response)
+    logger.feed_response(state_machine, state, feed_url, response)
