@@ -1,3 +1,5 @@
+from typing import Any, Dict, Type, Tuple, Iterable
+
 import pytest
 import requests
 
@@ -6,7 +8,7 @@ from routemaster.logging.base import BaseLogger
 from routemaster.logging.split_logger import SplitLogger
 from routemaster.logging.python_logger import PythonLogger
 
-TEST_CASES = (
+TEST_CASES: Iterable[Tuple[Type[BaseLogger], Dict[str, Any]]] = [
     (BaseLogger, {}),
     (PythonLogger, {'log_level': 'INFO'}),
     (PythonLogger, {'log_level': 'ERROR'}),
