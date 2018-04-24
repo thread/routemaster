@@ -129,7 +129,6 @@ def update_metadata_for_label(
 
     row.metadata = new_metadata
     row.metadata_triggers_processed = not needs_gate_evaluation
-    app.session.add(row)
 
     # Try to move the label forward, but this is not a hard requirement as
     # the cron will come back around to progress the label later.
@@ -207,7 +206,6 @@ def delete_label(app: App, label: LabelRef) -> None:
     # Record the label as having been deleted and remove its metadata
     row.metadata = {}
     row.deleted = True
-    app.session.add(row)
 
     # Add a history entry for the deletion
     current_state = get_current_state(app, label, state_machine)
