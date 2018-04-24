@@ -60,7 +60,7 @@ def get_current_state(
     return state_machine.get_state(history_entry.new_state)
 
 
-def get_current_history(app: App, label: LabelRef) -> Any:
+def get_current_history(app: App, label: LabelRef) -> History:
     """Get a label's last history entry."""
     history_entry = app.session.query(History).filter_by(
         label_name=label.name,
