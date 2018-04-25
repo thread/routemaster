@@ -24,7 +24,7 @@ class SentryLogger(BaseLogger):
     def __init__(self, *args, dsn):
         try:
             version = pkg_resources.working_set.by_key['routemaster'].version
-        except KeyError:
+        except KeyError:  # pragma: no cover
             version = 'dev'
 
         self.client = Client(

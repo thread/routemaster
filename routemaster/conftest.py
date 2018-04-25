@@ -4,6 +4,7 @@ import os
 import re
 import json
 import datetime
+import functools
 import contextlib
 from typing import Any, Dict
 from unittest import mock
@@ -34,6 +35,7 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
 )
 from routemaster.server import server
@@ -274,7 +276,12 @@ def app(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
-        logging_plugins=kwargs.get('logging_plugins', []),
+        logging_plugins=kwargs.get('logging_plugins', [
+            LoggingPluginConfig(
+                dotted_path='routemaster.logging:PythonLogger',
+                kwargs={'log_level': 'DEBUG'},
+            ),
+        ]),
     ))
 
 
@@ -453,7 +460,12 @@ def make_context(app):
         @contextlib.contextmanager
         def feed_logging_context(feed_url):
             with logger.process_feed(state_machine, state, feed_url):
-                yield logger.feed_response
+                yield functools.partial(
+                    logger.feed_response,
+                    state_machine,
+                    state,
+                    feed_url,
+                )
 
         return Context(
             label=kwargs['label'],

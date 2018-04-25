@@ -55,10 +55,8 @@ def logging_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
         environ: WSGIEnvironment,
         start_response: StartResponse,
     ) -> Iterable[bytes]:
-        app.logger.info("{method} {path}".format(
-            method=environ['REQUEST_METHOD'],
-            path=environ['PATH_INFO'],
-        ))
 
-        yield from wsgi(environ, start_response)
+        with app.logger.process_request(environ):
+            yield from wsgi(environ, start_response)
+
     return inner
