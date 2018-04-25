@@ -28,11 +28,15 @@ setup(
     classifiers=(
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
+        'Framework :: Flask',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Operating System :: POSIX',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Office/Business',
     ),
 
