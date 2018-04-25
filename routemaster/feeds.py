@@ -5,8 +5,8 @@ from typing import Any, Dict, Callable, Optional
 import requests
 from dataclasses import InitVar, dataclass
 
-from routemaster.config import StateMachine
 from routemaster.utils import get_path, template_url
+from routemaster.config import StateMachine
 
 
 def feeds_for_state_machine(state_machine: StateMachine) -> Dict[str, 'Feed']:
