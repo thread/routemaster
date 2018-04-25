@@ -13,7 +13,6 @@ from routemaster.state_machine import (
     LabelAlreadyExists,
     UnknownStateMachine,
     convert_to_network,
-    draw_state_machine,
 )
 
 server = Flask('routemaster')

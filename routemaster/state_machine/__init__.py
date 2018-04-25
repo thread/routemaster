@@ -25,7 +25,6 @@ from routemaster.state_machine.exceptions import (
 )
 from routemaster.state_machine.visualisation import (
     convert_to_network,
-    draw_state_machine,
 )
 
 __all__ = (
@@ -42,7 +41,6 @@ __all__ = (
     'labels_in_state',
     'convert_to_network',
     'get_label_metadata',
-    'draw_state_machine',
     'LabelAlreadyExists',
     'LabelStateProcessor',
     'UnknownStateMachine',
