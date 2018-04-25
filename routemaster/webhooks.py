@@ -5,7 +5,7 @@ from typing import Any, Dict, Callable, Iterable
 
 import requests
 
-from routemaster.config import State, Webhook, StateMachine
+from routemaster.config import Webhook, StateMachine
 
 
 @enum.unique
