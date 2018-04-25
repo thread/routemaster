@@ -23,24 +23,28 @@ class PrometheusLogger(BaseLogger):
             'exceptions',
             "Exceptions logged",
             ('type',),
+            registry=self.registry,
         )
 
         self.cron_jobs_processed = Counter(
             'cron_jobs_processed',
             "Cron jobs processed",
             ('fn_name', 'state_machine', 'state'),
+            registry=self.registry,
         )
 
         self.feed_requests = Counter(
             'feed_requests',
             "Feed requests",
             ('feed_url', 'state_machine', 'state', 'status_code'),
+            registry=self.registry,
         )
 
         self.webhook_requests = Counter(
             'webhook_requests',
             "Webhook requests",
             ('state_machine', 'state', 'status_code'),
+            registry=self.registry,
         )
 
         super().__init__(*args)
