@@ -1,5 +1,6 @@
 """Core API endpoints for routemaster service."""
 
+import sqlalchemy
 import pkg_resources
 from flask import Flask, Response, abort, jsonify, request
 
@@ -28,17 +29,16 @@ def status():
     """
     try:
         version = pkg_resources.working_set.by_key['routemaster'].version
-    except KeyError:
+    except KeyError:  # pragma: no cover
         version = 'development'
 
     try:
-        with server.config.app.db.begin() as conn:
-            conn.execute('select 1')
-            return jsonify({
-                'status': 'ok',
-                'state-machines': '/state-machines',
-                'version': version,
-            })
+        server.config.app.session.query(sqlalchemy.literal(1)).one()
+        return jsonify({
+            'status': 'ok',
+            'state-machines': '/state-machines',
+            'version': version,
+        })
     except Exception:
         return jsonify({
             'status': 'error',

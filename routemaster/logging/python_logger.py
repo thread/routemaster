@@ -44,6 +44,16 @@ class PythonLogger(BaseLogger):
             f"in {state_machine.name} in {duration:.2f} seconds",
         )
 
+    @contextlib.contextmanager
+    def process_request(self, environ):
+        """Process a web request and log some basic info about it."""
+        self.info("{method} {path}".format(
+            method=environ.get('REQUEST_METHOD'),
+            path=environ.get('PATH_INFO'),
+        ))
+
+        yield
+
     def __getattr__(self, name):
         """Fall back to the logger API."""
         return getattr(self.logger, name)

@@ -160,13 +160,20 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install twine wheel m2r
+            pip install twine wheel
 
             python setup.py sdist
             python setup.py bdist_wheel
             twine upload dist/*
 
             cd plugins/routemaster-sentry
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
+            cd ../..
+
+            cd plugins/routemaster-prometheus
             python setup.py sdist
             python setup.py bdist_wheel
             twine upload dist/*

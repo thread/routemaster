@@ -58,10 +58,10 @@ def process_job(
 ):
     """Process a single instance of a single cron job."""
 
-    def _iter_labels_until_terminating(state_machine, state, conn):
+    def _iter_labels_until_terminating(state_machine, state):
         return itertools.takewhile(
             lambda _: not is_terminating(),
-            label_provider(state_machine, state, conn),
+            label_provider(app, state_machine, state),
         )
 
     try:

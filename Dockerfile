@@ -10,6 +10,7 @@ COPY dist/ .
 
 # Install first-party plugins (inactive by default).
 COPY plugins/routemaster-sentry/dist/ .
+COPY plugins/routemaster-prometheus/dist/ .
 
 RUN pip install --no-cache-dir *.whl
 

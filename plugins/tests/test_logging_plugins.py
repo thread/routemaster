@@ -2,23 +2,22 @@ from typing import Any, Dict, Type, Tuple, Iterable
 
 import pytest
 import requests
+from flask import Flask
+from routemaster_sentry import SentryLogger
+from routemaster_prometheus import PrometheusLogger
 
-from routemaster.server import server
-from routemaster.logging.base import BaseLogger
-from routemaster.logging.split_logger import SplitLogger
-from routemaster.logging.python_logger import PythonLogger
+from routemaster.logging import BaseLogger, SplitLogger
+
+SENTRY_KWARGS = {'dsn': 'https://xxxxxxx:xxxxxxx@sentry.io/xxxxxxx'}
+PROMETHEUS_KWARGS = {'path': '/metrics'}
 
 TEST_CASES: Iterable[Tuple[Type[BaseLogger], Dict[str, Any]]] = [
-    (BaseLogger, {}),
-    (PythonLogger, {'log_level': 'INFO'}),
-    (PythonLogger, {'log_level': 'ERROR'}),
-    (SplitLogger, {'loggers': []}),
+    (SentryLogger, SENTRY_KWARGS),
+    (PrometheusLogger, PROMETHEUS_KWARGS),
+    (PrometheusLogger, {}),
     (SplitLogger, {'loggers': [
-        PythonLogger(None, log_level='WARN'),
-    ]}),
-    (SplitLogger, {'loggers': [
-        PythonLogger(None, log_level='WARN'),
-        BaseLogger(None, {}),
+        SentryLogger(None, **SENTRY_KWARGS),
+        PrometheusLogger(None, **PROMETHEUS_KWARGS),
     ]}),
 ]
 
@@ -30,6 +29,7 @@ def test_logger(app, klass, kwargs):
     state = state_machine.states[0]
     feed_url = 'https://localhost'
 
+    server = Flask('test_server')
     logger.init_flask(server)
 
     with logger.process_cron(state_machine, state, 'test_cron'):

@@ -4,6 +4,7 @@ import os
 import re
 import json
 import datetime
+import functools
 import contextlib
 from typing import Any, Dict
 from unittest import mock
@@ -12,10 +13,13 @@ import pytest
 import httpretty
 import dateutil.tz
 import pkg_resources
-from sqlalchemy import and_, select, create_engine
+from sqlalchemy import create_engine
+from werkzeug.test import Client
+from sqlalchemy.orm import sessionmaker
+from werkzeug.wrappers import BaseResponse
 
 from routemaster import state_machine
-from routemaster.db import labels, history, metadata
+from routemaster.db import Label, History, metadata
 from routemaster.app import App
 from routemaster.utils import dict_merge
 from routemaster.config import (
@@ -31,12 +35,17 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
 )
 from routemaster.server import server
 from routemaster.context import Context
 from routemaster.logging import BaseLogger
-from routemaster.webhooks import WebhookResult
+from routemaster.webhooks import (
+    WebhookResult,
+    webhook_runner_for_state_machine,
+)
+from routemaster.middleware import wrap_application
 from routemaster.state_machine import LabelRef
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -226,37 +235,60 @@ class TestApp(App):
     """
     def __init__(self, config):
         self.config = config
-        self.database_used = False
+        self.session_used = False
         self.logger = mock.MagicMock()
+        self._session = None
+        self._needs_rollback = False
+        self._current_session = None
+        self._sessionmaker = sessionmaker(bind=TEST_ENGINE)
+        self._webhook_runners = {
+            x: webhook_runner_for_state_machine(y)
+            for x, y in self.config.state_machines.items()
+        }
 
     @property
-    def db(self):
-        """Get the shared DB and set the used flag."""
-        self.database_used = True
-        return TEST_ENGINE
+    def session(self):
+        """Start if necessary and return a shared session."""
+        self.session_used = True
+        return super().session
+
+
+class TestClientResponse(BaseResponse):
+    """Test client response format."""
+
+    @property
+    def json(self):
+        """Util property for json responses."""
+        return json.loads(self.data)
+
+
+@pytest.fixture()
+def client():
+    """Create a werkzeug test client."""
+    _app = app()
+    server.config.app = _app
+    return Client(wrap_application(_app, server), TestClientResponse)
 
 
 @pytest.fixture()
 def app(**kwargs):
-    """Create the Flask app for testing."""
-    server.config.app = app_config(**kwargs)
-    return server
-
-
-@pytest.fixture()
-def app_config(**kwargs):
     """Create an `App` config object for testing."""
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
-        logging_plugins=kwargs.get('logging_plugins', []),
+        logging_plugins=kwargs.get('logging_plugins', [
+            LoggingPluginConfig(
+                dotted_path='routemaster.logging:PythonLogger',
+                kwargs={'log_level': 'DEBUG'},
+            ),
+        ]),
     ))
 
 
 @pytest.fixture()
-def custom_app_config():
+def custom_app():
     """Return the app config fixture directly so that we can modify config."""
-    return app_config
+    return app
 
 
 @pytest.fixture()
@@ -278,22 +310,26 @@ def app_env():
 @pytest.fixture(autouse=True, scope='session')
 def database_creation(request):
     """Wrap test session in creating and destroying all required tables."""
+    metadata.drop_all(bind=TEST_ENGINE)
     metadata.create_all(bind=TEST_ENGINE)
-    request.addfinalizer(lambda: metadata.drop_all(bind=TEST_ENGINE))
+    yield
 
 
 @pytest.yield_fixture(autouse=True)
-def database_clear(app_config):
+def database_clear(app):
     """Truncate all tables after each test."""
     yield
-    if app_config.database_used:
-        with app_config.db.begin() as conn:
+    if app.session_used:
+        with app.new_session():
             for table in metadata.tables:
-                conn.execute(f'truncate table {table} cascade')
+                app.session.execute(
+                    f'truncate table {table} cascade',
+                    {},
+                )
 
 
 @pytest.fixture()
-def create_label(app_config, mock_test_feed):
+def create_label(app, mock_test_feed):
     """Create a label in the database."""
 
     def _create(
@@ -301,9 +337,9 @@ def create_label(app_config, mock_test_feed):
         state_machine_name: str,
         metadata: Dict[str, Any],
     ) -> LabelRef:
-        with mock_test_feed():
+        with mock_test_feed(), app.new_session():
             state_machine.create_label(
-                app_config,
+                app,
                 LabelRef(name, state_machine_name),
                 metadata,
             )
@@ -313,16 +349,17 @@ def create_label(app_config, mock_test_feed):
 
 
 @pytest.fixture()
-def delete_label(app_config):
+def delete_label(app):
     """
     Mark a label in the database as deleted.
     """
 
     def _delete(name: str, state_machine_name: str) -> None:
-        state_machine.delete_label(
-            app_config,
-            LabelRef(name, state_machine_name),
-        )
+        with app.new_session():
+            state_machine.delete_label(
+                app,
+                LabelRef(name, state_machine_name),
+            )
 
     return _delete
 
@@ -348,7 +385,7 @@ def mock_webhook():
     def _mock(result=WebhookResult.SUCCESS):
         runner = mock.Mock(return_value=result)
         with mock.patch(
-            'routemaster.webhooks.RequestsWebhookRunner',
+            'routemaster.app.App.get_webhook_runner',
             return_value=runner,
         ):
             yield runner
@@ -378,17 +415,16 @@ def mock_test_feed():
 
 
 @pytest.fixture()
-def assert_history(app_config):
+def assert_history(app):
     """Assert that the database history matches what is expected."""
     def _assert(entries):
-        with app_config.db.begin() as conn:
+        with app.new_session():
             history_entries = [
-                tuple(x)
-                for x in conn.execute(
-                    select((
-                        history.c.old_state,
-                        history.c.new_state,
-                    )).order_by(history.c.id.asc()),
+                (x.old_state, x.new_state)
+                for x in app.session.query(
+                    History,
+                ).order_by(
+                    History.id,
                 )
             ]
 
@@ -397,42 +433,39 @@ def assert_history(app_config):
 
 
 @pytest.fixture()
-def set_metadata(app_config):
+def set_metadata(app):
     """Directly set the metadata for a label in the database."""
     def _inner(label, update):
-        with app_config.db.begin() as conn:
-            filter_ = and_(
-                labels.c.name == label.name,
-                labels.c.state_machine == label.state_machine,
-            )
+        with app.new_session():
+            db_label = app.session.query(Label).filter_by(
+                name=label.name,
+                state_machine=label.state_machine,
+            ).first()
 
-            existing_metadata = conn.scalar(
-                select([labels.c.metadata]).where(filter_),
-            )
+            db_label.metadata = dict_merge(db_label.metadata, update)
+            db_label.metadata_triggers_processed = True
 
-            new_metadata = dict_merge(existing_metadata, update)
-
-            conn.execute(labels.update().where(filter_).values(
-                metadata=new_metadata,
-                metadata_triggers_processed=True,
-            ))
-
-            return new_metadata
+            return db_label.metadata
     return _inner
 
 
 @pytest.fixture()
-def make_context(app_config):
+def make_context(app):
     """Factory for Contexts that provides sane defaults for testing."""
     def _inner(**kwargs):
-        logger = BaseLogger(app_config.config)
-        state_machine = app_config.config.state_machines['test_machine']
+        logger = BaseLogger(app.config)
+        state_machine = app.config.state_machines['test_machine']
         state = state_machine.states[0]
 
         @contextlib.contextmanager
         def feed_logging_context(feed_url):
             with logger.process_feed(state_machine, state, feed_url):
-                yield logger.feed_response
+                yield functools.partial(
+                    logger.feed_response,
+                    state_machine,
+                    state,
+                    feed_url,
+                )
 
         return Context(
             label=kwargs['label'],
@@ -454,5 +487,21 @@ def version():
     """Return the package version."""
     try:
         return pkg_resources.working_set.by_key['routemaster'].version
-    except KeyError:
+    except KeyError:  # pragma: no cover
         return 'development'
+
+
+@pytest.fixture()
+def current_state(app):
+    """Get the current state of a label."""
+    def _inner(label):
+        with app.new_session():
+            return app.session.query(
+                History.new_state,
+            ).filter_by(
+                label_name=label.name,
+                label_state_machine=label.state_machine,
+            ).order_by(
+                History.id.desc(),
+            ).limit(1).scalar()
+    return _inner

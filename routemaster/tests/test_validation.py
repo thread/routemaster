@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import yaml
 import pytest
 
 from routemaster.config import (
@@ -7,13 +10,18 @@ from routemaster.config import (
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
+    load_config,
 )
-from routemaster.validation import ValidationError, _validate_state_machine
+from routemaster.validation import (
+    ValidationError,
+    validate_config,
+    _validate_state_machine,
+)
 from routemaster.exit_conditions import ExitConditionProgram
 
 
-def test_valid(app_config):
-    _validate_state_machine(app_config, StateMachine(
+def test_valid(app):
+    _validate_state_machine(app, StateMachine(
         name='example',
         feeds=[],
         webhooks=[],
@@ -30,11 +38,11 @@ def test_valid(app_config):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     ))
 
 
-def test_disconnected_state_machine_invalid(app_config):
+def test_disconnected_state_machine_invalid(app):
     state_machine = StateMachine(
         name='example',
         feeds=[],
@@ -52,13 +60,43 @@ def test_disconnected_state_machine_invalid(app_config):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
-def test_no_path_from_start_to_end_state_machine_invalid(app_config):
+def test_non_unique_states_invalid(app):
+    state_machine = StateMachine(
+        name='example',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='start',
+                triggers=[],
+                next_states=ConstantNextState('gate1'),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+            Gate(
+                name='gate1',
+                triggers=[],
+                next_states=ConstantNextState('start'),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+            Gate(
+                name='gate1',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    )
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app, state_machine)
+
+
+def test_no_path_from_start_to_end_state_machine_invalid(app):
     state_machine = StateMachine(
         name='example',
         feeds=[],
@@ -80,10 +118,10 @@ def test_no_path_from_start_to_end_state_machine_invalid(app_config):
     )
 
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
-def test_nonexistent_node_destination_invalid(app_config):
+def test_nonexistent_node_destination_invalid(app):
     state_machine = StateMachine(
         name='example',
         feeds=[],
@@ -114,13 +152,13 @@ def test_nonexistent_node_destination_invalid(app_config):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
-def test_label_in_deleted_state_invalid(app_config, create_label):
+def test_label_in_deleted_state_invalid(app, create_label):
     create_label('foo', 'test_machine', {})  # Created in "start" implicitly
     state_machine = StateMachine(
         name='test_machine',
@@ -134,14 +172,14 @@ def test_label_in_deleted_state_invalid(app_config, create_label):
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
     with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+        _validate_state_machine(app, state_machine)
 
 
 def test_label_in_deleted_state_on_per_state_machine_basis(
-    app_config,
+    app,
     create_label,
 ):
     create_label('foo', 'test_machine', {})  # Created in "start" implicitly
@@ -158,7 +196,29 @@ def test_label_in_deleted_state_on_per_state_machine_basis(
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
-    with pytest.raises(ValidationError):
-        _validate_state_machine(app_config, state_machine)
+
+    # Should not care about our label as it is in a different state machine.
+    _validate_state_machine(app, state_machine)
+
+
+def test_example_config_is_valid(app):
+    """
+    Test that the example.yaml in this repo is valid.
+
+    This ensures that the example file itself is valid and is not intended as a
+    test of the system.
+    """
+
+    repo_root = Path(__file__).parent.parent.parent
+    example_yaml = repo_root / 'example.yaml'
+
+    assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
+
+    example_config = load_config(yaml.load(example_yaml.read_text()))
+
+    # quick check that we've loaded the config we expect
+    assert list(example_config.state_machines.keys()) == ['user_lifecycle']
+
+    validate_config(app, example_config)

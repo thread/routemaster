@@ -34,6 +34,7 @@ class SplitLogger(BaseLogger):
             'process_cron',
             'process_webhook',
             'process_feed',
+            'process_request',
         ):
             setattr(self, fn, functools.partial(self._log_all_ctx, fn))
 

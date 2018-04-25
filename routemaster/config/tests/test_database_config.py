@@ -22,6 +22,6 @@ CASES = (
 )
 
 
-@pytest.mark.parametrize("config, expected", CASES)
+@pytest.mark.parametrize('config, expected', CASES)
 def test_connection_string_formatting(config, expected):
     assert DatabaseConfig(*config).connstr == expected

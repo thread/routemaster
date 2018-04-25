@@ -18,6 +18,7 @@ from routemaster.state_machine.utils import (
 )
 from routemaster.state_machine.actions import process_action
 from routemaster.state_machine.exceptions import (
+    DeletedLabel,
     UnknownLabel,
     LabelAlreadyExists,
     UnknownStateMachine,
@@ -31,8 +32,8 @@ __all__ = (
     'delete_label',
     'process_cron',
     'process_gate',
+    'DeletedLabel',
     'UnknownLabel',
-    'IsExitingCheck',
     'process_action',
     'get_label_state',
     'labels_in_state',
