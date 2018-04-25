@@ -26,7 +26,7 @@ setup(
     include_package_data=True,
 
     classifiers=(
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Natural Language :: English',
         'Operating System :: POSIX',
