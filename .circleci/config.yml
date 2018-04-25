@@ -171,6 +171,13 @@ jobs:
             python setup.py bdist_wheel
             twine upload dist/*
 
+            cd ..
+
+            cd plugins/routemaster-prometheus
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
       - setup_remote_docker
 
       - run:
