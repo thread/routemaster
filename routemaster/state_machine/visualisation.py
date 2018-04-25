@@ -2,8 +2,12 @@
 
 from routemaster.config import Action, StateMachine
 
+from typing import List, Dict, Union
 
-def convert_to_network(state_machine: StateMachine) -> bytes:
+
+def convert_to_network(
+    state_machine: StateMachine,
+) -> List[Dict[str, Union[Dict[str, str], str]]]:
     """Produce an SVG drawing of a state machine."""
     elements = []
 
