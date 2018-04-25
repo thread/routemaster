@@ -81,7 +81,7 @@ class Context(object):
         label: str,
         accessed_variables: Iterable[str],
         logging_context,
-    ):
+    ) -> None:
         for accessed_variable in accessed_variables:
             parts = accessed_variable.split('.')
 

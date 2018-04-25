@@ -97,7 +97,7 @@ def serve(ctx, bind, debug, workers):  # pragma: no cover
         cron_thread.stop()
 
 
-def _validate_config(app: App):
+def _validate_config(app: App) -> None:
     try:
         validate_config(app, app.config)
     except ValidationError as e:

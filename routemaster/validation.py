@@ -14,13 +14,13 @@ class ValidationError(Exception):
     pass
 
 
-def validate_config(app: App, config: Config):
+def validate_config(app: App, config: Config) -> None:
     """Validate that a given config satisfies invariants."""
     for state_machine in config.state_machines.values():
         _validate_state_machine(app, state_machine)
 
 
-def _validate_state_machine(app: App, state_machine: StateMachine):
+def _validate_state_machine(app: App, state_machine: StateMachine) -> None:
     """Validate that a given state machine is internally consistent."""
     with app.new_session():
         _validate_route_start_to_end(state_machine)
