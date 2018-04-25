@@ -92,7 +92,7 @@ def view_state_machine(state_machine_name):
         'visualisation.html',
     ).decode('utf-8')
 
-    state_machine_json = json.dumps(convert_to_network(state_machine), indent=True)
+    state_machine_json = json.dumps(convert_to_network(state_machine))
 
     return Response(
         template_html.replace('{{ state_machine_config }}', state_machine_json),
