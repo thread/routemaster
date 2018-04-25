@@ -23,7 +23,10 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
     UnknownStateMachine,
 )
-from routemaster.state_machine.visualisation import draw_state_machine
+from routemaster.state_machine.visualisation import (
+    convert_to_network,
+    draw_state_machine,
+)
 
 __all__ = (
     'LabelRef',
@@ -37,6 +40,7 @@ __all__ = (
     'process_action',
     'get_label_state',
     'labels_in_state',
+    'convert_to_network',
     'get_label_metadata',
     'draw_state_machine',
     'LabelAlreadyExists',

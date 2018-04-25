@@ -1,5 +1,7 @@
 """Core API endpoints for routemaster service."""
 
+import json
+
 import sqlalchemy
 import pkg_resources
 from flask import Flask, Response, abort, jsonify, request
@@ -10,6 +12,7 @@ from routemaster.state_machine import (
     UnknownLabel,
     LabelAlreadyExists,
     UnknownStateMachine,
+    convert_to_network,
     draw_state_machine,
 )
 
@@ -84,9 +87,15 @@ def view_state_machine(state_machine_name):
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
 
+    template_html = pkg_resources.resource_string(
+        'routemaster.config',
+        'visualisation.html',
+    ).decode('utf-8')
+
+    state_machine_json = json.dumps(convert_to_network(state_machine), indent=True)
+
     return Response(
-        draw_state_machine(state_machine),
-        mimetype='image/svg+xml',
+        template_html.replace('{{ state_machine_config }}', state_machine_json),
     )
 
 
