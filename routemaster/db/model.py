@@ -47,65 +47,30 @@ sync_label_updated_column = DDL(
 )
 
 
-"""The representation of the state of a label."""
-labels = Table(
-    'labels',
-    metadata,
-    Column('name', String, primary_key=True),
-    Column('state_machine', String, primary_key=True),
-    Column('metadata', JSONB),
-    Column('metadata_triggers_processed', Boolean, default=True),
-    Column('deleted', Boolean, default=False),
-    Column(
-        'updated',
-        DateTime(timezone=True),
-        server_default=func.now(),
-        server_onupdate=FetchedValue(),
-    ),
-    listeners=[
-        ('after_create', sync_label_updated_column),
-    ],
-)
-
-
-"""Represents history of state transitions for a label."""
-history = Table(
-    'history',
-    metadata,
-    Column('id', Integer, primary_key=True, autoincrement=True),
-
-    Column('label_name', String),
-    Column('label_state_machine', String),
-    ForeignKeyConstraint(
-        ['label_name', 'label_state_machine'],
-        ['labels.name', 'labels.state_machine'],
-    ),
-
-    Column(
-        'created',
-        DateTime(timezone=True),
-        default=lambda: datetime.datetime.now(dateutil.tz.tzutc()),
-    ),
-
-    # `forced = True` represents a manual transition that may not be in
-    # accordance with the state machine logic.
-    Column('forced', Boolean, default=False),
-
-    # Null indicates starting a state machine
-    NullableColumn('old_state', String),
-
-    # Null indicates being deleted from a state machine
-    NullableColumn('new_state', String),
-)
-
-
 # ORM classes
 
 
 class Label(Base):
     """A single label including context."""
 
-    __table__ = labels
+    __table__ = Table(
+        'labels',
+        metadata,
+        Column('name', String, primary_key=True),
+        Column('state_machine', String, primary_key=True),
+        Column('metadata', JSONB),
+        Column('metadata_triggers_processed', Boolean, default=True),
+        Column('deleted', Boolean, default=False),
+        Column(
+            'updated',
+            DateTime(timezone=True),
+            server_default=func.now(),
+            server_onupdate=FetchedValue(),
+        ),
+        listeners=[
+            ('after_create', sync_label_updated_column),
+        ],
+    )
 
     def __repr__(self):
         """Return a useful debug representation."""
@@ -117,7 +82,34 @@ class Label(Base):
 class History(Base):
     """A single historical state transition of a label."""
 
-    __table__ = history
+    __table__ = Table(
+        'history',
+        metadata,
+        Column('id', Integer, primary_key=True, autoincrement=True),
+
+        Column('label_name', String),
+        Column('label_state_machine', String),
+        ForeignKeyConstraint(
+            ['label_name', 'label_state_machine'],
+            ['labels.name', 'labels.state_machine'],
+        ),
+
+        Column(
+            'created',
+            DateTime(timezone=True),
+            default=lambda: datetime.datetime.now(dateutil.tz.tzutc()),
+        ),
+
+        # `forced = True` represents a manual transition that may not be in
+        # accordance with the state machine logic.
+        Column('forced', Boolean, default=False),
+
+        # Null indicates starting a state machine
+        NullableColumn('old_state', String),
+
+        # Null indicates being deleted from a state machine
+        NullableColumn('new_state', String),
+    )
 
     label = relationship(Label, backref='history')
 
