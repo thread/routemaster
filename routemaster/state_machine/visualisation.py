@@ -1,8 +1,8 @@
 """Visualisation code for state machines."""
 
-from routemaster.config import Action, StateMachine
+from typing import Dict, List, Union
 
-from typing import List, Dict, Union
+from routemaster.config import Action, StateMachine
 
 
 def convert_to_network(
