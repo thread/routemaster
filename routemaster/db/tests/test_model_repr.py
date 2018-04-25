@@ -18,6 +18,6 @@ INSTANCES = [
 ]
 
 
-@pytest.mark.parametrize("instance, representation", INSTANCES)
+@pytest.mark.parametrize('instance, representation', INSTANCES)
 def test_model_is_represented_correctly(instance, representation):
     assert repr(instance) == representation

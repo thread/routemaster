@@ -67,7 +67,7 @@ HISTORY_ENTRY = FakeHistoryEntry(
 )
 
 
-@pytest.mark.parametrize("program, expected, variables", PROGRAMS)
+@pytest.mark.parametrize('program, expected, variables', PROGRAMS)
 def test_evaluate(program, expected, variables, make_context):
     program = ExitConditionProgram(program)
     context = make_context(
@@ -80,7 +80,7 @@ def test_evaluate(program, expected, variables, make_context):
     assert program.run(context) == expected
 
 
-@pytest.mark.parametrize("program, expected, variables", PROGRAMS)
+@pytest.mark.parametrize('program, expected, variables', PROGRAMS)
 def test_accessed_variables(program, expected, variables):
     program = ExitConditionProgram(program)
     assert sorted(program.accessed_variables()) == sorted(variables)
@@ -176,7 +176,7 @@ ERRORS = [
 ]
 
 
-@pytest.mark.parametrize("source, error", ERRORS)
+@pytest.mark.parametrize('source, error', ERRORS)
 def test_errors(source, error, make_context):
     with pytest.raises(ValueError) as compile_error:
         program = ExitConditionProgram(source)
