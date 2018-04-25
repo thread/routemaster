@@ -1,4 +1,6 @@
 """Validation of state machines."""
+import collections
+
 import networkx
 from sqlalchemy import func
 
@@ -24,6 +26,7 @@ def _validate_state_machine(app: App, state_machine: StateMachine):
         _validate_route_start_to_end(state_machine)
         _validate_all_states_exist(state_machine)
         _validate_no_labels_in_nonexistent_states(state_machine, app)
+        _validate_unique_state_names(state_machine)
 
 
 def _build_graph(state_machine: StateMachine) -> networkx.Graph:
@@ -39,6 +42,20 @@ def _validate_route_start_to_end(state_machine):
     graph = _build_graph(state_machine)
     if not networkx.is_connected(graph):
         raise ValidationError("Graph is not fully connected")
+
+
+def _validate_unique_state_names(state_machine):
+    state_name_counts = collections.Counter([
+        x.name for x in state_machine.states
+    ])
+
+    invalid_states = [x for x, y in state_name_counts.items() if y > 1]
+
+    if invalid_states:
+        raise ValidationError(
+            f"States {invalid_states!r} are not unique in "
+            f"{state_machine.name}",
+        )
 
 
 def _validate_all_states_exist(state_machine):

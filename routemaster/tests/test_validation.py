@@ -66,6 +66,36 @@ def test_disconnected_state_machine_invalid(app):
         _validate_state_machine(app, state_machine)
 
 
+def test_non_unique_states_invalid(app):
+    state_machine = StateMachine(
+        name='example',
+        feeds=[],
+        webhooks=[],
+        states=[
+            Gate(
+                name='start',
+                triggers=[],
+                next_states=ConstantNextState('gate1'),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+            Gate(
+                name='gate1',
+                triggers=[],
+                next_states=ConstantNextState('start'),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+            Gate(
+                name='gate1',
+                triggers=[],
+                next_states=NoNextStates(),
+                exit_condition=ExitConditionProgram('false'),
+            ),
+        ],
+    )
+    with pytest.raises(ValidationError):
+        _validate_state_machine(app, state_machine)
+
+
 def test_no_path_from_start_to_end_state_machine_invalid(app):
     state_machine = StateMachine(
         name='example',
