@@ -75,11 +75,6 @@ body {
         .selector('.gate')
           .css({
             'background-color': 'lightBlue',
-          })
-        .selector('.faded')
-          .css({
-            'opacity': 0.25,
-            'text-opacity': 0
           }),
 
       elements: state_machine_config,
@@ -99,20 +94,6 @@ body {
         transform: function ( node, position ){ return position; } // transform a given node position. Useful for changing flow direction in discrete layouts
       }
     });
-
-//    cy.on('tap', 'node', function(e){
-//      var node = e.cyTarget;
-//      var neighborhood = node.neighborhood().add(node);
-//
-//      cy.elements().addClass('faded');
-//      neighborhood.removeClass('faded');
-//    });
-//
-//    cy.on('tap', function(e){
-//      if( e.cyTarget === cy ){
-//        cy.elements().removeClass('faded');
-//      }
-//    });
   </script>
 </body>
 </html>
