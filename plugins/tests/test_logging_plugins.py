@@ -8,7 +8,10 @@ from routemaster_prometheus import PrometheusLogger
 
 from routemaster.logging import BaseLogger, SplitLogger
 
-SENTRY_KWARGS = {'dsn': 'https://xxxxxxx:xxxxxxx@sentry.io/xxxxxxx'}
+SENTRY_KWARGS = {
+    'dsn': 'https://xxxxxxx:xxxxxxx@sentry.io/xxxxxxx',
+    'enabled': False,
+}
 PROMETHEUS_KWARGS = {'path': '/metrics'}
 
 TEST_CASES: Iterable[Tuple[Type[BaseLogger], Dict[str, Any]]] = [
