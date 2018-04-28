@@ -127,7 +127,7 @@ class PrometheusLogger(BaseLogger):
         response,
     ):
         """Log feed response with status code to Prometheus."""
-        self.feed_requests.labels(
+        feed_requests.labels(
             feed_url=feed_url,
             state_machine=state_machine.name,
             state=state.name,
