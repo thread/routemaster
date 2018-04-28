@@ -1,3 +1,5 @@
+import os
+import pathlib
 from typing import Any, Dict, Type, Tuple, Iterable
 
 import pytest
@@ -79,3 +81,20 @@ def test_logger(app, klass, kwargs):
     response = requests.Response()
     logger.webhook_response(state_machine, state, response)
     logger.feed_response(state_machine, state, feed_url, response)
+
+
+def test_prometheus_logger_wipes_directory_on_startup(app):
+    tmp = pathlib.Path(os.environ['prometheus_multiproc_dir'])
+    tmp.mkdir(parents=True, exist_ok=True)
+
+    filepath = tmp / 'foo.txt'
+    dirpath = tmp / 'subdir'
+
+    dirpath.mkdir(parents=True, exist_ok=True)
+    with filepath.open('w') as f:
+        f.write('Hello, world')
+
+    PrometheusLogger(app.config)
+
+    assert not filepath.exists()
+    assert not dirpath.exists()
