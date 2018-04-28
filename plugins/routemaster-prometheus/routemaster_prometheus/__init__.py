@@ -17,7 +17,6 @@ from prometheus_client import (
     CollectorRegistry,
     generate_latest,
 )
-import prometheus_client.core
 from prometheus_client.multiprocess import MultiProcessCollector
 
 from routemaster.logging import BaseLogger
