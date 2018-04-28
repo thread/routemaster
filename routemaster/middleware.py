@@ -56,7 +56,20 @@ def logging_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
         start_response: StartResponse,
     ) -> Iterable[bytes]:
 
-        with app.logger.process_request(environ):
-            yield from wsgi(environ, start_response)
+        kwargs: Dict[str, Any] = {}
+
+        def wrapped_start_response(
+            status: str,
+            headers: Dict[str, str],
+            exc_info: Optional[Any] = None,
+        ) -> None:
+            kwargs['status'] = status
+            kwargs['headers'] = headers
+            kwargs['exc_info'] = exc_info
+            start_response(status, headers, exc_info)
+
+        app.logger.process_request_started(environ)
+        yield from wsgi(environ, wrapped_start_response)
+        app.logger.process_request_finished(environ, **kwargs)
 
     return inner
