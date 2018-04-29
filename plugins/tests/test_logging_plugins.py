@@ -36,6 +36,11 @@ def test_logger(app, klass, kwargs):
     feed_url = 'https://localhost'
 
     server = Flask('test_server')
+
+    @server.route('/')
+    def root():
+        return 'Ok', 200
+
     logger.init_flask(server)
 
     with logger.process_cron(state_machine, state, 'test_cron'):
