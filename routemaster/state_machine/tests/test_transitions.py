@@ -5,6 +5,7 @@ from routemaster.state_machine.transitions import process_transitions
 
 
 def test_cannot_infinite_loop(app, create_label, set_metadata):
+    app.logger = mock.Mock()
     label = create_label('foo', 'test_infinite_machine', {})
     set_metadata(label, {'should_progress': True})
 
