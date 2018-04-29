@@ -9,6 +9,7 @@ import shutil
 import pathlib
 import contextlib
 from timeit import default_timer as timer
+from werkzeug.routing import NotFound, RequestRedirect, MethodNotAllowed
 
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
@@ -51,12 +52,6 @@ api_histogram = Histogram(
     ('method', 'endpoint', 'status'),
 )
 
-api_counter = Counter(
-    'routemaster_api_request_total',
-    'Total number of API requests',
-    ('method', 'status', 'endpoint'),
-)
-
 
 class PrometheusLogger(BaseLogger):
     """Instruments Routemaster with Prometheus."""
@@ -83,8 +78,13 @@ class PrometheusLogger(BaseLogger):
 
     def init_flask(self, flask_app):
         """Instrument Flask with Prometheus."""
+        self.url_adapter = flask_app.url_map.bind('localhost')
+        self.endpoint_lookup = {
+            rule.endpoint: rule.rule
+            for rule in flask_app.url_map.iter_rules()
+        }
 
-        @flask_app.route(self.path)
+        @flask_app.route(self.path, endpoint=self.path)
         def get_metrics():
             registry = CollectorRegistry()
             MultiProcessCollector(registry)
@@ -159,23 +159,30 @@ class PrometheusLogger(BaseLogger):
         exc_info,
     ):
         """Log completed request metrics, given the timer we started."""
+        if exc_info:
+            exceptions.labels(type='api').inc()
+
         total_time = max(timer() - environ['_PROMETHEUS_REQUEST_TIMER'], 0)
-        path = environ.get('PATH_INFO', '')
+        path = environ['PATH_INFO']
+        method = environ['REQUEST_METHOD']
 
         if path == self.path:
             return
 
-        api_histogram.labels(
-            method=environ.get('REQUEST_METHOD'),
-            endpoint=path,
-            status=status,
-        ).observe(total_time)
+        endpoint = ''
 
-        api_counter.labels(
-            method=environ.get('REQUEST_METHOD'),
+        try:
+            match = self.url_adapter.match(path, method=method)
+            if match:
+                endpoint = self.endpoint_lookup[match[0]]
+        except (RequestRedirect, MethodNotAllowed, NotFound):
+            pass
+
+        api_histogram.labels(
+            method=method,
             status=status,
-            endpoint=path,
-        ).inc()
+            endpoint=endpoint,
+        ).observe(total_time)
 
 
 def _clear_directory(path: pathlib.Path):
