@@ -54,7 +54,7 @@ api_histogram = Histogram(
 api_counter = Counter(
     'routemaster_api_request_total',
     'Total number of API requests',
-    ('method', 'status'),
+    ('method', 'status', 'endpoint'),
 )
 
 
@@ -174,6 +174,7 @@ class PrometheusLogger(BaseLogger):
         api_counter.labels(
             method=environ.get('REQUEST_METHOD'),
             status=status,
+            endpoint=path,
         ).inc()
 
 
