@@ -245,5 +245,6 @@ def process_cron(
                     label=label,
                 )
 
-            if could_progress:
-                process_transitions(app, label)
+            with app.new_session():
+                if could_progress:
+                    process_transitions(app, label)
