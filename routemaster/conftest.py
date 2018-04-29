@@ -263,11 +263,18 @@ class TestClientResponse(BaseResponse):
 
 
 @pytest.fixture()
-def client():
+def client(custom_app=None):
     """Create a werkzeug test client."""
-    _app = app()
+    _app = app() if custom_app is None else custom_app
     server.config.app = _app
+    _app.logger.init_flask(server)
     return Client(wrap_application(_app, server), TestClientResponse)
+
+
+@pytest.fixture()
+def custom_client():
+    """Return the client fixture directly so that we can modify the app."""
+    return client
 
 
 @pytest.fixture()
