@@ -63,7 +63,7 @@ def logging_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
             headers: Dict[str, str],
             exc_info: Optional[Any] = None,
         ) -> None:
-            kwargs['status'] = status
+            kwargs['status'] = status.split()[0]
             kwargs['headers'] = headers
             kwargs['exc_info'] = exc_info
             start_response(status, headers, exc_info)
