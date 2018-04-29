@@ -59,7 +59,10 @@ def test_logger(app, klass, kwargs):
         with logger.process_webhook(state_machine, state):
             raise RuntimeError("Error must propagate")
 
-    wsgi_environ = {}
+    wsgi_environ = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/',
+    }
     logger.process_request_started(wsgi_environ)
     logger.process_request_finished(
         wsgi_environ,
