@@ -40,7 +40,7 @@ from routemaster.config import (
 )
 from routemaster.server import server
 from routemaster.context import Context
-from routemaster.logging import BaseLogger
+from routemaster.logging import BaseLogger, SplitLogger, register_loggers
 from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
@@ -236,7 +236,7 @@ class TestApp(App):
     def __init__(self, config):
         self.config = config
         self.session_used = False
-        self.logger = mock.MagicMock()
+        self.logger = SplitLogger(config, loggers=register_loggers(config))
         self._session = None
         self._needs_rollback = False
         self._current_session = None
