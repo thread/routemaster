@@ -164,7 +164,10 @@ def _labels_in_state(
         new_state=state.name,
     ).from_self().filter(
         rank == 1,
-    ).join(Label).filter(filter_)
+    ).join(Label).filter(
+        filter_,
+        ~Label.deleted,
+    )
 
     return [x for x, _ in ranked_transitions]
 
