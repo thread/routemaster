@@ -144,8 +144,8 @@ def test_context_for_label_in_action_created_with_correct_variables(app):
 
 
 def test_labels_needing_metadata_update_retry_in_gate(app, mock_test_feed, create_label, current_state):
-    label_unprocessed = create_label('foo', 'test_machine', {})
-    label_processed = create_label('bar', 'test_machine', {})
+    label_unprocessed = create_label('label_unprocessed', 'test_machine', {})
+    label_processed = create_label('label_processed', 'test_machine', {})
 
     test_machine = app.config.state_machines['test_machine']
     gate = test_machine.states[0]
