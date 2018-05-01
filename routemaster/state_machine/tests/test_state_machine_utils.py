@@ -143,9 +143,10 @@ def test_context_for_label_in_action_created_with_correct_variables(app):
         )
 
 
-def test_labels_needing_metadata_update_retry_in_gate(app, mock_test_feed, create_label, current_state):
+def test_labels_needing_metadata_update_retry_in_gate(app, mock_test_feed, create_label, create_deleted_label, current_state):
     label_unprocessed = create_label('label_unprocessed', 'test_machine', {})
     label_processed = create_label('label_processed', 'test_machine', {})
+    label_deleted = create_deleted_label('label_deleted', 'test_machine')
 
     test_machine = app.config.state_machines['test_machine']
     gate = test_machine.states[0]
@@ -164,6 +165,7 @@ def test_labels_needing_metadata_update_retry_in_gate(app, mock_test_feed, creat
     # Both should be in the start state...
     assert current_state(label_processed) == 'start'
     assert current_state(label_unprocessed) == 'start'
+    assert current_state(label_deleted) is None
 
     # But only label_unprocessed should be pending a metadata update
     with app.new_session():
