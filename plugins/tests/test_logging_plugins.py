@@ -68,7 +68,11 @@ def test_logger(app, klass, kwargs):
     logger.warning("test")
     logger.error("test")
     logger.critical("test")
-    logger.exception("test")
+
+    try:
+        raise ValueError("Test Exception")
+    except ValueError:
+        logger.exception("test")
 
     with pytest.raises(AttributeError):
         logger.non_existent_logging_fn("test")
