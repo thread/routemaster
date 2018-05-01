@@ -68,3 +68,7 @@ class SentryLogger(BaseLogger):
         except Exception:
             self.client.captureException()
             raise
+
+    def exception(self, *args, **kwargs):
+        """Log a directly reported exception to Sentry."""
+        self.client.captureException()
