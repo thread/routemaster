@@ -174,27 +174,9 @@ def test_labels_needing_metadata_update_retry_in_gate(app, mock_test_feed, creat
         ) == [label_unprocessed.name]
 
 
-def test_labels_in_state_does_not_include_deleted(app, create_label, create_deleted_label, current_state):
+def test_labels_in_state(app, mock_test_feed, mock_webhook, create_label, create_deleted_label, current_state):
     label_in_state = create_label('label_in_state', 'test_machine', {})
     label_deleted = create_deleted_label('label_deleted', 'test_machine')
-
-    test_machine = app.config.state_machines['test_machine']
-    gate = test_machine.states[0]
-
-    assert current_state(label_in_state) == 'start'
-    assert current_state(label_deleted) is None
-
-    # But only label_unprocessed should be pending a metadata update
-    with app.new_session():
-        assert utils.labels_in_state(
-            app,
-            test_machine,
-            gate,
-        ) == [label_in_state.name]
-
-
-def test_labels_in_state_does_not_include_wrong_state(app, mock_test_feed, mock_webhook, create_label, current_state):
-    label_in_state = create_label('label_in_state', 'test_machine', {})
 
     with mock_test_feed(), mock_webhook():
         label_not_in_state = create_label(
@@ -207,6 +189,7 @@ def test_labels_in_state_does_not_include_wrong_state(app, mock_test_feed, mock_
     gate = test_machine.states[0]
 
     assert current_state(label_in_state) == 'start'
+    assert current_state(label_deleted) is None
     assert current_state(label_not_in_state) == 'end'
 
     # But only label_unprocessed should be pending a metadata update
