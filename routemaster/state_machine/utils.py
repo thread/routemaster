@@ -169,7 +169,6 @@ def _labels_in_state(
         states_by_rank.c.new_state == state.name,
     ).join(Label).filter(
         filter_,
-        ~Label.deleted,
     )
 
     return [x for x, in ranked_transitions]
