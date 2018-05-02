@@ -8,10 +8,68 @@ from requests.exceptions import RequestException
 
 from routemaster import state_machine
 from routemaster.feeds import Feed
+from routemaster.config import (
+    Gate,
+    NoNextStates,
+    StateMachine,
+    ConstantNextState,
+)
 from routemaster.webhooks import WebhookResult
 from routemaster.state_machine import utils
+from routemaster.exit_conditions import ExitConditionProgram
 from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.exceptions import UnknownStateMachine
+
+
+def test_get_current_state(app, create_label):
+    label = create_label('foo', 'test_machine', {})
+    state_machine = app.config.state_machines['test_machine']
+    state = state_machine.states[0]
+    with app.new_session():
+        assert utils.get_current_state(app, label, state_machine) == state
+
+
+def test_get_current_state_for_deleted_label(app, create_deleted_label):
+    label = create_deleted_label('foo', 'test_machine')
+    state_machine = app.config.state_machines['test_machine']
+    with app.new_session():
+        assert utils.get_current_state(app, label, state_machine) is None
+
+
+def test_get_current_state_for_label_in_invalid_state(custom_app, create_label):
+    state_to_be_removed = Gate(
+        name='start',
+        triggers=[],
+        next_states=ConstantNextState('end'),
+        exit_condition=ExitConditionProgram('false'),
+    )
+    end_state = Gate(
+        name='end',
+        triggers=[],
+        next_states=NoNextStates(),
+        exit_condition=ExitConditionProgram('false'),
+    )
+
+    app = custom_app(state_machines={
+        'test_machine': StateMachine(
+            name='test_machine',
+            states=[state_to_be_removed, end_state],
+            feeds=[],
+            webhooks=[],
+        ),
+    })
+
+    label = create_label('foo', 'test_machine', {})
+    state_machine = app.config.state_machines['test_machine']
+
+    # Remove the state which we expect the label to be in from the state
+    # machine; this is logically equivalent to loading a new config which does
+    # not have the state
+    del state_machine.states[0]
+
+    with app.new_session():
+        with pytest.raises(Exception):
+            utils.get_current_state(app, label, state_machine)
 
 
 def test_get_state_machine(app):
