@@ -7,7 +7,7 @@ body {
   font: 14px helvetica neue, helvetica, arial, sans-serif;
   margin: 0;
 }
-#cy {
+#graph-container {
   height: 100%;
   width: 100%;
   position: absolute;
@@ -60,7 +60,7 @@ body {
     </div>
     <div class="muted">Click and drag to move the graph; scroll to zoom</div>
   </div>
-  <div id="cy"></div>
+  <div id="graph-container"></div>
   <script>
     function backgroundColourForNodeClass(nodeClass) {
       var style = getComputedStyle(document.querySelector('#legend ' + nodeClass));
@@ -89,7 +89,7 @@ body {
     }
 
     var cy = cytoscape({
-      container: document.querySelector('#cy'),
+      container: document.querySelector('#graph-container'),
 
       boxSelectionEnabled: false,
       autounselectify: true,
