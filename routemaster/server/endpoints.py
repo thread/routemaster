@@ -100,6 +100,7 @@ def view_state_machine(state_machine_name):
 
     return render_template_string(
         template_html,
+        state_machine_name=state_machine_name,
         state_machine_config=convert_to_network(state_machine),
     )
 
