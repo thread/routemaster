@@ -4,12 +4,14 @@ from typing import Dict, List, Union
 
 from routemaster.config import Action, StateMachine
 
+CytoscapeData = List[Dict[str, Union[Dict[str, str], str]]]
+
 
 def nodes_for_cytoscape(
     state_machine: StateMachine,
-) -> List[Dict[str, Union[Dict[str, str], str]]]:
+) -> CytoscapeData:
     """Produce an SVG drawing of a state machine."""
-    elements: List[Dict[str, Union[Dict[str, str], str]]] = []
+    elements: CytoscapeData = []
 
     for state in state_machine.states:
         node_kind = 'action' if isinstance(state, Action) else 'gate'
