@@ -14,11 +14,8 @@
 <title>Visualisation of state machine {{ state_machine_name }}</title>
 </head>
 <body>
-  <script id="state_machine_config" type="application/json">
-    {{ state_machine_config|tojson }}
-  </script>
   <script type="text/javascript">
-    var state_machine_config = JSON.parse(document.getElementById('state_machine_config').innerHTML);
+    var state_machine_config = {{ state_machine_config|tojson }};
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.11/cytoscape.js"></script>
   <div id="cy"></div>
