@@ -3,12 +3,26 @@
 <head>
 <meta charset="utf-8">
 <style>
+body {
+  font: 14px helvetica neue, helvetica, arial, sans-serif;
+}
 #cy {
   height: 100%;
   width: 100%;
   position: absolute;
   left: 0;
   top: 0;
+}
+#legend > div {
+  display: inline-block;
+  padding: 0.6em;
+  margin: 0.1em;
+}
+.action {
+  background-color: orange;
+}
+.gate {
+  background-color: lightBlue;
 }
 </style>
 <title>Visualisation of state machine {{ state_machine_name }}</title>
@@ -18,8 +32,17 @@
     var state_machine_config = {{ state_machine_config|tojson }};
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.11/cytoscape.js"></script>
+  <div id="legend">
+    <div class="action">action</div>
+    <div class="gate">gate</div>
+  </div>
   <div id="cy"></div>
   <script>
+    function backgroundColourForNodeClass(nodeClass) {
+      var style = getComputedStyle(document.querySelector('#legend ' + nodeClass));
+      return style.backgroundColor;
+    }
+
     var cy = cytoscape({
       container: document.querySelector('#cy'),
 
@@ -56,11 +79,11 @@
           })
         .selector('.action')
           .css({
-            'background-color': 'orange',
+            'background-color': backgroundColourForNodeClass('.action'),
           })
         .selector('.gate')
           .css({
-            'background-color': 'lightBlue',
+            'background-color': backgroundColourForNodeClass('.gate'),
           }),
 
       elements: state_machine_config,
