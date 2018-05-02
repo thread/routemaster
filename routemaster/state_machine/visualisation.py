@@ -9,7 +9,7 @@ def convert_to_network(
     state_machine: StateMachine,
 ) -> List[Dict[str, Union[Dict[str, str], str]]]:
     """Produce an SVG drawing of a state machine."""
-    elements = []
+    elements: List[Dict[str, Union[Dict[str, str], str]]] = []
 
     for state in state_machine.states:
         node_kind = 'action' if isinstance(state, Action) else 'gate'
