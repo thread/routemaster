@@ -1,6 +1,7 @@
 tox
 pytest
 pytest-cov
+pytest-randomly
 pytest-faulthandler
 freezegun
 mypy

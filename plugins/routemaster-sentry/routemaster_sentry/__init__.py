@@ -21,7 +21,7 @@ from routemaster.logging import BaseLogger
 class SentryLogger(BaseLogger):
     """Instruments Routemaster with Sentry."""
 
-    def __init__(self, *args, dsn):
+    def __init__(self, *args, dsn, enabled=True):
         try:
             version = pkg_resources.working_set.by_key['routemaster'].version
         except KeyError:  # pragma: no cover
@@ -30,7 +30,7 @@ class SentryLogger(BaseLogger):
         self.client = Client(
             dsn,
             release=version,
-            sample_rate=0 if 'dev' in version else 1,
+            sample_rate=0 if 'dev' in version or not enabled else 1,
             include_paths=[
                 'routemaster',
             ],
@@ -68,3 +68,7 @@ class SentryLogger(BaseLogger):
         except Exception:
             self.client.captureException()
             raise
+
+    def exception(self, *args, **kwargs):
+        """Log a directly reported exception to Sentry."""
+        self.client.captureException()

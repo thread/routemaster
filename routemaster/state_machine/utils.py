@@ -150,23 +150,28 @@ def _labels_in_state(
     filter_: Any,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
-    rank = func.row_number().over(
-        order_by=History.id.desc(),
-        partition_by=History.label_name,
-    ).label('rank')
 
-    ranked_transitions = app.session.query(
+    states_by_rank = app.session.query(
         History.label_name,
-    ).add_column(
-        rank,
+        History.new_state,
+        func.row_number().over(
+            order_by=History.id.desc(),
+            partition_by=History.label_name,
+        ).label('rank'),
     ).filter_by(
         label_state_machine=state_machine.name,
-        new_state=state.name,
-    ).from_self().filter(
-        rank == 1,
-    ).join(Label).filter(filter_)
+    ).subquery()
 
-    return [x for x, _ in ranked_transitions]
+    ranked_transitions = app.session.query(
+        states_by_rank.c.label_name,
+    ).filter(
+        states_by_rank.c.rank == 1,
+        states_by_rank.c.new_state == state.name,
+    ).join(Label).filter(
+        filter_,
+    )
+
+    return [x for x, in ranked_transitions]
 
 
 def context_for_label(
