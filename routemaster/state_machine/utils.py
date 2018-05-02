@@ -67,7 +67,11 @@ def get_current_history(app: App, label: LabelRef) -> History:
         label_name=label.name,
         label_state_machine=label.state_machine,
     ).order_by(
-        History.id.desc(),
+        # Our model type stubs define the `id` attribute as `int`, yet
+        # sqlalchemy actually allows the attribute to be used for ordering like
+        # this; ignore the type check here specifically rather than complicate
+        # our type definitions.
+        History.id.desc(),  # type: ignore
     ).first()
 
     if history_entry is None:
@@ -155,7 +159,11 @@ def _labels_in_state(
         History.label_name,
         History.new_state,
         func.row_number().over(
-            order_by=History.id.desc(),
+            # Our model type stubs define the `id` attribute as `int`, yet
+            # sqlalchemy actually allows the attribute to be used for ordering
+            # like this; ignore the type check here specifically rather than
+            # complicate our type definitions.
+            order_by=History.id.desc(),  # type: ignore
             partition_by=History.label_name,
         ).label('rank'),
     ).filter_by(
