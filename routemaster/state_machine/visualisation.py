@@ -14,10 +14,7 @@ def convert_to_network(
     for state in state_machine.states:
         node_kind = 'action' if isinstance(state, Action) else 'gate'
         elements.append({
-            'data': {
-                'id': state.name,
-                'name': state.name,
-            },
+            'data': {'id': state.name},
             'classes': node_kind,
         })
 
