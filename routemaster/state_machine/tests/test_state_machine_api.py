@@ -8,7 +8,7 @@ def test_handles_label_state_change_race_condition(app, create_deleted_label):
     state = state_machine.states[1]
 
     # Create a label which is not in the expected state. Doing this and then
-    # returning the affected label from the `get_labels` call is easier but
+    # returning the affected label from the `get_labels` call is easier and
     # equivalent to having the state of the label change between the return of
     # that call and when the label is used.
     label = create_deleted_label('foo', 'test_machine')
