@@ -2,13 +2,7 @@
 
 import sqlalchemy
 import pkg_resources
-from flask import (
-    Flask,
-    abort,
-    jsonify,
-    request,
-    render_template_string,
-)
+from flask import Flask, abort, jsonify, request, render_template_string
 
 from routemaster import state_machine
 from routemaster.state_machine import (
