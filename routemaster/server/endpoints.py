@@ -86,7 +86,7 @@ def view_state_machine(state_machine_name):
 
     template_html = pkg_resources.resource_string(
         'routemaster.config',
-        'visualisation.html',
+        'visualisation.jinja',
     ).decode('utf-8')
 
     return render_template_string(
