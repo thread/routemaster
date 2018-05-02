@@ -23,7 +23,7 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
     UnknownStateMachine,
 )
-from routemaster.state_machine.visualisation import convert_to_network
+from routemaster.state_machine.visualisation import nodes_for_cytoscape
 
 __all__ = (
     'LabelRef',
@@ -37,11 +37,11 @@ __all__ = (
     'process_action',
     'get_label_state',
     'labels_in_state',
-    'convert_to_network',
     'get_label_metadata',
     'LabelAlreadyExists',
     'LabelStateProcessor',
     'UnknownStateMachine',
+    'nodes_for_cytoscape',
     'update_metadata_for_label',
     'labels_needing_metadata_update_retry_in_gate',
 )

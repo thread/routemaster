@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from routemaster.config import Action, StateMachine
 
 
-def convert_to_network(
+def nodes_for_cytoscape(
     state_machine: StateMachine,
 ) -> List[Dict[str, Union[Dict[str, str], str]]]:
     """Produce an SVG drawing of a state machine."""

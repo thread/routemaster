@@ -19,7 +19,7 @@ from routemaster.state_machine import (
     UnknownLabel,
     LabelAlreadyExists,
     UnknownStateMachine,
-    convert_to_network,
+    nodes_for_cytoscape,
 )
 
 server = Flask('routemaster')
@@ -101,7 +101,7 @@ def view_state_machine(state_machine_name):
     return render_template_string(
         template_html,
         state_machine_name=state_machine_name,
-        state_machine_config=convert_to_network(state_machine),
+        state_machine_config=nodes_for_cytoscape(state_machine),
     )
 
 

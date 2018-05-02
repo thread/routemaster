@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 
 from routemaster.config import load_config
-from routemaster.state_machine import convert_to_network
+from routemaster.state_machine import nodes_for_cytoscape
 
 TEST_MACHINE_STATE_AS_NETWORK = [
     {
@@ -71,8 +71,8 @@ TEST_MACHINE_STATE_AS_NETWORK = [
 ]
 
 
-def test_convert_to_network(app):
-    nodes = convert_to_network(app.config.state_machines['test_machine'])
+def test_nodes_for_cytoscape(app):
+    nodes = nodes_for_cytoscape(app.config.state_machines['test_machine'])
 
     assert nodes == TEST_MACHINE_STATE_AS_NETWORK
 
@@ -88,4 +88,4 @@ def test_convert_example_to_network(app):
     # quick check that we've loaded the config we expect
     assert list(example_config.state_machines.keys()) == ['user_lifecycle']
 
-    convert_to_network(example_config.state_machines['user_lifecycle'])
+    nodes_for_cytoscape(example_config.state_machines['user_lifecycle'])
