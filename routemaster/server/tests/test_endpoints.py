@@ -350,3 +350,8 @@ def test_check_loggers(client):
 def test_get_visualisation(client):
     response = client.get('/state-machines/test_machine/view')
     assert response.status_code == 200
+
+
+def test_get_visualisation_404_for_not_found(client):
+    response = client.get('/state-machines/no_such_machine/view')
+    assert response.status_code == 404
