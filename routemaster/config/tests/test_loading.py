@@ -2,7 +2,6 @@ import os
 import re
 import datetime
 import contextlib
-from pathlib import Path
 from unittest import mock
 
 import yaml
@@ -359,7 +358,7 @@ def test_multiple_feeds_same_name_invalid():
         load_config(yaml_data('multiple_feeds_same_name_invalid'))
 
 
-def test_example_config_loads():
+def test_example_config_loads(repo_root):
     """
     Test that the example.yaml in this repo can be loaded.
 
@@ -367,7 +366,6 @@ def test_example_config_loads():
     test of the system.
     """
 
-    repo_root = Path(__file__).parent.parent.parent.parent
     example_yaml = repo_root / 'example.yaml'
 
     assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"

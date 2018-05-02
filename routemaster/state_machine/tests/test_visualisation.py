@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import yaml
 
 from routemaster.config import load_config
@@ -77,8 +75,7 @@ def test_nodes_for_cytoscape(app):
     assert nodes == TEST_MACHINE_STATE_AS_NETWORK
 
 
-def test_convert_example_to_network(app):
-    repo_root = Path(__file__).parent.parent.parent.parent
+def test_convert_example_to_network(app, repo_root):
     example_yaml = repo_root / 'example.yaml'
 
     assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"

@@ -203,7 +203,7 @@ def test_label_in_deleted_state_on_per_state_machine_basis(
     _validate_state_machine(app, state_machine)
 
 
-def test_example_config_is_valid(app):
+def test_example_config_is_valid(app, repo_root):
     """
     Test that the example.yaml in this repo is valid.
 
@@ -211,7 +211,6 @@ def test_example_config_is_valid(app):
     test of the system.
     """
 
-    repo_root = Path(__file__).parent.parent.parent
     example_yaml = repo_root / 'example.yaml'
 
     assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
