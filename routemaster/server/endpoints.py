@@ -84,13 +84,13 @@ def view_state_machine(state_machine_name):
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
 
-    template_html = pkg_resources.resource_string(
+    template_string = pkg_resources.resource_string(
         'routemaster.config',
         'visualisation.jinja',
     ).decode('utf-8')
 
     return render_template_string(
-        template_html,
+        template_string,
         state_machine_name=state_machine_name,
         state_machine_config=nodes_for_cytoscape(state_machine),
     )
