@@ -26,7 +26,7 @@ body {
 </head>
 <body>
   <script id="state_machine_config" type="application/json">
-    {{ state_machine_config }}
+    {{ state_machine_config|tojson }}
   </script>
   <script type="text/javascript">
     var state_machine_config = JSON.parse(document.getElementById('state_machine_config').innerHTML);

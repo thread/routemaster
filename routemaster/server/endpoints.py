@@ -4,7 +4,14 @@ import json
 
 import sqlalchemy
 import pkg_resources
-from flask import Flask, Response, abort, jsonify, request
+from flask import (
+    Flask,
+    Response,
+    abort,
+    jsonify,
+    request,
+    render_template_string,
+)
 
 from routemaster import state_machine
 from routemaster.state_machine import (
@@ -91,10 +98,9 @@ def view_state_machine(state_machine_name):
         'visualisation.html',
     ).decode('utf-8')
 
-    state_machine_json = json.dumps(convert_to_network(state_machine))
-
-    return Response(
-        template_html.replace('{{ state_machine_config }}', state_machine_json),
+    return render_template_string(
+        template_html,
+        state_machine_config=convert_to_network(state_machine),
     )
 
 
