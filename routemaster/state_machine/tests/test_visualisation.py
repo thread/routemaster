@@ -1,5 +1,91 @@
+from pathlib import Path
+
+import yaml
+
+from routemaster.config import load_config
 from routemaster.state_machine import convert_to_network
+
+TEST_MACHINE_STATE_AS_NETWORK = [
+    {
+        'data': {'id': 'start'},
+        'classes': 'gate',
+    },
+    {
+        'data': {
+            'source': 'start',
+            'target': 'perform_action',
+        },
+    },
+    {
+        'data': {
+            'source': 'start',
+            'target': 'perform_alternate_action',
+        },
+    },
+    # We emit duplicate edges when the destination is duplicated; this seems to
+    # be fine though.
+    {
+        'data': {
+            'source': 'start',
+            'target': 'perform_action',
+        },
+    },
+    {
+        'data': {'id': 'perform_action'},
+        'classes': 'action',
+    },
+    {
+        'data': {
+            'source': 'perform_action',
+            'target': 'end',
+        },
+    },
+    {
+        'data': {'id': 'perform_alternate_action'},
+        'classes': 'action',
+    },
+    {
+        'data': {
+            'source': 'perform_alternate_action',
+            'target': 'end',
+        },
+    },
+    # We emit duplicate edges when the destination is duplicated; this seems to
+    # be fine though.
+    {
+        'data': {
+            'source': 'perform_alternate_action',
+            'target': 'start',
+        },
+    },
+    {
+        'data': {
+            'source': 'perform_alternate_action',
+            'target': 'end',
+        },
+    },
+    {
+        'data': {'id': 'end'},
+        'classes': 'gate',
+    },
+]
 
 
 def test_convert_to_network(app):
-    convert_to_network(app.config.state_machines['test_machine'])
+    nodes = convert_to_network(app.config.state_machines['test_machine'])
+
+    assert nodes == TEST_MACHINE_STATE_AS_NETWORK
+
+
+def test_convert_example_to_network(app):
+    repo_root = Path(__file__).parent.parent.parent.parent
+    example_yaml = repo_root / 'example.yaml'
+
+    assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
+
+    example_config = load_config(yaml.load(example_yaml.read_text()))
+
+    # quick check that we've loaded the config we expect
+    assert list(example_config.state_machines.keys()) == ['user_lifecycle']
+
+    convert_to_network(example_config.state_machines['user_lifecycle'])
