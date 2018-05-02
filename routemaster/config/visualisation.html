@@ -83,9 +83,6 @@ body {
       document.getElementById('spacing-factor-display').innerHTML = precisionRound(layoutOptions.spacingFactor * 10, 1);
     }
 
-    document.getElementById('spacing-factor').value = layoutOptions.spacingFactor * 10;
-    displaySpacingFactor();
-
     var cy = cytoscape({
       container: document.querySelector('#cy'),
 
@@ -139,6 +136,10 @@ body {
       displaySpacingFactor();
       cy.layout(layoutOptions).run();
     }
+
+    var initialSpacingFactor = 0.35 + cy.collection('node').length * 0.029;
+    document.getElementById('spacing-factor').value = initialSpacingFactor * 10;
+    changeSpacing(initialSpacingFactor);
   </script>
 </body>
 </html>
