@@ -73,7 +73,7 @@ def view_state_machine(state_machine_name):
     Render an image of a state machine.
 
     Returns:
-    - 200 Ok, SVG: if the state machine exists.
+    - 200 Ok, HTML: if the state machine exists.
     - 404 Not Found: if the state machine does not exist.
     """
     app = server.config.app
