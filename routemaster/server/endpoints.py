@@ -1,12 +1,9 @@
 """Core API endpoints for routemaster service."""
 
-import json
-
 import sqlalchemy
 import pkg_resources
 from flask import (
     Flask,
-    Response,
     abort,
     jsonify,
     request,
