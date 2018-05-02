@@ -58,16 +58,7 @@ body {
         <span id="spacing-factor-display"></span>
       </label>
     </div>
-    <div>
-      <label>
-        Zoom:
-        <span class="range-input-container">
-          <input id="zoom" type="range" onchange="changeZoom(this.value / 2.5)" min="1" max="5" step="0.5" value="2.5">
-        </span>
-        <span id="zoom-display"></span>
-      </label>
-    </div>
-    <div class="muted">Click and drag to move the graph</div>
+    <div class="muted">Click and drag to move the graph; scroll to zoom</div>
   </div>
   <div id="cy"></div>
   <script>
@@ -101,6 +92,7 @@ body {
 
       boxSelectionEnabled: false,
       autounselectify: true,
+      wheelSensitivity: 0.1,
 
       style: cytoscape.stylesheet()
         .selector('node')
@@ -143,16 +135,6 @@ body {
 
       layout: layoutOptions
     });
-
-    function changeZoom(value) {
-      cy.zoom({
-        'level': value,
-        'position': {
-          'x': window.innerWidth / 2,
-          'y': window.innerHeight / 2
-        }
-      });
-    }
 
     function changeSpacing(value) {
       layoutOptions.spacingFactor = value;
