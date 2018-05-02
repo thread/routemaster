@@ -141,7 +141,7 @@ body {
       cy.layout(layoutOptions).run();
     }
 
-    var initialSpacingFactor = 0.35 + cy.collection('node').length * 0.029;
+    var initialSpacingFactor = 0.35 + cy.nodes().length * 0.029;
     document.getElementById('spacing-factor').value = initialSpacingFactor * 10;
     changeSpacing(initialSpacingFactor);
   </script>
