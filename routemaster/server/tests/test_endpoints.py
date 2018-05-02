@@ -345,3 +345,8 @@ def test_update_label_410_for_deleted_label(
 def test_check_loggers(client):
     response = client.get('/check-loggers')
     assert response.status_code == 500
+
+
+def test_get_visualisation(client):
+    response = client.get('/state-machines/test_machine/view')
+    assert response.status_code == 200
