@@ -3,7 +3,7 @@
 import datetime
 import functools
 import contextlib
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import dateutil.tz
 from sqlalchemy import func
@@ -55,9 +55,12 @@ def get_current_state(
     app: App,
     label: LabelRef,
     state_machine: StateMachine,
-) -> State:
+) -> Optional[State]:
     """Get the current state of a label, based on its last history entry."""
     history_entry = get_current_history(app, label)
+    if history_entry.new_state is None:
+        # label has been deleted
+        return None
     return state_machine.get_state(history_entry.new_state)
 
 
@@ -91,6 +94,12 @@ def needs_gate_evaluation_for_metadata_change(
     """
 
     current_state = get_current_state(app, label, state_machine)
+
+    if current_state is None:
+        raise ValueError(
+            f"Cannot determine gate evaluation for deleted label {label} "
+            "(deleted labels have no current state)",
+        )
 
     if not isinstance(current_state, Gate):
         # Label is not a gate state so there's no trigger to resolve.
