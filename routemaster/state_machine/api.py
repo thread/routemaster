@@ -1,6 +1,6 @@
 """The core of the state machine logic."""
 
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 from routemaster.db import Label, History
 from routemaster.app import App
@@ -39,7 +39,7 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
         yield LabelRef(name=name, state_machine=state_machine.name)
 
 
-def get_label_state(app: App, label: LabelRef) -> State:
+def get_label_state(app: App, label: LabelRef) -> Optional[State]:
     """Finds the current state of a label."""
     state_machine = get_state_machine(app, label)
     return get_current_state(app, label, state_machine)
@@ -204,6 +204,10 @@ def delete_label(app: App, label: LabelRef) -> None:
 
     # Add a history entry for the deletion
     current_state = get_current_state(app, label, state_machine)
+
+    if current_state is None:
+        raise AssertionError(f"Active label {label} has no current state!")
+
     row.history.append(History(
         old_state=current_state.name,
         new_state=None,
