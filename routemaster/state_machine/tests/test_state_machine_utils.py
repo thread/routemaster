@@ -110,6 +110,22 @@ def test_needs_gate_evaluation_for_metadata_change(app, create_label):
         ) == (True, current_state)
 
 
+def test_needs_gate_evaluation_for_metadata_change_errors_on_deleted_label(app, create_deleted_label):
+    label = create_deleted_label('foo', 'test_machine')
+    state_machine = app.config.state_machines['test_machine']
+
+    with app.new_session():
+        with pytest.raises(ValueError) as excinfo:
+            utils.needs_gate_evaluation_for_metadata_change(
+                app,
+                state_machine,
+                label,
+                {},
+            )
+
+        assert 'deleted' in str(excinfo.value)
+
+
 def test_does_not_need_gate_evaluation_for_metadata_change_with_action(app, create_label, mock_webhook):
     state_machine = app.config.state_machines['test_machine']
 
