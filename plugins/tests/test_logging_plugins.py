@@ -1,5 +1,8 @@
 import os
+import socket
 import pathlib
+import contextlib
+import subprocess
 from typing import Any, Dict, Type, Tuple, Iterable
 
 import pytest
@@ -9,7 +12,6 @@ from routemaster_sentry import SentryLogger
 from routemaster_prometheus import PrometheusLogger
 from prometheus_client.parser import text_string_to_metric_families
 
-from routemaster.config import LoggingPluginConfig
 from routemaster.logging import BaseLogger, SplitLogger
 
 SENTRY_KWARGS = {
@@ -110,64 +112,64 @@ def test_prometheus_logger_wipes_directory_on_startup(app):
     assert not dirpath.exists()
 
 
-def test_prometheus_logger_metrics(custom_app, custom_client):
-    test_metrics_path = '/test_prometheus_logger_metrics'
-    app = custom_app(
-        logging_plugins=[
-            LoggingPluginConfig(
-                dotted_path='routemaster_prometheus:PrometheusLogger',
-                kwargs={'path': test_metrics_path},
-            ),
-        ],
-    )
-    client = custom_client(app)
+def test_prometheus_logger_metrics():
+    # Get a free port
+    with contextlib.closing(socket.socket()) as sock:
+        sock.bind(('127.0.0.1', 0))
+        port = sock.getsockname()[1]
 
-    wsgi_environ = {
-        'REQUEST_METHOD': 'GET',
-        'PATH_INFO': '/',
-    }
-    app.logger.process_request_started(wsgi_environ)
-    app.logger.process_request_finished(
-        wsgi_environ,
-        status=200,
-        headers={},
-        exc_info=None,
-    )
+    try:
+        proc = subprocess.Popen(
+            f'routemaster --config-file=example.yaml serve --bind 127.0.0.1:{port}',
+            shell=True,
+            stderr=subprocess.PIPE,
+        )
+        while True:
+            if 'Booting worker' in proc.stderr.readline().decode('utf-8'):
+                break
 
-    metrics_response = client.get(test_metrics_path)
-    metrics_data = metrics_response.data.decode('utf-8')
-    metric_families = list(text_string_to_metric_families(metrics_data))
-    samples = [y for x in metric_families for y in x.samples]
+        # Populate metrics with a request
+        requests.get(f'http://127.0.0.1:{port}/')
 
-    assert (
-        'routemaster_api_request_duration_seconds_count',
-        {'method': 'GET', 'status': '200', 'endpoint': '/'},
-        1.0,
-    ) in samples
+        metrics_response = requests.get(f'http://127.0.0.1:{port}/metrics')
+        metric_families = list(text_string_to_metric_families(metrics_response.text))
+        samples = [y for x in metric_families for y in x.samples]
+
+        assert (
+            'routemaster_api_request_duration_seconds_count',
+            {'method': 'GET', 'status': '200', 'endpoint': '/'},
+            1.0,
+        ) in samples
+    finally:
+        proc.kill()
 
 
 def test_prometheus_logger_ignores_metrics_path(custom_app, custom_client):
-    test_metrics_path = '/test_prometheus_logger_ignores_metrics_path'
-    app = custom_app(
-        logging_plugins=[
-            LoggingPluginConfig(
-                dotted_path='routemaster_prometheus:PrometheusLogger',
-                kwargs={'path': test_metrics_path},
-            ),
-        ],
-    )
-    client = custom_client(app)
+    # Get a free port
+    with contextlib.closing(socket.socket()) as sock:
+        sock.bind(('127.0.0.1', 0))
+        port = sock.getsockname()[1]
 
-    metrics_response = client.get(test_metrics_path)
-    metrics_data = metrics_response.data.decode('utf-8')
-    metric_families = list(text_string_to_metric_families(metrics_data))
-    samples = [y for x in metric_families for y in x.samples]
+    try:
+        proc = subprocess.Popen(
+            f'routemaster --config-file=example.yaml serve --bind 127.0.0.1:{port}',
+            shell=True,
+            stderr=subprocess.PIPE,
+        )
+        while True:
+            if 'Booting worker' in proc.stderr.readline().decode('utf-8'):
+                break
 
-    assert (
-        'routemaster_api_request_duration_seconds_count',
-        {'method': 'GET', 'status': '200', 'endpoint': test_metrics_path},
-        1.0,
-    ) not in samples
+        # This should _not_ populate the metrics with any samples
+        requests.get(f'http://127.0.0.1:{port}/metrics')
+
+        metrics_response = requests.get(f'http://127.0.0.1:{port}/metrics')
+        metric_families = list(text_string_to_metric_families(metrics_response.text))
+        samples = [y for x in metric_families for y in x.samples]
+
+        assert samples == []
+    finally:
+        proc.kill()
 
 
 def test_prometheus_logger_validates_metrics_path(app):
