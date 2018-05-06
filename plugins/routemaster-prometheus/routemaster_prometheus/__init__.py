@@ -9,8 +9,8 @@ import shutil
 import pathlib
 import contextlib
 from timeit import default_timer as timer
-from werkzeug.routing import NotFound, RequestRedirect, MethodNotAllowed
 
+from werkzeug.routing import NotFound, RequestRedirect, MethodNotAllowed
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     Counter,
