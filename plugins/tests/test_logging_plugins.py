@@ -68,6 +68,7 @@ def test_logger(app, klass, kwargs):
         with logger.process_webhook(state_machine, state):
             raise RuntimeError("Error must propagate")
 
+    # Test valid request
     wsgi_environ = {
         'REQUEST_METHOD': 'GET',
         'PATH_INFO': '/',
@@ -76,6 +77,32 @@ def test_logger(app, klass, kwargs):
     logger.process_request_finished(
         wsgi_environ,
         status=200,
+        headers={},
+        exc_info=None,
+    )
+
+    # Test failed request
+    wsgi_environ_failed = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/',
+    }
+    logger.process_request_started(wsgi_environ_failed)
+    logger.process_request_finished(
+        wsgi_environ_failed,
+        status=200,
+        headers={},
+        exc_info=(RuntimeError, RuntimeError('Test exception'), None),
+    )
+
+    # Test with invalid path
+    wsgi_environ_invalid_path = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/non-existent',
+    }
+    logger.process_request_started(wsgi_environ_invalid_path)
+    logger.process_request_finished(
+        wsgi_environ_invalid_path,
+        status=404,
         headers={},
         exc_info=None,
     )
