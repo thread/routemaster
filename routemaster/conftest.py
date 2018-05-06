@@ -274,12 +274,6 @@ def client(custom_app=None):
 
 
 @pytest.fixture()
-def custom_client():
-    """Return the client fixture directly so that we can modify the app."""
-    return client
-
-
-@pytest.fixture()
 def app(**kwargs):
     """Create an `App` config object for testing."""
     return TestApp(Config(
