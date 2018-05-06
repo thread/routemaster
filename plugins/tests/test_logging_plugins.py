@@ -112,18 +112,8 @@ def test_prometheus_logger_wipes_directory_on_startup(app):
     assert not dirpath.exists()
 
 
-def test_prometheus_logger_metrics():
-    # Get a free port
-    with contextlib.closing(socket.socket()) as sock:
-        sock.bind(('127.0.0.1', 0))
-        port = sock.getsockname()[1]
-
-    try:
-        proc = subprocess.Popen(
-            f'routemaster --config-file=example.yaml serve --bind 127.0.0.1:{port}',
-            shell=True,
-            stderr=subprocess.PIPE,
-        )
+def test_prometheus_logger_metrics(routemaster_serve_subprocess):
+    with routemaster_serve_subprocess() as (proc, port):
         while True:
             if 'Booting worker' in proc.stderr.readline().decode('utf-8'):
                 break
@@ -140,22 +130,10 @@ def test_prometheus_logger_metrics():
             {'method': 'GET', 'status': '200', 'endpoint': '/'},
             1.0,
         ) in samples
-    finally:
-        proc.kill()
 
 
-def test_prometheus_logger_ignores_metrics_path(custom_app, custom_client):
-    # Get a free port
-    with contextlib.closing(socket.socket()) as sock:
-        sock.bind(('127.0.0.1', 0))
-        port = sock.getsockname()[1]
-
-    try:
-        proc = subprocess.Popen(
-            f'routemaster --config-file=example.yaml serve --bind 127.0.0.1:{port}',
-            shell=True,
-            stderr=subprocess.PIPE,
-        )
+def test_prometheus_logger_ignores_metrics_path(routemaster_serve_subprocess):
+    with routemaster_serve_subprocess() as (proc, port):
         while True:
             if 'Booting worker' in proc.stderr.readline().decode('utf-8'):
                 break
@@ -168,8 +146,6 @@ def test_prometheus_logger_ignores_metrics_path(custom_app, custom_client):
         samples = [y for x in metric_families for y in x.samples]
 
         assert samples == []
-    finally:
-        proc.kill()
 
 
 def test_prometheus_logger_validates_metrics_path(app):

@@ -3,9 +3,11 @@
 import os
 import re
 import json
+import socket
 import datetime
 import functools
 import contextlib
+import subprocess
 from typing import Any, Dict
 from unittest import mock
 
@@ -511,4 +513,38 @@ def current_state(app):
             ).order_by(
                 History.id.desc(),
             ).limit(1).scalar()
+    return _inner
+
+
+@pytest.fixture()
+def unused_tcp_port():
+    """Returns an unused TCP port, inspired by pytest-asyncio."""
+    with contextlib.closing(socket.socket()) as sock:
+        sock.bind(('127.0.0.1', 0))
+        return sock.getsockname()[1]
+
+
+@pytest.fixture()
+def routemaster_serve_subprocess(unused_tcp_port):
+    """
+    Fixture to spawn a routemaster server as a subprocess.
+
+    Yields the process reference, and the port that it can be accessed on.
+    """
+
+    @contextlib.contextmanager
+    def _inner():
+        try:
+            proc = subprocess.Popen(
+                f'routemaster --config-file=example.yaml serve '
+                f'--bind 127.0.0.1:{unused_tcp_port}',
+                shell=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            yield proc, unused_tcp_port
+        finally:
+            proc.kill()
+
     return _inner
