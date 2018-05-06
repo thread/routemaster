@@ -1,5 +1,6 @@
 """Global test setup and fixtures."""
 
+import io
 import os
 import re
 import json
@@ -536,15 +537,19 @@ def routemaster_serve_subprocess(unused_tcp_port):
     def _inner():
         try:
             proc = subprocess.Popen(
-                f'routemaster --config-file=example.yaml serve '
-                f'--bind 127.0.0.1:{unused_tcp_port}',
-                shell=True,
+                [
+                    'routemaster',
+                    '--config-file=example.yaml',
+                    'serve',
+                    '--bind',
+                    f'127.0.0.1:{unused_tcp_port}',
+                ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
             )
             yield proc, unused_tcp_port
         finally:
-            proc.kill()
+            proc.terminate()
 
     return _inner
