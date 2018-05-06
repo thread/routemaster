@@ -1,6 +1,5 @@
 """Global test setup and fixtures."""
 
-import io
 import os
 import re
 import json
@@ -535,6 +534,15 @@ def routemaster_serve_subprocess(unused_tcp_port):
 
     @contextlib.contextmanager
     def _inner():
+        env = os.environ.copy()
+        env.update({
+            'DB_HOST': os.environ.get('PG_HOST', 'localhost'),
+            'DB_PORT': os.environ.get('PG_PORT', '5432'),
+            'DB_NAME': os.environ.get('PG_DB', 'routemaster_test'),
+            'DB_USER': os.environ.get('PG_USER', ''),
+            'DB_PASS': os.environ.get('PG_PASS', ''),
+        })
+
         try:
             proc = subprocess.Popen(
                 [
@@ -544,6 +552,7 @@ def routemaster_serve_subprocess(unused_tcp_port):
                     '--bind',
                     f'127.0.0.1:{unused_tcp_port}',
                 ],
+                env=env,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
