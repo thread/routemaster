@@ -1,12 +1,13 @@
 """Base class for logging plugins."""
 
 import contextlib
+from typing import Any
 
 
 class BaseLogger:
     """Base class for logging plugins."""
 
-    def __init__(self, config, *args, **kwargs) -> None:
+    def __init__(self, config: Any, **kwargs: str) -> None:
         self.config = config
 
     def init_flask(self, flask_app):

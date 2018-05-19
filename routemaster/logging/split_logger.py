@@ -2,16 +2,19 @@
 
 import functools
 import contextlib
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from routemaster.logging.base import BaseLogger
+
+if TYPE_CHECKING:
+    from routemaster.config import Config  # noqa
 
 
 class SplitLogger(BaseLogger):
     """Proxies logging calls to all loggers in a list."""
 
-    def __init__(self, *args, loggers: List[BaseLogger]) -> None:
-        super().__init__(*args)
+    def __init__(self, config: 'Config', loggers: List[BaseLogger]) -> None:
+        super().__init__(config)
 
         self.loggers = loggers
 

@@ -18,7 +18,7 @@ TEST_CASES: Iterable[Tuple[Type[BaseLogger], Dict[str, Any]]] = [
     ]}),
     (SplitLogger, {'loggers': [
         PythonLogger(None, log_level='WARN'),
-        BaseLogger(None, {}),
+        BaseLogger(None),
     ]}),
 ]
 

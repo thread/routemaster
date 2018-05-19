@@ -160,7 +160,7 @@ class FeedConfig(NamedTuple):
 
 class Webhook(NamedTuple):
     """Configuration for webdook requests."""
-    match: Pattern
+    match: Pattern[str]
     headers: Dict[str, str]
 
 

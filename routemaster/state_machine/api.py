@@ -151,7 +151,7 @@ def _process_transitions_for_metadata_update(
     label: LabelRef,
     state_machine: StateMachine,
     state_pending_update: State,
-):
+) -> None:
     with app.session.begin_nested():
         lock_label(app, label)
         current_state = get_current_state(app, label, state_machine)
@@ -223,7 +223,7 @@ def process_cron(
     app: App,
     state_machine: StateMachine,
     state: State,
-):
+) -> None:
     """
     Cron event entrypoint.
     """

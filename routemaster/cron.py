@@ -55,7 +55,7 @@ def process_job(
     # Bound when scheduling a specific job for a state
     fn: LabelStateProcessor,
     label_provider: LabelProvider,
-):
+) -> None:
     """Process a single instance of a single cron job."""
 
     def _iter_labels_until_terminating(state_machine, state):
