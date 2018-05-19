@@ -5,13 +5,14 @@ from routemaster.state_machine.transitions import process_transitions
 
 
 def test_cannot_infinite_loop(app, create_label, set_metadata):
+    app.logger = mock.Mock()
     label = create_label('foo', 'test_infinite_machine', {})
     set_metadata(label, {'should_progress': True})
 
     with app.new_session():
         process_transitions(app, label)
 
-    app.logger.warn.assert_called_once()
+    app.logger.warning.assert_called_once()
 
 
 def test_stops_on_delete(app, create_label, set_metadata):

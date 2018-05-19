@@ -53,12 +53,17 @@ def test_logger(app, klass, kwargs):
         with logger.process_webhook(state_machine, state):
             raise RuntimeError("Error must propagate")
 
-    with logger.process_request({}):
-        pass
-
-    with pytest.raises(RuntimeError):
-        with logger.process_request({}):
-            raise RuntimeError("Error must propagate")
+    wsgi_environ = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/',
+    }
+    logger.process_request_started(wsgi_environ)
+    logger.process_request_finished(
+        wsgi_environ,
+        status=200,
+        headers={},
+        exc_info=None,
+    )
 
     logger.debug("test")
     logger.info("test")

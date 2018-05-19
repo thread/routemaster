@@ -19,4 +19,6 @@ COPY alembic.ini alembic.ini
 
 EXPOSE 2017
 
+ENV prometheus_multiproc_dir /tmp/routemaster/prometheus
+
 CMD ["routemaster", "--config-file=config.yaml", "serve"]

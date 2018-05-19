@@ -1,3 +1,8 @@
+import os
+import socket
+import pathlib
+import contextlib
+import subprocess
 from typing import Any, Dict, Type, Tuple, Iterable
 
 import pytest
@@ -5,6 +10,7 @@ import requests
 from flask import Flask
 from routemaster_sentry import SentryLogger
 from routemaster_prometheus import PrometheusLogger
+from prometheus_client.parser import text_string_to_metric_families
 
 from routemaster.logging import BaseLogger, SplitLogger
 
@@ -12,12 +18,13 @@ SENTRY_KWARGS = {
     'dsn': 'https://xxxxxxx:xxxxxxx@sentry.io/xxxxxxx',
     'enabled': False,
 }
-PROMETHEUS_KWARGS = {'path': '/metrics'}
+PROMETHEUS_KWARGS = {
+    'path': '/metrics',
+}
 
 TEST_CASES: Iterable[Tuple[Type[BaseLogger], Dict[str, Any]]] = [
     (SentryLogger, SENTRY_KWARGS),
     (PrometheusLogger, PROMETHEUS_KWARGS),
-    (PrometheusLogger, {}),
     (SplitLogger, {'loggers': [
         SentryLogger(None, **SENTRY_KWARGS),
         PrometheusLogger(None, **PROMETHEUS_KWARGS),
@@ -33,6 +40,11 @@ def test_logger(app, klass, kwargs):
     feed_url = 'https://localhost'
 
     server = Flask('test_server')
+
+    @server.route('/')
+    def root():
+        return 'Ok', 200
+
     logger.init_flask(server)
 
     with logger.process_cron(state_machine, state, 'test_cron'):
@@ -56,12 +68,44 @@ def test_logger(app, klass, kwargs):
         with logger.process_webhook(state_machine, state):
             raise RuntimeError("Error must propagate")
 
-    with logger.process_request({}):
-        pass
+    # Test valid request
+    wsgi_environ = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/',
+    }
+    logger.process_request_started(wsgi_environ)
+    logger.process_request_finished(
+        wsgi_environ,
+        status=200,
+        headers={},
+        exc_info=None,
+    )
 
-    with pytest.raises(RuntimeError):
-        with logger.process_request({}):
-            raise RuntimeError("Error must propagate")
+    # Test failed request
+    wsgi_environ_failed = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/',
+    }
+    logger.process_request_started(wsgi_environ_failed)
+    logger.process_request_finished(
+        wsgi_environ_failed,
+        status=200,
+        headers={},
+        exc_info=(RuntimeError, RuntimeError('Test exception'), None),
+    )
+
+    # Test with invalid path
+    wsgi_environ_invalid_path = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/non-existent',
+    }
+    logger.process_request_started(wsgi_environ_invalid_path)
+    logger.process_request_finished(
+        wsgi_environ_invalid_path,
+        status=404,
+        headers={},
+        exc_info=None,
+    )
 
     logger.debug("test")
     logger.info("test")
@@ -80,3 +124,68 @@ def test_logger(app, klass, kwargs):
     response = requests.Response()
     logger.webhook_response(state_machine, state, response)
     logger.feed_response(state_machine, state, feed_url, response)
+
+
+def test_prometheus_logger_wipes_directory_on_startup(app):
+    tmp = pathlib.Path(os.environ['prometheus_multiproc_dir'])
+    tmp.mkdir(parents=True, exist_ok=True)
+
+    filepath = tmp / 'foo.txt'
+    dirpath = tmp / 'subdir'
+
+    dirpath.mkdir(parents=True, exist_ok=True)
+    with filepath.open('w') as f:
+        f.write('Hello, world')
+
+    PrometheusLogger(app.config)
+
+    assert not filepath.exists()
+    assert not dirpath.exists()
+
+
+def test_prometheus_logger_metrics(routemaster_serve_subprocess):
+    with routemaster_serve_subprocess() as (proc, port):
+        while True:
+            out = proc.stdout.readline()
+            if 'Booting worker' in out.decode('utf-8'):
+                break
+
+        # Populate metrics with a request
+        requests.get(f'http://127.0.0.1:{port}/')
+
+        metrics_response = requests.get(f'http://127.0.0.1:{port}/metrics')
+        metric_families = list(text_string_to_metric_families(metrics_response.text))
+        samples = [y for x in metric_families for y in x.samples]
+
+        assert (
+            'routemaster_api_request_duration_seconds_count',
+            {'method': 'GET', 'status': '200', 'endpoint': '/'},
+            1.0,
+        ) in samples
+
+
+def test_prometheus_logger_ignores_metrics_path(routemaster_serve_subprocess):
+    with routemaster_serve_subprocess() as (proc, port):
+        while True:
+            out = proc.stdout.readline()
+            if 'Booting worker' in out.decode('utf-8'):
+                break
+
+        # This should _not_ populate the metrics with any samples
+        requests.get(f'http://127.0.0.1:{port}/metrics')
+
+        metrics_response = requests.get(f'http://127.0.0.1:{port}/metrics')
+        metric_families = list(text_string_to_metric_families(metrics_response.text))
+        samples = [y for x in metric_families for y in x.samples]
+
+        assert samples == []
+
+
+def test_prometheus_logger_validates_metrics_path(app):
+    orig = os.environ['prometheus_multiproc_dir']
+    os.environ['prometheus_multiproc_dir'] = ''
+
+    with pytest.raises(ValueError):
+        PrometheusLogger(app.config)
+
+    os.environ['prometheus_multiproc_dir'] = orig
