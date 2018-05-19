@@ -135,8 +135,34 @@ def test_layers():
         code = compile(contents, module_name, 'exec')
 
         last_import_source = None
+        last_load_name = None
+        skip_to_offset = None
 
-        for instruction in dis.get_instructions(code):
+        for offset, instruction in enumerate(dis.get_instructions(code)):
+
+            # Skip over checking code that is within a block like this:
+            #     if TYPE_CHECKING:
+            #         import...
+            if skip_to_offset == offset:
+                skip_to_offset = None
+            elif skip_to_offset is not None:
+                continue
+
+            if instruction.opname == 'LOAD_NAME':
+                last_load_name = instruction.argval
+                continue
+
+            elif (
+                instruction.opname == 'POP_JUMP_IF_FALSE' and
+                last_load_name == 'TYPE_CHECKING'
+            ):
+                skip_to_offset = instruction.argval
+                continue
+
+            last_load_name = None
+
+            # Now do the actual import checking
+
             if instruction.opname == 'IMPORT_NAME':
                 import_target = instruction.argval
 
