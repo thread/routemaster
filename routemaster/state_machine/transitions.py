@@ -65,7 +65,7 @@ def process_transitions(app: App, label: LabelRef) -> None:
         num_transitions += 1
 
         if num_transitions == MAX_TRANSITIONS:
-            app.logger.warn(textwrap.dedent(
+            app.logger.warning(textwrap.dedent(
                 f"""
                 Label {label}
                 hit the maximum number of transitions allowed in one go. This

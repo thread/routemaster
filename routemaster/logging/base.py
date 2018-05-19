@@ -29,7 +29,26 @@ class BaseLogger:
         """Wraps the processing of a webhook for logging purposes."""
         yield
 
-    def webhook_response(self, response):
+    def process_request_started(self, environ):
+        """Request started."""
+        pass
+
+    def process_request_finished(
+        self,
+        environ,
+        status,
+        headers,
+        exc_info,
+    ):
+        """Completes the processing of a request."""
+        pass
+
+    def webhook_response(
+        self,
+        state_machine,
+        state,
+        response,
+    ):
         """Logs the receipt of a response from a webhook."""
         pass
 
@@ -38,7 +57,13 @@ class BaseLogger:
         """Wraps the processing of a feed for logging purposes."""
         yield
 
-    def feed_response(self, response):
+    def feed_response(
+        self,
+        state_machine,
+        state,
+        feed_url,
+        response,
+    ):
         """Logs the receipt of a response from a feed."""
         pass
 

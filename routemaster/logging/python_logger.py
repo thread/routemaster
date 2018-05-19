@@ -44,6 +44,21 @@ class PythonLogger(BaseLogger):
             f"in {state_machine.name} in {duration:.2f} seconds",
         )
 
+    def process_request_finished(
+        self,
+        environ,
+        *,
+        status,
+        headers,
+        exc_info,
+    ):
+        """Process a web request and log some basic info about it."""
+        self.info("{method} {path} {status}".format(
+            method=environ.get('REQUEST_METHOD'),
+            path=environ.get('PATH_INFO'),
+            status=status,
+        ))
+
     def __getattr__(self, name):
         """Fall back to the logger API."""
         return getattr(self.logger, name)

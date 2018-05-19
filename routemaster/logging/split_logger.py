@@ -27,6 +27,8 @@ class SplitLogger(BaseLogger):
 
             'webhook_response',
             'feed_response',
+            'process_request_started',
+            'process_request_finished',
         ):
             setattr(self, fn, functools.partial(self._log_all, fn))
 

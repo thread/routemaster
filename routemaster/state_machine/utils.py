@@ -1,8 +1,9 @@
 """Utilities for state machine execution."""
 
 import datetime
+import functools
 import contextlib
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import dateutil.tz
 from sqlalchemy import func
@@ -54,9 +55,12 @@ def get_current_state(
     app: App,
     label: LabelRef,
     state_machine: StateMachine,
-) -> State:
+) -> Optional[State]:
     """Get the current state of a label, based on its last history entry."""
     history_entry = get_current_history(app, label)
+    if history_entry.new_state is None:
+        # label has been deleted
+        return None
     return state_machine.get_state(history_entry.new_state)
 
 
@@ -66,7 +70,11 @@ def get_current_history(app: App, label: LabelRef) -> History:
         label_name=label.name,
         label_state_machine=label.state_machine,
     ).order_by(
-        History.id.desc(),
+        # Our model type stubs define the `id` attribute as `int`, yet
+        # sqlalchemy actually allows the attribute to be used for ordering like
+        # this; ignore the type check here specifically rather than complicate
+        # our type definitions.
+        History.id.desc(),  # type: ignore
     ).first()
 
     if history_entry is None:
@@ -86,6 +94,12 @@ def needs_gate_evaluation_for_metadata_change(
     """
 
     current_state = get_current_state(app, label, state_machine)
+
+    if current_state is None:
+        raise ValueError(
+            f"Cannot determine gate evaluation for deleted label {label} "
+            "(deleted labels have no current state)",
+        )
 
     if not isinstance(current_state, Gate):
         # Label is not a gate state so there's no trigger to resolve.
@@ -149,23 +163,32 @@ def _labels_in_state(
     filter_: Any,
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
-    rank = func.row_number().over(
-        order_by=History.id.desc(),
-        partition_by=History.label_name,
-    ).label('rank')
 
-    ranked_transitions = app.session.query(
+    states_by_rank = app.session.query(
         History.label_name,
-    ).add_column(
-        rank,
+        History.new_state,
+        func.row_number().over(
+            # Our model type stubs define the `id` attribute as `int`, yet
+            # sqlalchemy actually allows the attribute to be used for ordering
+            # like this; ignore the type check here specifically rather than
+            # complicate our type definitions.
+            order_by=History.id.desc(),  # type: ignore
+            partition_by=History.label_name,
+        ).label('rank'),
     ).filter_by(
         label_state_machine=state_machine.name,
-        new_state=state.name,
-    ).from_self().filter(
-        rank == 1,
-    ).join(Label).filter(filter_)
+    ).subquery()
 
-    return [x for x, _ in ranked_transitions]
+    ranked_transitions = app.session.query(
+        states_by_rank.c.label_name,
+    ).filter(
+        states_by_rank.c.rank == 1,
+        states_by_rank.c.new_state == state.name,
+    ).join(Label).filter(
+        filter_,
+    )
+
+    return [x for x, in ranked_transitions]
 
 
 def context_for_label(
@@ -188,7 +211,12 @@ def context_for_label(
     @contextlib.contextmanager
     def feed_logging_context(feed_url):
         with logger.process_feed(state_machine, state, feed_url):
-            yield logger.feed_response
+            yield functools.partial(
+                logger.feed_response,
+                state_machine,
+                state,
+                feed_url,
+            )
 
     return Context(
         label=label.name,

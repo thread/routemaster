@@ -3,8 +3,11 @@
 import os
 import re
 import json
+import socket
 import datetime
+import functools
 import contextlib
+import subprocess
 from typing import Any, Dict
 from unittest import mock
 
@@ -34,11 +37,12 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    LoggingPluginConfig,
     ContextNextStatesOption,
 )
 from routemaster.server import server
 from routemaster.context import Context
-from routemaster.logging import BaseLogger
+from routemaster.logging import BaseLogger, SplitLogger, register_loggers
 from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
@@ -234,7 +238,7 @@ class TestApp(App):
     def __init__(self, config):
         self.config = config
         self.session_used = False
-        self.logger = mock.MagicMock()
+        self.logger = SplitLogger(config, loggers=register_loggers(config))
         self._session = None
         self._needs_rollback = False
         self._current_session = None
@@ -261,10 +265,11 @@ class TestClientResponse(BaseResponse):
 
 
 @pytest.fixture()
-def client():
+def client(custom_app=None):
     """Create a werkzeug test client."""
-    _app = app()
+    _app = app() if custom_app is None else custom_app
     server.config.app = _app
+    _app.logger.init_flask(server)
     return Client(wrap_application(_app, server), TestClientResponse)
 
 
@@ -274,7 +279,12 @@ def app(**kwargs):
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
-        logging_plugins=kwargs.get('logging_plugins', []),
+        logging_plugins=kwargs.get('logging_plugins', [
+            LoggingPluginConfig(
+                dotted_path='routemaster.logging:PythonLogger',
+                kwargs={'log_level': 'DEBUG'},
+            ),
+        ]),
     ))
 
 
@@ -453,7 +463,12 @@ def make_context(app):
         @contextlib.contextmanager
         def feed_logging_context(feed_url):
             with logger.process_feed(state_machine, state, feed_url):
-                yield logger.feed_response
+                yield functools.partial(
+                    logger.feed_response,
+                    state_machine,
+                    state,
+                    feed_url,
+                )
 
         return Context(
             label=kwargs['label'],
@@ -492,4 +507,52 @@ def current_state(app):
             ).order_by(
                 History.id.desc(),
             ).limit(1).scalar()
+    return _inner
+
+
+@pytest.fixture()
+def unused_tcp_port():
+    """Returns an unused TCP port, inspired by pytest-asyncio."""
+    with contextlib.closing(socket.socket()) as sock:
+        sock.bind(('127.0.0.1', 0))
+        return sock.getsockname()[1]
+
+
+@pytest.fixture()
+def routemaster_serve_subprocess(unused_tcp_port):
+    """
+    Fixture to spawn a routemaster server as a subprocess.
+
+    Yields the process reference, and the port that it can be accessed on.
+    """
+
+    @contextlib.contextmanager
+    def _inner():
+        env = os.environ.copy()
+        env.update({
+            'DB_HOST': os.environ.get('PG_HOST', 'localhost'),
+            'DB_PORT': os.environ.get('PG_PORT', '5432'),
+            'DB_NAME': os.environ.get('PG_DB', 'routemaster_test'),
+            'DB_USER': os.environ.get('PG_USER', ''),
+            'DB_PASS': os.environ.get('PG_PASS', ''),
+        })
+
+        try:
+            proc = subprocess.Popen(
+                [
+                    'routemaster',
+                    '--config-file=example.yaml',
+                    'serve',
+                    '--bind',
+                    f'127.0.0.1:{unused_tcp_port}',
+                ],
+                env=env,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            yield proc, unused_tcp_port
+        finally:
+            proc.terminate()
+
     return _inner

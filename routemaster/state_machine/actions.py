@@ -2,6 +2,7 @@
 
 import json
 import hashlib
+import functools
 
 from sqlalchemy import func
 
@@ -58,13 +59,19 @@ def process_action(
 
     idempotency_token = _calculate_idempotency_token(label, latest_history)
 
+    webhook_logger = functools.partial(
+        app.logger.webhook_response,
+        state_machine,
+        state,
+    )
+
     with app.logger.process_webhook(state_machine, state):
         result = run_webhook(
             template_url(action.webhook, state_machine.name, label.name),
             'application/json',
             webhook_data,
             idempotency_token,
-            app.logger.webhook_response,
+            webhook_logger,
         )
 
     if result != WebhookResult.SUCCESS:
