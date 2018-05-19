@@ -3,15 +3,19 @@
 import time
 import logging
 import contextlib
+from typing import TYPE_CHECKING
 
 from routemaster.logging.base import BaseLogger
+
+if TYPE_CHECKING:
+    from routemaster.config import Config  # noqa
 
 
 class PythonLogger(BaseLogger):
     """Routemaster logging interface for Python's logging library."""
 
-    def __init__(self, *args, log_level: str) -> None:
-        super().__init__(*args)
+    def __init__(self, config: 'Config', log_level: str) -> None:
+        super().__init__(config)
 
         logging.basicConfig(
             format=(

@@ -8,6 +8,8 @@ from dataclasses import InitVar, dataclass
 from routemaster.utils import get_path, template_url
 from routemaster.config import StateMachine
 
+FeedResponseLogger = Callable[[requests.Response], None]
+
 
 def feeds_for_state_machine(state_machine: StateMachine) -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
@@ -43,7 +45,7 @@ class Feed:
     def prefetch(
         self,
         label: str,
-        log_response: Callable[[requests.Response], None] = lambda x: None,
+        log_response: FeedResponseLogger = lambda x: None,
     ) -> None:
         """Trigger the fetching of a feed's data."""
         if self.data is not None:

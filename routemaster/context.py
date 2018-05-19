@@ -1,11 +1,26 @@
 """Context definition for exit condition programs."""
 import datetime
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    ContextManager,
+)
 
 from routemaster.utils import get_path
 
 if TYPE_CHECKING:
-    from routemaster.feeds import Feed  # noqa
+    import requests  # noqa
+    from routemaster.feeds import Feed, FeedResponseLogger  # noqa
+
+FeedLoggingContext = Callable[
+    [str],
+    ContextManager[Callable[['requests.Response'], None]],
+]
 
 
 class Context(object):
@@ -20,7 +35,7 @@ class Context(object):
         feeds: Dict[str, 'Feed'],
         accessed_variables: Iterable[str],
         current_history_entry: Optional[Any],
-        feed_logging_context,
+        feed_logging_context: FeedLoggingContext,
     ) -> None:
         """Create an execution context."""
         if now.tzinfo is None:
@@ -82,7 +97,7 @@ class Context(object):
         self,
         label: str,
         accessed_variables: Iterable[str],
-        logging_context,
+        logging_context: FeedLoggingContext,
     ) -> None:
         for accessed_variable in accessed_variables:
             parts = accessed_variable.split('.')
