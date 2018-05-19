@@ -27,7 +27,6 @@ DEPENDENCIES = (
     ('exit_conditions', 'utils'),
 
     ('context', 'utils'),
-    ('context', 'feeds'),
 
     ('config', 'exit_conditions'),
     ('config', 'context'),
@@ -57,6 +56,7 @@ DEPENDENCIES = (
     ('state_machine', 'webhooks'),
 
     ('feeds', 'utils'),
+    ('feeds', 'config'),
 
     ('webhooks', 'config'),
 
