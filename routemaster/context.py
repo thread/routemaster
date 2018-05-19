@@ -1,9 +1,11 @@
 """Context definition for exit condition programs."""
 import datetime
-from typing import Any, Dict, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence
 
-from routemaster.feeds import Feed
 from routemaster.utils import get_path
+
+if TYPE_CHECKING:
+    from routemaster.feeds import Feed  # noqa
 
 
 class Context(object):
@@ -15,7 +17,7 @@ class Context(object):
         label: str,
         metadata: Dict[str, Any],
         now: datetime.datetime,
-        feeds: Dict[str, Feed],
+        feeds: Dict[str, 'Feed'],
         accessed_variables: Iterable[str],
         current_history_entry: Optional[Any],
         feed_logging_context,
