@@ -12,7 +12,7 @@ setup(
     url='https://github.com/thread/routemaster',
     description="State machines as a service.",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
 
     author="Thread",
     author_email="tech@thread.com",
