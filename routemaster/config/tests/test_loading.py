@@ -188,6 +188,16 @@ def test_raises_for_invalid_top_level_context_name_in_exit_condition():
         ))
 
 
+def test_raises_for_invalid_feed_name_in_lookup():
+    with assert_config_error(
+        "Invalid feed name at "
+        "state_machines.the_workflow.states.0.exit_condition: key "
+        "feeds.nope.has_option_b references unknown feed 'nope' (configured "
+        "feeds are: 'jacquard')",
+    ):
+        load_config(yaml_data('invalid_feed_name_in_exit_condition'))
+
+
 def test_raises_for_action_and_gate_state():
     with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('action_and_gate_invalid'))
