@@ -3,7 +3,7 @@
 import os
 import re
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Iterable, Optional
 
 import yaml
 import jsonschema
@@ -167,6 +167,24 @@ def _load_state(path: Path, yaml_state: Yaml) -> State:
         )
 
 
+def _validate_context_lookups(
+    path: Path,
+    lookups: Iterable[str],
+) -> None:
+    # Changing this? Also change context lookups in
+    # `routemaster.context.Context`
+    VALID_TOP_LEVEL = ('feeds', 'history', 'metadata')
+
+    for lookup in lookups:
+        location, *rest = lookup.split('.')
+
+        if location not in VALID_TOP_LEVEL:
+            raise ConfigError(
+                f"Invalid context lookup at {'.'.join(path)}: key {lookup} "
+                f"must start with one of 'feeds', 'history' or 'metadata'.",
+            )
+
+
 def _load_action(path: Path, yaml_state: Yaml) -> Action:
     return Action(
         name=yaml_state['action'],
@@ -188,9 +206,15 @@ def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
     else:
         str_exit_condition = str(yaml_exit_condition).strip()
 
+    exit_condition = ExitConditionProgram(str_exit_condition)
+    _validate_context_lookups(
+        path + ['exit_condition'],
+        exit_condition.accessed_variables(),
+    )
+
     return Gate(
         name=yaml_state['gate'],
-        exit_condition=ExitConditionProgram(str_exit_condition),
+        exit_condition=exit_condition,
         triggers=[
             _load_trigger(path + ['triggers', str(idx)], yaml_trigger)
             for idx, yaml_trigger in enumerate(yaml_state.get('triggers', []))
@@ -300,8 +324,12 @@ def _load_context_next_states(
     path: Path,
     yaml_next_states: Yaml,
 ) -> NextStates:
+    context_path = yaml_next_states['path']
+
+    _validate_context_lookups(path + ['path'], (context_path,))
+
     return ContextNextStates(
-        path=yaml_next_states['path'],
+        path=context_path,
         destinations=[
             _load_context_next_state_option(
                 path + ['destinations', str(idx)],
