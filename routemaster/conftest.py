@@ -264,18 +264,8 @@ class TestClientResponse(BaseResponse):
         return json.loads(self.data)
 
 
-@pytest.fixture()
-def client(custom_app=None):
-    """Create a werkzeug test client."""
-    _app = app() if custom_app is None else custom_app
-    server.config.app = _app
-    _app.logger.init_flask(server)
-    return Client(wrap_application(_app, server), TestClientResponse)
-
-
-@pytest.fixture()
-def app(**kwargs):
-    """Create an `App` config object for testing."""
+def get_test_app(**kwargs):
+    """Instantiate an app with testing parameters."""
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
@@ -289,9 +279,24 @@ def app(**kwargs):
 
 
 @pytest.fixture()
+def client(custom_app=None):
+    """Create a werkzeug test client."""
+    _app = get_test_app() if custom_app is None else custom_app
+    server.config.app = _app
+    _app.logger.init_flask(server)
+    return Client(wrap_application(_app, server), TestClientResponse)
+
+
+@pytest.fixture()
+def app(**kwargs):
+    """Create an `App` config object for testing."""
+    return get_test_app(**kwargs)
+
+
+@pytest.fixture()
 def custom_app():
-    """Return the app config fixture directly so that we can modify config."""
-    return app
+    """Return the test app generator so that we can pass in custom config."""
+    return get_test_app
 
 
 @pytest.fixture()
