@@ -1,8 +1,8 @@
 """CLI handling for `routemaster`."""
 import logging
 
-from ruamel import yaml
 import click
+from ruamel import yaml
 
 from routemaster.app import App
 from routemaster.cron import CronThread

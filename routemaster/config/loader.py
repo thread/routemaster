@@ -5,10 +5,10 @@ import re
 import datetime
 from typing import Any, Dict, List, Optional
 
-from ruamel import yaml
 import jsonschema
 import pkg_resources
 import jsonschema.exceptions
+from ruamel import yaml
 
 from routemaster.config.model import (
     Gate,
