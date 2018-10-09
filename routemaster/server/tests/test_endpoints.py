@@ -339,8 +339,3 @@ def test_update_label_410_for_deleted_label(
         content_type='application/json',
     )
     assert response.status_code == 410
-
-
-def test_check_loggers(client):
-    response = client.get('/check-loggers')
-    assert response.status_code == 500
