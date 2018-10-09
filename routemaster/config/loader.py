@@ -71,7 +71,7 @@ def _schema_validate(config: Yaml) -> None:
         'routemaster.config',
         'schema.yaml',
     ).decode('utf-8')
-    schema_yaml = yaml.load(schema_raw)
+    schema_yaml = yaml.safe_load(schema_raw)
 
     try:
         jsonschema.validate(config, schema_yaml)

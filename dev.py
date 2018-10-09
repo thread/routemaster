@@ -18,7 +18,7 @@ def app_from_config(config_path):
     By default, will use the example.yaml file.
     """
     with open(config_path, 'r') as f:
-        config = load_config(yaml.load(f))
+        config = load_config(yaml.safe_load(f))
 
     class InteractiveApp(App):
         """

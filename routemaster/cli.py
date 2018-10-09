@@ -29,7 +29,7 @@ def main(ctx, config_file):
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
     try:
-        config = load_config(yaml.load(config_file))
+        config = load_config(yaml.safe_load(config_file))
     except ConfigError:
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
