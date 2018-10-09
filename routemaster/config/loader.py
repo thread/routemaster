@@ -5,7 +5,7 @@ import re
 import datetime
 from typing import Any, Dict, List, Optional
 
-import yaml
+from ruamel import yaml
 import jsonschema
 import pkg_resources
 import jsonschema.exceptions

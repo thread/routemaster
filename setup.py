@@ -39,7 +39,7 @@ setup(
 
     install_requires=(
         'click',
-        'pyyaml',
+        'ruamel.yaml',
         'jsonschema >=2.6',
         'flask',
         'psycopg2',

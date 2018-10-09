@@ -4,7 +4,7 @@ Development interactive script.
 Use with `python -i dev.py` for a useful interactive shell.
 """
 
-import yaml
+from ruamel import yaml
 
 from routemaster.db import *  # noqa: F403, F401
 from routemaster.app import App

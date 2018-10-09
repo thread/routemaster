@@ -1,7 +1,7 @@
 """CLI handling for `routemaster`."""
 import logging
 
-import yaml
+from ruamel import yaml
 import click
 
 from routemaster.app import App

@@ -5,7 +5,7 @@ import contextlib
 from pathlib import Path
 from unittest import mock
 
-import yaml
+from ruamel import yaml
 import pytest
 
 from routemaster.config import (

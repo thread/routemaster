@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import yaml
+from ruamel import yaml
 import pytest
 
 from routemaster.config import (
