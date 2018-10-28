@@ -192,7 +192,7 @@ def _validate_context_lookups(
         if location == 'feeds':
             feed_name = rest[0]
             if feed_name not in feed_names:
-                valid_names = ", ".join(f"'{x}'" for x in feed_names)
+                valid_names = join_comma_or(f"'{x}'" for x in feed_names)
                 raise ConfigError(
                     f"Invalid feed name at {'.'.join(path)}: key {lookup} "
                     f"references unknown feed '{feed_name}' (configured "
