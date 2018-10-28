@@ -532,7 +532,7 @@ def routemaster_serve_subprocess(unused_tcp_port):
     """
 
     @contextlib.contextmanager
-    def _inner():
+    def _inner(*, wait_for_output=None):
         env = os.environ.copy()
         env.update({
             'DB_HOST': os.environ.get('PG_HOST', 'localhost'),
@@ -556,6 +556,13 @@ def routemaster_serve_subprocess(unused_tcp_port):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
             )
+
+            if wait_for_output is not None:
+                while True:
+                    out_line = proc.stdout.readline()
+                    if wait_for_output in out_line:
+                        break
+
             yield proc, unused_tcp_port
         finally:
             proc.terminate()

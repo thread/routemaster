@@ -144,12 +144,9 @@ def test_prometheus_logger_wipes_directory_on_startup(app):
 
 
 def test_prometheus_logger_metrics(routemaster_serve_subprocess):
-    with routemaster_serve_subprocess() as (proc, port):
-        while True:
-            out = proc.stdout.readline()
-            if 'Booting worker' in out.decode('utf-8'):
-                break
-
+    with routemaster_serve_subprocess(
+        wait_for_output=b'Booting worker',
+    ) as (proc, port):
         # Populate metrics with a request
         requests.get(f'http://127.0.0.1:{port}/')
 
@@ -165,12 +162,9 @@ def test_prometheus_logger_metrics(routemaster_serve_subprocess):
 
 
 def test_prometheus_logger_ignores_metrics_path(routemaster_serve_subprocess):
-    with routemaster_serve_subprocess() as (proc, port):
-        while True:
-            out = proc.stdout.readline()
-            if 'Booting worker' in out.decode('utf-8'):
-                break
-
+    with routemaster_serve_subprocess(
+        wait_for_output=b'Booting worker',
+    ) as (proc, port):
         # This should _not_ populate the metrics with any samples
         requests.get(f'http://127.0.0.1:{port}/metrics')
 
