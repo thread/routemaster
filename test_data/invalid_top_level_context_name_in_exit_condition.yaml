@@ -7,5 +7,6 @@ state_machines:
       - gate: choice
         triggers:
           - event: entry
-        # This should be `feeds.jacquard.has_option_b`
+        # This exit condition should error because it is missing the `feeds`
+        # prefix (the correct spelling would be `feeds.jacquard.has_option_b`)
         exit_condition: jacquard.has_option_b

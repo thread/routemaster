@@ -7,5 +7,6 @@ state_machines:
       - gate: choice
         triggers:
           - event: entry
-        # This should be `feeds.jacquard.has_option_b`
+        # This exit condition should error as it has an invalid feed name (it
+        # should be `feeds.jacquard.has_option_b`)
         exit_condition: feeds.nope.has_option_b

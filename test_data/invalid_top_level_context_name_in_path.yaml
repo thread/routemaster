@@ -10,7 +10,8 @@ state_machines:
         exit_condition: true
         next:
           type: context
-          # This should be `feeds.jacquard.has_option_b`
+          # This path should error because it is missing the `feeds` prefix (the
+          # correct spelling would be `feeds.jacquard.has_option_b`)
           path: jacquard.has_option_b
           default: option_a
           destinations:
