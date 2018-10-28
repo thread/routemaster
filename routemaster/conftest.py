@@ -558,10 +558,15 @@ def routemaster_serve_subprocess(unused_tcp_port):
             )
 
             if wait_for_output is not None:
+                all_output = b''
                 while True:
+                    assert proc.poll() is None, all_output.decode('utf-8')
+
                     out_line = proc.stdout.readline()
                     if wait_for_output in out_line:
                         break
+
+                    all_output += out_line
 
             yield proc, unused_tcp_port
         finally:
