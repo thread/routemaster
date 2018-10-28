@@ -3,6 +3,7 @@
 import os
 import re
 import json
+import time
 import socket
 import datetime
 import functools
@@ -559,5 +560,37 @@ def routemaster_serve_subprocess(unused_tcp_port):
             yield proc, unused_tcp_port
         finally:
             proc.terminate()
+
+    return _inner
+
+
+@pytest.fixture()
+def wait_for_process_output():
+    def _inner(
+        process: subprocess.Popen,
+        output_bytes: bytes,
+        *,
+        timeout_seconds: int,
+    ) -> None:
+        end = time.time() + timeout_seconds
+
+        while time.time() < end:
+            stdout, stderr = process.communicate(timeout=timeout_seconds)
+            assert process.returncode is None, (
+                f"Process exited before desired output ({output_bytes!r}) was "
+                "observed."
+                "\nLatest stdout:"
+                f"\n{stdout.decode('utf-8') if stdout else stdout}"
+                "\nLatest stderr:"
+                f"\n{stderr.decode('utf-8') if stderr else stderr}"
+            )
+
+            if output_bytes in stdout:
+                return
+
+        raise TimeoutError(
+            f"Did not observe expected output ({output_bytes!r}) within "
+            f"timeout ({timeout_seconds} seconds)",
+        )
 
     return _inner
