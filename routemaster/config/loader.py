@@ -10,6 +10,7 @@ import jsonschema
 import pkg_resources
 import jsonschema.exceptions
 
+from routemaster.text_utils import join_comma_or
 from routemaster.config.model import (
     Gate,
     State,
@@ -182,9 +183,10 @@ def _validate_context_lookups(
         location, *rest = lookup.split('.')
 
         if location not in VALID_TOP_LEVEL:
+            valid_top_level = join_comma_or(f"'{x}'" for x in VALID_TOP_LEVEL)
             raise ConfigError(
                 f"Invalid context lookup at {'.'.join(path)}: key {lookup} "
-                f"must start with one of 'feeds', 'history' or 'metadata'.",
+                f"must start with one of {valid_top_level}.",
             )
 
         if location == 'feeds':
