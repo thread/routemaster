@@ -31,6 +31,7 @@ DEPENDENCIES = (
 
     ('config', 'exit_conditions'),
     ('config', 'context'),
+    ('config', 'text_utils'),
     ('config', 'utils'),
     ('db', 'config'),
 
