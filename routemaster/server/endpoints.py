@@ -13,6 +13,7 @@ from routemaster.state_machine import (
 )
 
 server = Flask('routemaster')
+server.config['PROPAGATE_EXCEPTIONS'] = True
 
 
 @server.route('/', methods=['GET'])
