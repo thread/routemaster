@@ -78,12 +78,14 @@ def serve(ctx, bind, debug, workers):  # pragma: no cover
     if debug:
         server.config['DEBUG'] = True
 
-    app.logger.init_flask(server)
-
     cron_thread = CronThread(app)
     cron_thread.start()
 
     wrapped_server = wrap_application(app, server)
+
+    def post_fork():
+        app.initialise()
+        app.logger.init_flask(server)
 
     try:
         instance = GunicornWSGIApplication(
@@ -91,7 +93,7 @@ def serve(ctx, bind, debug, workers):  # pragma: no cover
             bind=bind,
             debug=debug,
             workers=workers,
-            post_fork=app.initialise,
+            post_fork=post_fork,
         )
         instance.run()
     finally:
