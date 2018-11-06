@@ -10,6 +10,7 @@ import requests
 from flask import Flask
 from routemaster_sentry import SentryLogger
 from routemaster_prometheus import PrometheusLogger
+from prometheus_client.core import Sample
 from prometheus_client.parser import text_string_to_metric_families
 
 from routemaster.logging import BaseLogger, SplitLogger
@@ -154,10 +155,10 @@ def test_prometheus_logger_metrics(routemaster_serve_subprocess):
         metric_families = list(text_string_to_metric_families(metrics_response.text))
         samples = [y for x in metric_families for y in x.samples]
 
-        assert (
-            'routemaster_api_request_duration_seconds_count',
-            {'method': 'GET', 'status': '200', 'endpoint': '/'},
-            1.0,
+        assert Sample(
+            name='routemaster_api_request_duration_seconds_count',
+            labels={'method': 'GET', 'status': '200', 'endpoint': '/'},
+            value=1.0,
         ) in samples
 
 
