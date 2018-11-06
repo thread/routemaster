@@ -38,6 +38,6 @@ setup(
 
     install_requires=(
         'routemaster',
-        'prometheus_client',
+        'prometheus_client>=0.4.2',
     ),
 )
