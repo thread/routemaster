@@ -42,7 +42,7 @@ setup(
         'pyyaml',
         'jsonschema >=2.6',
         'flask',
-        'psycopg2',
+        'psycopg2-binary',
         'sqlalchemy',
         'python-dateutil',
         'alembic >=0.9.6',
