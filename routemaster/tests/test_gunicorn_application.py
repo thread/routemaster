@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 import werkzeug.test
 import werkzeug.testapp
@@ -13,6 +15,7 @@ def test_gunicorn_application_can_be_constructed(debug):
         bind='[::1]:0',
         debug=debug,
         workers=1,
+        post_fork=mock.Mock(),
     )
 
     application.load_config()

@@ -91,6 +91,7 @@ def serve(ctx, bind, debug, workers):  # pragma: no cover
             bind=bind,
             debug=debug,
             workers=workers,
+            post_fork=app.initialise,
         )
         instance.run()
     finally:

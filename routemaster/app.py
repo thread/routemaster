@@ -30,8 +30,20 @@ class App(threading.local):
     ) -> None:
         """Initialisation of the app state."""
         self.config = config
+        self.initialise()
+
+    def initialise(self):
+        """
+        Initialise this instance of the app.
+
+        This may be used to re-initialise after forking in a multiprocessing
+        environment.
+        """
         self._db = initialise_db(self.config.database)
-        self.logger = SplitLogger(config, loggers=register_loggers(config))
+        self.logger = SplitLogger(
+            self.config,
+            loggers=register_loggers(self.config),
+        )
         self._sessionmaker = sessionmaker(self._db)
         self._current_session = None
         self._needs_rollback = False
