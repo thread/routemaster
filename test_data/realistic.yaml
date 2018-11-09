@@ -22,10 +22,10 @@ state_machines:
       - gate: stage2
         triggers: []
         exit_condition: >
-          foo.bar is defined
+          metadata.foo.bar is defined
         next:
           type: context
-          path: foo.bar
+          path: metadata.foo.bar
           default: end
           destinations:
             - state: stage3

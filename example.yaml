@@ -40,7 +40,7 @@ state_machines:
         triggers:
           - metadata: metadata.recs.has_first_recommendations
         exit_condition: >
-          recs.has_first_recommendations and
+          metadata.recs.has_first_recommendations and
           (feeds.jacquard.has_redesigned_first_two_drip_emails is defined)
         next:
           type: context
@@ -66,7 +66,7 @@ state_machines:
         triggers:
           - time: 18h30m
         exit_condition: >
-          12h has passed since current_state.entered
+          12h has passed since history.entered_state
         next:
           type: constant
           state: send_browse_email

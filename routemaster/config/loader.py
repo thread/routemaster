@@ -3,13 +3,14 @@
 import os
 import re
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Iterable, Optional
 
 import yaml
 import jsonschema
 import pkg_resources
 import jsonschema.exceptions
 
+from routemaster.text_utils import join_comma_or
 from routemaster.config.model import (
     Gate,
     State,
@@ -124,10 +125,12 @@ def _load_state_machine(
             f"{'.'.join(path + ['feeds'])}",
         )
 
+    feed_names = [x.name for x in feeds]
+
     return StateMachine(
         name=name,
         states=[
-            _load_state(path + ['states', str(idx)], yaml_state)
+            _load_state(path + ['states', str(idx)], yaml_state, feed_names)
             for idx, yaml_state in enumerate(yaml_state_machine['states'])
         ],
         feeds=feeds,
@@ -149,7 +152,7 @@ def _load_feed_config(yaml: Yaml) -> FeedConfig:
     return FeedConfig(name=yaml['name'], url=yaml['url'])
 
 
-def _load_state(path: Path, yaml_state: Yaml) -> State:
+def _load_state(path: Path, yaml_state: Yaml, feed_names: List[str]) -> State:
     if 'action' in yaml_state and 'gate' in yaml_state:  # pragma: no branch
         raise ConfigError(  # pragma: no cover
             f"State at path {'.'.join(path)} cannot be both a gate and an "
@@ -157,9 +160,9 @@ def _load_state(path: Path, yaml_state: Yaml) -> State:
         )
 
     if 'action' in yaml_state:
-        return _load_action(path, yaml_state)
+        return _load_action(path, yaml_state, feed_names)
     elif 'gate' in yaml_state:  # pragma: no branch
-        return _load_gate(path, yaml_state)
+        return _load_gate(path, yaml_state, feed_names)
     else:
         raise ConfigError(  # pragma: no cover
             f"State at path {'.'.join(path)} must be either a gate or an "
@@ -167,18 +170,53 @@ def _load_state(path: Path, yaml_state: Yaml) -> State:
         )
 
 
-def _load_action(path: Path, yaml_state: Yaml) -> Action:
+def _validate_context_lookups(
+    path: Path,
+    lookups: Iterable[str],
+    feed_names: List[str],
+) -> None:
+    # Changing this? Also change context lookups in
+    # `routemaster.context.Context`
+    VALID_TOP_LEVEL = ('feeds', 'history', 'metadata')
+
+    for lookup in lookups:
+        location, *rest = lookup.split('.')
+
+        if location not in VALID_TOP_LEVEL:
+            valid_top_level = join_comma_or(f"'{x}'" for x in VALID_TOP_LEVEL)
+            raise ConfigError(
+                f"Invalid context lookup at {'.'.join(path)}: key {lookup} "
+                f"must start with one of {valid_top_level}.",
+            )
+
+        if location == 'feeds':
+            feed_name = rest[0]
+            if feed_name not in feed_names:
+                valid_names = join_comma_or(f"'{x}'" for x in feed_names)
+                raise ConfigError(
+                    f"Invalid feed name at {'.'.join(path)}: key {lookup} "
+                    f"references unknown feed '{feed_name}' (configured "
+                    f"feeds are: {valid_names})",
+                )
+
+
+def _load_action(
+    path: Path,
+    yaml_state: Yaml,
+    feed_names: List[str],
+) -> Action:
     return Action(
         name=yaml_state['action'],
         webhook=yaml_state['webhook'],
         next_states=_load_next_states(
             path + ['next'],
             yaml_state.get('next'),
+            feed_names,
         ),
     )
 
 
-def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
+def _load_gate(path: Path, yaml_state: Yaml, feed_names: List[str]) -> Gate:
     yaml_exit_condition = yaml_state['exit_condition']
 
     if yaml_exit_condition is True:
@@ -188,14 +226,25 @@ def _load_gate(path: Path, yaml_state: Yaml) -> Gate:
     else:
         str_exit_condition = str(yaml_exit_condition).strip()
 
+    exit_condition = ExitConditionProgram(str_exit_condition)
+    _validate_context_lookups(
+        path + ['exit_condition'],
+        exit_condition.accessed_variables(),
+        feed_names,
+    )
+
     return Gate(
         name=yaml_state['gate'],
-        exit_condition=ExitConditionProgram(str_exit_condition),
+        exit_condition=exit_condition,
         triggers=[
             _load_trigger(path + ['triggers', str(idx)], yaml_trigger)
             for idx, yaml_trigger in enumerate(yaml_state.get('triggers', []))
         ],
-        next_states=_load_next_states(path + ['next'], yaml_state.get('next')),
+        next_states=_load_next_states(
+            path + ['next'],
+            yaml_state.get('next'),
+            feed_names,
+        ),
     )
 
 
@@ -271,6 +320,7 @@ def _load_metadata_trigger(path: Path, yaml_trigger: Yaml) -> MetadataTrigger:
 def _load_next_states(
     path: Path,
     yaml_next_states: Optional[Yaml],
+    feed_names: List[str],
 ) -> NextStates:
 
     if yaml_next_states is None:
@@ -281,7 +331,7 @@ def _load_next_states(
     if yaml_next_states['type'] == 'constant':
         return _load_constant_next_state(path, yaml_next_states)
     elif yaml_next_states['type'] == 'context':  # pragma: no branch
-        return _load_context_next_states(path, yaml_next_states)
+        return _load_context_next_states(path, yaml_next_states, feed_names)
     else:
         raise ConfigError(  # pragma: no cover
             f"Next state config at path {'.'.join(path)} must be of type "
@@ -299,9 +349,14 @@ def _load_constant_next_state(
 def _load_context_next_states(
     path: Path,
     yaml_next_states: Yaml,
+    feed_names: List[str],
 ) -> NextStates:
+    context_path = yaml_next_states['path']
+
+    _validate_context_lookups(path + ['path'], (context_path,), feed_names)
+
     return ContextNextStates(
-        path=yaml_next_states['path'],
+        path=context_path,
         destinations=[
             _load_context_next_state_option(
                 path + ['destinations', str(idx)],

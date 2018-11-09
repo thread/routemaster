@@ -113,7 +113,7 @@ def test_realistic_config():
                         name='stage2',
                         triggers=[],
                         next_states=ContextNextStates(
-                            path='foo.bar',
+                            path='metadata.foo.bar',
                             destinations=[
                                 ContextNextStatesOption(
                                     state='stage3',
@@ -127,7 +127,7 @@ def test_realistic_config():
                             default='end',
                         ),
                         exit_condition=ExitConditionProgram(
-                            'foo.bar is defined',
+                            'metadata.foo.bar is defined',
                         ),
                     ),
                     Action(
@@ -164,6 +164,38 @@ def test_realistic_config():
     )
     with reset_environment():
         assert load_config(data) == expected
+
+
+def test_raises_for_invalid_top_level_context_name_in_path():
+    with assert_config_error(
+        "Invalid context lookup at "
+        "state_machines.the_workflow.states.0.next.path: key "
+        "jacquard.has_option_b must start with one of 'feeds', 'history' or "
+        "'metadata'.",
+    ):
+        load_config(yaml_data('invalid_top_level_context_name_in_path'))
+
+
+def test_raises_for_invalid_top_level_context_name_in_exit_condition():
+    with assert_config_error(
+        "Invalid context lookup at "
+        "state_machines.the_workflow.states.0.exit_condition: key "
+        "jacquard.has_option_b must start with one of 'feeds', 'history' or "
+        "'metadata'.",
+    ):
+        load_config(yaml_data(
+            'invalid_top_level_context_name_in_exit_condition',
+        ))
+
+
+def test_raises_for_invalid_feed_name_in_lookup():
+    with assert_config_error(
+        "Invalid feed name at "
+        "state_machines.the_workflow.states.0.exit_condition: key "
+        "feeds.nope.has_option_b references unknown feed 'nope' (configured "
+        "feeds are: 'jacquard')",
+    ):
+        load_config(yaml_data('invalid_feed_name_in_exit_condition'))
 
 
 def test_raises_for_action_and_gate_state():
@@ -288,7 +320,7 @@ def test_environment_variables_override_config_file_for_database_config():
                         name='stage2',
                         triggers=[],
                         next_states=ContextNextStates(
-                            path='foo.bar',
+                            path='metadata.foo.bar',
                             destinations=[
                                 ContextNextStatesOption(
                                     state='stage3',
@@ -302,7 +334,7 @@ def test_environment_variables_override_config_file_for_database_config():
                             default='end',
                         ),
                         exit_condition=ExitConditionProgram(
-                            'foo.bar is defined',
+                            'metadata.foo.bar is defined',
                         ),
                     ),
                     Action(

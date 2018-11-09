@@ -38,6 +38,8 @@ class Context(object):
         location, *rest = path
 
         try:
+            # Changing this mapping? Also change config validation in
+            # `routemaster.config.loader._validate_context_lookups`
             return {
                 'metadata': self._lookup_metadata,
                 'feeds': self._lookup_feed_data,
