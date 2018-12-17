@@ -5,7 +5,7 @@ import contextlib
 from pathlib import Path
 from unittest import mock
 
-import yaml
+from ruamel import yaml
 import pytest
 
 from routemaster.config import (
@@ -37,7 +37,7 @@ def reset_environment():
 
 def yaml_data(name: str):
     with open(f'test_data/{name}.yaml') as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 
 
 @contextlib.contextmanager
@@ -404,7 +404,7 @@ def test_example_config_loads():
 
     assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
 
-    example_config = load_config(yaml.load(example_yaml.read_text()))
+    example_config = load_config(yaml.safe_load(example_yaml.read_text()))
 
     # Some basic assertions that we got the right thing loaded
     assert list(example_config.state_machines.keys()) == ['user_lifecycle']

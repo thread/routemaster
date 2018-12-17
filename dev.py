@@ -4,7 +4,7 @@ Development interactive script.
 Use with `python -i dev.py` for a useful interactive shell.
 """
 
-import yaml
+from ruamel import yaml
 
 from routemaster.db import *  # noqa: F403, F401
 from routemaster.app import App
@@ -18,7 +18,7 @@ def app_from_config(config_path):
     By default, will use the example.yaml file.
     """
     with open(config_path, 'r') as f:
-        config = load_config(yaml.load(f))
+        config = load_config(yaml.safe_load(f))
 
     class InteractiveApp(App):
         """
