@@ -145,6 +145,7 @@ def _load_webhook(yaml: Yaml) -> Webhook:
     return Webhook(
         match=re.compile(yaml['match']),
         headers=yaml['headers'],
+        localport=yaml.get('localport'),
     )
 
 

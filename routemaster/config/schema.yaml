@@ -34,7 +34,9 @@ properties:
                 type: string
               headers:
                 type: object
-            additionalProperties: false
+            additionalProperties:
+              localport:
+                type: integer
         states:
           title: States
           type: array

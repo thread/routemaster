@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Pattern,
     Iterable,
+    Optional,
     Sequence,
     NamedTuple,
 )
@@ -162,6 +163,7 @@ class Webhook(NamedTuple):
     """Configuration for webdook requests."""
     match: Pattern
     headers: Dict[str, str]
+    localport: Optional[int]
 
 
 class StateMachine(NamedTuple):

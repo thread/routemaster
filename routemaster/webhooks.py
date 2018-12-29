@@ -1,7 +1,7 @@
 """Webhook invocation."""
 
 import enum
-from typing import Any, Dict, Callable, Iterable
+from typing import Any, Dict, Callable, Iterable, Optional
 from urllib.parse import urlparse, urlunparse
 
 import requests
@@ -31,7 +31,7 @@ class RequestsWebhookRunner(object):
     def __init__(
         self,
         webhook_configs: Iterable[Webhook]=(),
-        url_builder: Callable[[str], str]=(lambda x: x),
+        url_builder: Callable[[str, Optional[int]], str]=(lambda x, y: x),
     ) -> None:
         # Use a session so that we can take advantage of connection pooling in
         # `urllib3`.
@@ -56,7 +56,7 @@ class RequestsWebhookRunner(object):
 
         try:
             result = self.session.post(
-                self.url_builder(url),
+                self.url_builder(url, self._localport_for_url(url)),
                 data=data,
                 headers=headers,
                 timeout=10,
@@ -79,17 +79,26 @@ class RequestsWebhookRunner(object):
                 headers.update(config.headers)
         return headers
 
+    def _localport_for_url(self, url: str) -> Optional[int]:
+        for config in self.webhook_configs:
+            if config.match.search(url):
+                return config.localport
+        return None
 
-def _to_local_scheme_netloc(scheme: str, netloc: str) -> tuple:
-    if 'thread.com' in netloc:
-        return ('http', 'localhost:8000')
-    else:
-        return (scheme, netloc)
+
+def _to_local_scheme_netloc(
+    base_value: tuple,
+    localport: Optional[int],
+) -> tuple:
+    if localport:
+        return ('http', 'localhost:{0}'.format(localport))
+
+    return base_value
 
 
-def _to_local_url(url: str) -> str:
+def _to_local_url(url: str, localport: Optional[int]) -> str:
     parts = urlparse(url)
-    mapped_url = _to_local_scheme_netloc(*parts[:2]) + parts[2:6]
+    mapped_url = _to_local_scheme_netloc(parts[:2], localport) + parts[2:6]
     return urlunparse(mapped_url)
 
 
