@@ -136,6 +136,14 @@ There are 3 types of trigger:
  - **Time** — triggers each day at the given time.
  - **Interval** — triggers every given interval (i.e. 1 hour, 5 minutes)
 
+NOTE: if routemaster is down when a trigger would have fired then it won't fire.
+e.g. If you have a trigger of:
+```
+- time: 18h00m
+```
+Then this condition won't be evaluated if routemaster is down at 6PM. It doesn't persistently track
+that it has triggers upcoming to evaluate, so in this case the condition would next be evaluated at
+the next time that routemaster is up at 6PM. 
 
 ### Data feeds
 

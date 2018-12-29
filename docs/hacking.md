@@ -1,5 +1,11 @@
 # Hacking on Routemaster
 
+First, ensure you have a user named `routemaster` in your local postgres, i.e. on your
+local psql execute:
+```
+CREATE USER routemaster;
+```
+
 You'll need to create a database for developing against and for running tests
 against. This can be done by running the `scripts/database/create_databases.sh`
 script. Full details of how the database, models & migrations are handled can
