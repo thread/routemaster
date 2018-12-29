@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     '--only-python-logging',
-    help="For local testing, don't instantiate loggers other than the basic PythonLogger",
+    help="For local testing, only instantiate the basic PythonLogger plugin",
     default=False,
     is_flag=True,
 )

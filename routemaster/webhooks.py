@@ -1,8 +1,8 @@
 """Webhook invocation."""
 
 import enum
-from urllib.parse import urlparse, urlunparse
 from typing import Any, Dict, Callable, Iterable
+from urllib.parse import urlparse, urlunparse
 
 import requests
 
@@ -28,7 +28,11 @@ class RequestsWebhookRunner(object):
     Optionally takes a list of webhook configs to modify how requests are made.
     """
 
-    def __init__(self, webhook_configs: Iterable[Webhook]=(), url_builder: Callable[[str], str]=(lambda x: x)) -> None:
+    def __init__(
+        self,
+        webhook_configs: Iterable[Webhook]=(),
+        url_builder: Callable[[str], str]=(lambda x: x),
+    ) -> None:
         # Use a session so that we can take advantage of connection pooling in
         # `urllib3`.
         self.session = requests.Session()
@@ -68,8 +72,6 @@ class RequestsWebhookRunner(object):
         else:
             return WebhookResult.RETRY
 
-    
-
     def _headers_for_url(self, url: str) -> Dict[str, Any]:
         headers = {}
         for config in self.webhook_configs:
@@ -78,16 +80,16 @@ class RequestsWebhookRunner(object):
         return headers
 
 
-def to_local_scheme_netloc(scheme: str, netloc: str) -> tuple:
+def _to_local_scheme_netloc(scheme: str, netloc: str) -> tuple:
     if 'thread.com' in netloc:
         return ('http', 'localhost:8000')
     else:
         return (scheme, netloc)
 
 
-def to_local_url(url: str) -> str:
+def _to_local_url(url: str) -> str:
     parts = urlparse(url)
-    mapped_url = to_local_scheme_netloc(*parts[:2]) + parts[2:6]
+    mapped_url = _to_local_scheme_netloc(*parts[:2]) + parts[2:6]
     return urlunparse(mapped_url)
 
 
@@ -101,6 +103,6 @@ def webhook_runner_for_state_machine(
     Applies any state machine configuration to the runner.
     """
     if only_use_localhost:
-        return RequestsWebhookRunner(state_machine.webhooks, to_local_url)
-    
+        return RequestsWebhookRunner(state_machine.webhooks, _to_local_url)
+
     return RequestsWebhookRunner(state_machine.webhooks)

@@ -1,7 +1,7 @@
 """Core App singleton that holds state for the application."""
 import threading
 import contextlib
-from typing import Dict, Optional, Iterable
+from typing import Dict, Iterable, Optional
 
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.engine import Engine
@@ -15,7 +15,7 @@ from routemaster.webhooks import (
 )
 
 
-def only_python_logger(logger_configs: Iterable):
+def _only_python_logger(logger_configs: Iterable):
     return [x for x in logger_configs if 'PythonLogger' in x.dotted_path]
 
 
@@ -51,7 +51,7 @@ class App(threading.local):
         """
         self._db = initialise_db(self.config.database)
         logging_plugins = (
-            only_python_logger(self.config.logging_plugins) 
+            _only_python_logger(self.config.logging_plugins)
             if self.only_python_logging
             else self.config.logging_plugins
         )

@@ -12,11 +12,12 @@ class PluginConfigurationException(Exception):
 
 def register_loggers(
     config: Config,
-    logger_configs: Iterable[LoggingPluginConfig],
+    logger_configs: Iterable[LoggingPluginConfig]=None,
 ):
     """
     Iterate through all plugins in the config file and instatiate them.
     """
+    logger_configs = logger_configs or config.logging_plugins
     return [_import_logger(config, x) for x in logger_configs]
 
 
