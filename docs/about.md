@@ -142,7 +142,7 @@ e.g. If you have a trigger of:
 - time: 18h00m
 ```
 Then this condition won't be evaluated if routemaster is down at 6PM. It doesn't persistently track
-that it has triggers upcoming to evaluate, so in this case the condition would next be evaluated at
+that it has triggers upcoming to evaluate, so in this case the condition would be evaluated at
 the next time that routemaster is up at 6PM. 
 
 ### Data feeds
