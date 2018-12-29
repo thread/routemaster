@@ -1,5 +1,6 @@
 """Plugin loading and configuration."""
 import importlib
+from typing import Iterable
 
 from routemaster.config import Config, LoggingPluginConfig
 from routemaster.logging.base import BaseLogger
@@ -9,11 +10,14 @@ class PluginConfigurationException(Exception):
     """Raised to signal an invalid plugin that was loaded."""
 
 
-def register_loggers(config: Config):
+def register_loggers(
+    config: Config,
+    logger_configs: Iterable[LoggingPluginConfig],
+):
     """
     Iterate through all plugins in the config file and instatiate them.
     """
-    return [_import_logger(config, x) for x in config.logging_plugins]
+    return [_import_logger(config, x) for x in logger_configs]
 
 
 def _import_logger(

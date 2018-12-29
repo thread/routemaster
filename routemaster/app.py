@@ -1,7 +1,7 @@
 """Core App singleton that holds state for the application."""
 import threading
 import contextlib
-from typing import Dict, Optional
+from typing import Dict, Optional, Iterable
 
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.engine import Engine
@@ -15,6 +15,10 @@ from routemaster.webhooks import (
 )
 
 
+def only_python_logger(logger_configs: Iterable):
+    return [x for x in logger_configs if 'PythonLogger' in x.dotted_path]
+
+
 class App(threading.local):
     """Core application state."""
 
@@ -24,15 +28,18 @@ class App(threading.local):
     _current_session: Optional[Session]
     _webhook_runners: Dict[str, WebhookRunner]
     use_local_urls: bool
+    only_python_logging: bool
 
     def __init__(
         self,
         config: Config,
         use_local_urls: bool=False,
+        only_python_logging: bool=False,
     ) -> None:
         """Initialisation of the app state."""
         self.config = config
         self.use_local_urls = use_local_urls
+        self.only_python_logging = only_python_logging
         self.initialise()
 
     def initialise(self):
@@ -43,9 +50,14 @@ class App(threading.local):
         environment.
         """
         self._db = initialise_db(self.config.database)
+        logging_plugins = (
+            only_python_logger(self.config.logging_plugins) 
+            if self.only_python_logging
+            else self.config.logging_plugins
+        )
         self.logger = SplitLogger(
             self.config,
-            loggers=register_loggers(self.config),
+            loggers=register_loggers(self.config, logging_plugins),
         )
         self._sessionmaker = sessionmaker(self._db)
         self._current_session = None

@@ -29,8 +29,14 @@ logger = logging.getLogger(__name__)
     default=False,
     is_flag=True,
 )
+@click.option(
+    '--only-python-logging',
+    help="For local testing, don't instantiate loggers other than the basic PythonLogger",
+    default=False,
+    is_flag=True,
+)
 @click.pass_context
-def main(ctx, config_file, local):
+def main(ctx, config_file, local, only_python_logging):
     """Shared entrypoint configuration."""
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
@@ -40,7 +46,11 @@ def main(ctx, config_file, local):
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
-    ctx.obj = App(config, use_local_urls=local)
+    ctx.obj = App(
+        config,
+        use_local_urls=local,
+        only_python_logging=only_python_logging,
+    )
     _validate_config(ctx.obj)
 
 
