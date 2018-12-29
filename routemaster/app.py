@@ -23,13 +23,16 @@ class App(threading.local):
     logger: BaseLogger
     _current_session: Optional[Session]
     _webhook_runners: Dict[str, WebhookRunner]
+    use_local_urls: bool
 
     def __init__(
         self,
         config: Config,
+        use_local_urls: bool=False,
     ) -> None:
         """Initialisation of the app state."""
         self.config = config
+        self.use_local_urls = use_local_urls
         self.initialise()
 
     def initialise(self):
@@ -51,7 +54,7 @@ class App(threading.local):
         # Webhook runners may choose to persist a session, so we instantiate
         # up-front to ensure we re-use state.
         self._webhook_runners = {
-            x: webhook_runner_for_state_machine(y)
+            x: webhook_runner_for_state_machine(y, self.use_local_urls)
             for x, y in self.config.state_machines.items()
         }
 

@@ -23,8 +23,14 @@ logger = logging.getLogger(__name__)
     type=click.File(encoding='utf-8'),
     required=True,
 )
+@click.option(
+    '--local',
+    help="Override webhook URLs to point to localhost",
+    default=False,
+    is_flag=True,
+)
 @click.pass_context
-def main(ctx, config_file):
+def main(ctx, config_file, local):
     """Shared entrypoint configuration."""
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
@@ -34,7 +40,7 @@ def main(ctx, config_file):
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
 
-    ctx.obj = App(config)
+    ctx.obj = App(config, use_local_urls=local)
     _validate_config(ctx.obj)
 
 
