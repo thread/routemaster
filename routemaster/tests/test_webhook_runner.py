@@ -2,10 +2,7 @@ import pytest
 import requests
 import httpretty
 
-from routemaster.webhooks import (
-    WebhookResult,
-    RequestsWebhookRunner,
-)
+from routemaster.webhooks import WebhookResult, RequestsWebhookRunner
 
 
 @httpretty.activate

@@ -1,5 +1,4 @@
 import pytest
-
 from werkzeug.test import run_wsgi_app
 
 from routemaster.db import Label
