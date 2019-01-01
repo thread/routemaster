@@ -1,7 +1,5 @@
 from unittest import mock
 
-import pytest
-
 from routemaster.utils import get_path, dict_merge, suppress_exceptions
 
 

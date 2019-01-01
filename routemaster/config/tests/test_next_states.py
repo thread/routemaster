@@ -6,7 +6,6 @@ from routemaster.config import (
     ContextNextStates,
     ContextNextStatesOption,
 )
-from routemaster.context import Context
 
 
 def test_constant_next_state():

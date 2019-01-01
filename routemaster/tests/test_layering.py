@@ -137,8 +137,6 @@ def test_layers():
 
         last_import_source = None
 
-        top_level_import = False
-
         for instruction in dis.get_instructions(code):
             if instruction.opname == 'IMPORT_NAME':
                 import_target = instruction.argval
