@@ -2,7 +2,6 @@ import pytest
 
 from routemaster.db import Label, History
 
-
 INSTANCES = [
     (
         Label(state_machine='foo', name='bar'),

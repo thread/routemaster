@@ -62,8 +62,8 @@ def test_trivial_config():
                         next_states=NoNextStates(),
                         exit_condition=ExitConditionProgram('false'),
                     ),
-                ]
-            )
+                ],
+            ),
         },
         database=DatabaseConfig(
             host='localhost',
@@ -269,8 +269,8 @@ def test_next_states_shorthand_results_in_constant_config():
                         next_states=NoNextStates(),
                         exit_condition=ExitConditionProgram('false'),
                     ),
-                ]
-            )
+                ],
+            ),
         },
         database=DatabaseConfig(
             host='localhost',
