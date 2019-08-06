@@ -52,6 +52,7 @@ setup(
         'requests',
         'networkx',
         'dataclasses',
+        'typing-extensions>=3.7.4',
     ),
 
     setup_requires=(

@@ -2,6 +2,8 @@
 
 from typing import Callable, Iterable, Optional
 
+from typing_extensions import Protocol
+
 from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.utils import dict_merge, suppress_exceptions
@@ -214,7 +216,22 @@ def delete_label(app: App, label: LabelRef) -> None:
     ))
 
 
-LabelStateProcessor = Callable[[App, State, StateMachine, LabelRef], bool]
+class LabelStateProcessor(Protocol):
+    """Type signature for the label state processor callable."""
+    def __call__(
+        self,
+        *,
+        app: App,
+        state: State,
+        state_machine: StateMachine,
+        label: LabelRef,
+    ) -> bool:
+        """Type signature for the label state processor callable."""
+        ...
+
+    def __name__(self) -> str:
+        """Name of the callable."""
+        ...
 
 
 def process_cron(
@@ -242,7 +259,7 @@ def process_cron(
                 if current_state != state:
                     continue
 
-                could_progress = process(  # type: ignore
+                could_progress = process(
                     app=app,
                     state=state,
                     state_machine=state_machine,

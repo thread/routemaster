@@ -7,6 +7,7 @@ import threading
 from typing import List, Callable, Iterable
 
 import schedule
+from typing_extensions import Protocol
 
 from routemaster.app import App
 from routemaster.config import (
@@ -34,10 +35,34 @@ IsTerminating = Callable[[], bool]
 # introduction of errors, we require all the data up-front.
 LabelProvider = Callable[[App, StateMachine, State], List[str]]
 
-CronProcessor = Callable[
-    [LabelStateProcessor, LabelProvider, State, StateMachine],
-    None,
-]
+
+class CronProcessor(Protocol):
+    """Type signature for the cron processor callable."""
+
+    def __call__(
+        self,
+        *,
+        app: App,
+        state: State,
+        state_machine: StateMachine,
+        fn: LabelStateProcessor,
+        label_provider: LabelProvider,
+    ) -> None:
+        """Type signature for the cron processor callable."""
+        ...
+
+
+class StateSpecificCronProcessor(Protocol):
+    """Type signature for the a state-specific cron processor callable."""
+
+    def __call__(
+        self,
+        *,
+        fn: LabelStateProcessor,
+        label_provider: LabelProvider,
+    ) -> None:
+        """Type signature for a state-specific cron processor callable."""
+        ...
 
 
 # The cron configuration works by building up a partially applied function
@@ -82,7 +107,7 @@ def process_job(
 
 def _configure_schedule_for_state(
     scheduler: schedule.Scheduler,
-    processor: CronProcessor,
+    processor: StateSpecificCronProcessor,
     state: State,
 ) -> None:
     if isinstance(state, Action):
