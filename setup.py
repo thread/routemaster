@@ -40,7 +40,7 @@ setup(
     install_requires=(
         'click',
         'pyyaml',
-        'jsonschema >=2.6',
+        'jsonschema >=2.6, <3',
         'flask',
         'psycopg2-binary',
         'sqlalchemy',
