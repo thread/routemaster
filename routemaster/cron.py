@@ -4,7 +4,7 @@ import time
 import functools
 import itertools
 import threading
-from typing import Any, List, Callable
+from typing import List, Callable, Iterable
 
 import schedule
 
@@ -32,7 +32,7 @@ IsTerminating = Callable[[], bool]
 # Note: This function will be called in a different transaction to where we
 # iterate over the results, so to prevent confusion or the possible
 # introduction of errors, we require all the data up-front.
-LabelProvider = Callable[[StateMachine, State, Any], List[str]]
+LabelProvider = Callable[[App, StateMachine, State], List[str]]
 
 CronProcessor = Callable[
     [LabelStateProcessor, LabelProvider, State, StateMachine],
@@ -58,7 +58,10 @@ def process_job(
 ):
     """Process a single instance of a single cron job."""
 
-    def _iter_labels_until_terminating(state_machine, state):
+    def _iter_labels_until_terminating(
+        state_machine: StateMachine,
+        state: State,
+    ) -> Iterable[str]:
         return itertools.takewhile(
             lambda _: not is_terminating(),
             label_provider(app, state_machine, state),
