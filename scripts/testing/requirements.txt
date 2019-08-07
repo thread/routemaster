@@ -8,4 +8,4 @@ freezegun
 mypy
 httpretty
 pytest-pythonpath
-git+https://github.com/danpalmer/werkzeug
+werkzeug>=0.15.0    # contains fix https://github.com/pallets/werkzeug/pull/1280
