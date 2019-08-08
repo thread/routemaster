@@ -1,6 +1,6 @@
 """The core of the state machine logic."""
 
-from typing import Callable, Iterable, Optional
+from typing import List, Callable, Iterable, Optional
 
 from typing_extensions import Protocol
 
@@ -26,6 +26,12 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
 )
 from routemaster.state_machine.transitions import process_transitions
+
+# Signature of a function to gather the labels to be operated upon when
+# processing a cron task. This will be called in a different transaction to
+# where we iterate over the results, so to prevent confusion or the possible
+# introduction of errors, we require all the data up-front.
+LabelProvider = Callable[[App, StateMachine, State], List[str]]
 
 
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:

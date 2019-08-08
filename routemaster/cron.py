@@ -4,7 +4,7 @@ import time
 import functools
 import itertools
 import threading
-from typing import List, Callable, Iterable
+from typing import Callable, Iterable
 
 import schedule
 from typing_extensions import Protocol
@@ -20,6 +20,7 @@ from routemaster.config import (
     SystemTimeTrigger,
 )
 from routemaster.state_machine import (
+    LabelProvider,
     LabelStateProcessor,
     process_cron,
     process_gate,
@@ -29,11 +30,6 @@ from routemaster.state_machine import (
 )
 
 IsTerminating = Callable[[], bool]
-
-# Note: This function will be called in a different transaction to where we
-# iterate over the results, so to prevent confusion or the possible
-# introduction of errors, we require all the data up-front.
-LabelProvider = Callable[[App, StateMachine, State], List[str]]
 
 
 class CronProcessor(Protocol):

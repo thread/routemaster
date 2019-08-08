@@ -2,6 +2,7 @@
 
 from routemaster.state_machine.api import (
     LabelRef,
+    LabelProvider,
     LabelStateProcessor,
     list_labels,
     create_label,
@@ -33,6 +34,7 @@ __all__ = (
     'process_gate',
     'DeletedLabel',
     'UnknownLabel',
+    'LabelProvider',
     'process_action',
     'get_label_state',
     'labels_in_state',
