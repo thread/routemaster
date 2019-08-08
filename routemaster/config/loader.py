@@ -249,11 +249,6 @@ def _load_gate(path: Path, yaml_state: Yaml, feed_names: List[str]) -> Gate:
 
 
 def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
-    if len(yaml_trigger.keys()) > 1:  # pragma: no branch
-        raise ConfigError(  # pragma: no cover
-            f"Trigger at path {'.'.join(path)} cannot be of multiple types.",
-        )
-
     if 'time' in yaml_trigger:
         return _load_time_trigger(path, yaml_trigger)
     elif 'metadata' in yaml_trigger:
