@@ -28,7 +28,7 @@ class TimeTrigger(NamedTuple):
 
 
 class IntervalTrigger(NamedTuple):
-    """Time based trigger for exit condition evaluation."""
+    """Time interval based trigger for exit condition evaluation."""
     interval: datetime.timedelta
 
 
