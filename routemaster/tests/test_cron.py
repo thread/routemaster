@@ -13,6 +13,8 @@ from routemaster.config import (
     IntervalTrigger,
     MetadataTrigger,
     SystemTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -85,6 +87,146 @@ def test_gate_at_fixed_time(custom_app):
 
     assert processor.called is True
     assert job.next_run == datetime.datetime(2018, 1, 2, 18, 30)
+
+
+@freezegun.freeze_time('2018-01-01 12:00')
+def test_gate_at_fixed_time_with_specific_timezone(custom_app):
+    gate = Gate(
+        'fixed_time_gate',
+        next_states=NoNextStates(),
+        exit_condition=ExitConditionProgram('false'),
+        triggers=[TimezoneAwareTrigger(
+            datetime.time(12, 1),
+            timezone='Europe/London',
+        )],
+    )
+    app = create_app(custom_app, [gate])
+
+    def processor(*, state, **kwargs):
+        assert state == gate
+        processor.called = True
+
+    processor.called = False
+
+    scheduler = schedule.Scheduler()
+    configure_schedule(app, scheduler, processor)
+
+    assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
+    job, = scheduler.jobs
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 1)
+    assert processor.called is False
+
+    with freezegun.freeze_time(job.next_run):
+        job.run()
+
+    assert processor.called is True
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 2)
+
+
+@freezegun.freeze_time('2018-01-01 12:00')
+def test_gate_at_fixed_time_with_specific_timezone_other_time(custom_app):
+    gate = Gate(
+        'fixed_time_gate',
+        next_states=NoNextStates(),
+        exit_condition=ExitConditionProgram('false'),
+        triggers=[TimezoneAwareTrigger(
+            datetime.time(13, 37),
+            timezone='Europe/London',
+        )],
+    )
+    app = create_app(custom_app, [gate])
+
+    def processor(*, state, **kwargs):
+        assert state == gate
+        processor.called = True
+
+    processor.called = False
+
+    scheduler = schedule.Scheduler()
+    configure_schedule(app, scheduler, processor)
+
+    assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
+    job, = scheduler.jobs
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 1)
+    assert processor.called is False
+
+    with freezegun.freeze_time(job.next_run):
+        job.run()
+
+    assert processor.called is False
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 2)
+
+
+@freezegun.freeze_time('2018-01-01 12:00')
+def test_gate_at_fixed_time_with_metadata_timezone(custom_app):
+    gate = Gate(
+        'fixed_time_gate',
+        next_states=NoNextStates(),
+        exit_condition=ExitConditionProgram('false'),
+        triggers=[MetadataTimezoneAwareTrigger(
+            datetime.time(12, 1),
+            timezone_metadata_path='timezone',
+        )],
+    )
+    app = create_app(custom_app, [gate])
+
+    def processor(*, state, **kwargs):
+        assert state == gate
+        processor.called = True
+
+    processor.called = False
+
+    scheduler = schedule.Scheduler()
+    configure_schedule(app, scheduler, processor)
+
+    assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
+    job, = scheduler.jobs
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 1)
+    assert processor.called is False
+
+    with freezegun.freeze_time(job.next_run):
+        job.run()
+
+    assert processor.called is True
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 2)
+
+
+@freezegun.freeze_time('2018-01-01 12:00')
+def test_gate_at_fixed_time_with_metadata_timezone_other_time(custom_app):
+    gate = Gate(
+        'fixed_time_gate',
+        next_states=NoNextStates(),
+        exit_condition=ExitConditionProgram('false'),
+        triggers=[MetadataTimezoneAwareTrigger(
+            datetime.time(13, 37),
+            timezone_metadata_path='timezone',
+        )],
+    )
+    app = create_app(custom_app, [gate])
+
+    def processor(*, state, **kwargs):
+        assert state == gate
+        processor.called = True
+
+    processor.called = False
+
+    scheduler = schedule.Scheduler()
+    configure_schedule(app, scheduler, processor)
+
+    assert len(scheduler.jobs) == 1, "Should have scheduled a single job"
+    job, = scheduler.jobs
+
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 1)
+    assert processor.called is False
+
+    with freezegun.freeze_time(job.next_run):
+        job.run()
+
+    assert processor.called is False
+    assert job.next_run == datetime.datetime(2018, 1, 1, 12, 2)
 
 
 @freezegun.freeze_time('2018-01-01 12:00')

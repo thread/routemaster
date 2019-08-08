@@ -18,6 +18,8 @@ from routemaster.config import (
     IntervalTrigger,
     MetadataTrigger,
     SystemTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.state_machine import (
     LabelProvider,
@@ -27,6 +29,10 @@ from routemaster.state_machine import (
     process_action,
     labels_in_state,
     labels_needing_metadata_update_retry_in_gate,
+)
+from routemaster.cron_processors import (
+    TimezoneAwareProcessor,
+    MetadataTimezoneAwareProcessor,
 )
 
 IsTerminating = Callable[[], bool]
@@ -121,6 +127,22 @@ def _configure_schedule_for_state(
                     processor,
                     fn=process_gate,
                     label_provider=labels_in_state,
+                )
+            elif isinstance(trigger, TimezoneAwareTrigger):
+                func = functools.partial(
+                    processor,
+                    fn=process_gate,
+                    label_provider=labels_in_state,
+                )
+                scheduler.every().minute.do(
+                    TimezoneAwareProcessor(func, trigger),
+                )
+            elif isinstance(trigger, MetadataTimezoneAwareTrigger):
+                scheduler.every().minute.do(
+                    MetadataTimezoneAwareProcessor(
+                        functools.partial(processor, fn=process_gate),
+                        trigger,
+                    ),
                 )
             elif isinstance(trigger, IntervalTrigger):
                 scheduler.every(
