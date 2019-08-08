@@ -32,20 +32,27 @@ class SystemTimeTrigger(NamedTuple):
     time: datetime.time
 
 
-class LocalTimeTrigger(NamedTuple):
+class TimezoneAwareTrigger(NamedTuple):
     """
-    Local time based trigger for exit condition evaluation.
+    Fixed timezone aware trigger for exit condition evaluation.
 
-    This trigger runs at the given time according to the given timezone. The
-    timezone may either be a fixed, named, timezone or it may be a variable
-    pulled from metadata. In the latter case the trigger is evaluated for a
-    given label when the time occurs within that label's timezone.
-
-    In either case timezones should be spelled using their IANA names, for
-    example: 'Europe/London'.
+    This trigger runs at the time according to the named timezone. The timezone
+    should be spelled using an IANA name, for example: 'Europe/London'.
     """
     time: datetime.time
     timezone: str
+
+
+class MetadataTimezoneAwareTrigger(NamedTuple):
+    """
+    Metadata timezone aware trigger for exit condition evaluation.
+
+    This trigger uses a label's metadata to determine the current timezone and
+    otherwise behaves like a `TimezoneAwareTrigger`. The timezone should be
+    spelled using an IANA name, for example: 'Europe/London'.
+    """
+    time: datetime.time
+    timezone_metadata_path: Sequence[str]
 
 
 class IntervalTrigger(NamedTuple):
@@ -76,7 +83,8 @@ class OnEntryTrigger:
 
 Trigger = Union[
     SystemTimeTrigger,
-    LocalTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
     IntervalTrigger,
     MetadataTrigger,
     OnEntryTrigger,

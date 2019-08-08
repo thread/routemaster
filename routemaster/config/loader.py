@@ -27,12 +27,13 @@ from routemaster.config.model import (
     OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
-    LocalTimeTrigger,
     ConstantNextState,
     ContextNextStates,
     SystemTimeTrigger,
     LoggingPluginConfig,
+    TimezoneAwareTrigger,
     ContextNextStatesOption,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.exit_conditions import ExitConditionProgram
 from routemaster.config.exceptions import ConfigError
@@ -277,7 +278,11 @@ def _validate_known_timezone(path: Path, timezone: str) -> None:
 def _load_time_trigger(
     path: Path,
     yaml_trigger: Yaml,
-) -> Union[SystemTimeTrigger, LocalTimeTrigger]:
+) -> Union[
+    SystemTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
+]:
     format_ = '%Hh%Mm'
     try:
         dt = datetime.datetime.strptime(str(yaml_trigger['time']), format_)
@@ -293,10 +298,13 @@ def _load_time_trigger(
         timezone: str = yaml_trigger['timezone']
         if timezone.startswith('metadata.'):
             _validate_context_lookups(timezone_path, [timezone], [])
+            return MetadataTimezoneAwareTrigger(
+                time=trigger,
+                timezone_metadata_path=timezone.split('.')[1:],
+            )
         else:
             _validate_known_timezone(timezone_path, timezone)
-
-        return LocalTimeTrigger(time=trigger, timezone=timezone)
+            return TimezoneAwareTrigger(time=trigger, timezone=timezone)
 
     return SystemTimeTrigger(time=trigger)
 

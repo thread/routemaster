@@ -21,12 +21,13 @@ from routemaster.config import (
     OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
-    LocalTimeTrigger,
     ConstantNextState,
     ContextNextStates,
     SystemTimeTrigger,
     LoggingPluginConfig,
+    TimezoneAwareTrigger,
     ContextNextStatesOption,
+    MetadataTimezoneAwareTrigger,
     load_config,
 )
 from routemaster.exit_conditions import ExitConditionProgram
@@ -101,13 +102,13 @@ def test_realistic_config():
                         name='start',
                         triggers=[
                             SystemTimeTrigger(time=datetime.time(18, 30)),
-                            LocalTimeTrigger(
+                            TimezoneAwareTrigger(
                                 time=datetime.time(12, 25),
                                 timezone='Europe/London',
                             ),
-                            LocalTimeTrigger(
+                            MetadataTimezoneAwareTrigger(
                                 time=datetime.time(13, 37),
-                                timezone='metadata.timezone',
+                                timezone_metadata_path=['timezone'],
                             ),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(
@@ -321,13 +322,13 @@ def test_environment_variables_override_config_file_for_database_config():
                         name='start',
                         triggers=[
                             SystemTimeTrigger(time=datetime.time(18, 30)),
-                            LocalTimeTrigger(
+                            TimezoneAwareTrigger(
                                 time=datetime.time(12, 25),
                                 timezone='Europe/London',
                             ),
-                            LocalTimeTrigger(
+                            MetadataTimezoneAwareTrigger(
                                 time=datetime.time(13, 37),
-                                timezone='metadata.timezone',
+                                timezone_metadata_path=['timezone'],
                             ),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(

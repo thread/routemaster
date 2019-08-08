@@ -15,12 +15,13 @@ from routemaster.config.model import (
     OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
-    LocalTimeTrigger,
     ConstantNextState,
     ContextNextStates,
     SystemTimeTrigger,
     LoggingPluginConfig,
+    TimezoneAwareTrigger,
     ContextNextStatesOption,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.config.loader import load_config, load_database_config
 from routemaster.config.exceptions import ConfigError
@@ -43,10 +44,11 @@ __all__ = (
     'OnEntryTrigger',
     'IntervalTrigger',
     'MetadataTrigger',
-    'LocalTimeTrigger',
     'ConstantNextState',
     'ContextNextStates',
     'SystemTimeTrigger',
     'LoggingPluginConfig',
+    'TimezoneAwareTrigger',
     'ContextNextStatesOption',
+    'MetadataTimezoneAwareTrigger',
 )
