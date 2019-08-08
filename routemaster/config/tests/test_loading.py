@@ -21,6 +21,7 @@ from routemaster.config import (
     OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
+    LocalTimeTrigger,
     ConstantNextState,
     ContextNextStates,
     SystemTimeTrigger,
@@ -100,6 +101,14 @@ def test_realistic_config():
                         name='start',
                         triggers=[
                             SystemTimeTrigger(time=datetime.time(18, 30)),
+                            LocalTimeTrigger(
+                                time=datetime.time(12, 25),
+                                timezone='Europe/London',
+                            ),
+                            LocalTimeTrigger(
+                                time=datetime.time(13, 37),
+                                timezone='metadata.timezone',
+                            ),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
@@ -228,6 +237,11 @@ def test_raises_for_invalid_time_format_in_trigger():
         load_config(yaml_data('trigger_time_format_invalid'))
 
 
+def test_raises_for_invalid_timezone_name_in_trigger():
+    with assert_config_error("Could not validate config file against schema."):
+        load_config(yaml_data('trigger_timezone_name_invalid'))
+
+
 def test_raises_for_invalid_path_format_in_trigger():
     with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('path_format_context_trigger_invalid'))
@@ -307,6 +321,14 @@ def test_environment_variables_override_config_file_for_database_config():
                         name='start',
                         triggers=[
                             SystemTimeTrigger(time=datetime.time(18, 30)),
+                            LocalTimeTrigger(
+                                time=datetime.time(12, 25),
+                                timezone='Europe/London',
+                            ),
+                            LocalTimeTrigger(
+                                time=datetime.time(13, 37),
+                                timezone='metadata.timezone',
+                            ),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),

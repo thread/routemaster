@@ -3,13 +3,14 @@
 import os
 import re
 import datetime
-from typing import Any, Dict, List, Iterable, Optional
+from typing import Any, Dict, List, Union, Iterable, Optional
 
 import yaml
 import jsonschema
 import pkg_resources
 import jsonschema.exceptions
 
+from routemaster.timezones import get_known_timezones
 from routemaster.text_utils import join_comma_or
 from routemaster.config.model import (
     Gate,
@@ -26,6 +27,7 @@ from routemaster.config.model import (
     OnEntryTrigger,
     IntervalTrigger,
     MetadataTrigger,
+    LocalTimeTrigger,
     ConstantNextState,
     ContextNextStates,
     SystemTimeTrigger,
@@ -264,7 +266,18 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
         )
 
 
-def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> SystemTimeTrigger:
+def _validate_known_timezone(path: Path, timezone: str) -> None:
+    if timezone not in get_known_timezones():
+        raise ConfigError(
+            f"Timezone '{timezone}' at path {'.'.join(path)} is not a known "
+            f"timezone.",
+        )
+
+
+def _load_time_trigger(
+    path: Path,
+    yaml_trigger: Yaml,
+) -> Union[SystemTimeTrigger, LocalTimeTrigger]:
     format_ = '%Hh%Mm'
     try:
         dt = datetime.datetime.strptime(str(yaml_trigger['time']), format_)
@@ -274,6 +287,17 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> SystemTimeTrigger:
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
             f"does not meet expected format: {format_}.",
         ) from None
+
+    if 'timezone' in yaml_trigger:
+        timezone_path = path + ['timezone']
+        timezone: str = yaml_trigger['timezone']
+        if timezone.startswith('metadata.'):
+            _validate_context_lookups(timezone_path, [timezone], [])
+        else:
+            _validate_known_timezone(timezone_path, timezone)
+
+        return LocalTimeTrigger(time=trigger, timezone=timezone)
+
     return SystemTimeTrigger(time=trigger)
 
 
