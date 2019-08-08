@@ -8,11 +8,11 @@ from routemaster.cron import process_job, configure_schedule
 from routemaster.config import (
     Gate,
     Action,
-    TimeTrigger,
     NoNextStates,
     StateMachine,
     IntervalTrigger,
     MetadataTrigger,
+    SystemTimeTrigger,
 )
 from routemaster.exit_conditions import ExitConditionProgram
 
@@ -61,7 +61,7 @@ def test_gate_at_fixed_time(custom_app):
         'fixed_time_gate',
         next_states=NoNextStates(),
         exit_condition=ExitConditionProgram('false'),
-        triggers=[TimeTrigger(datetime.time(18, 30))],
+        triggers=[SystemTimeTrigger(datetime.time(18, 30))],
     )
     app = create_app(custom_app, [gate])
 
@@ -157,7 +157,7 @@ def test_cron_job_gracefully_exit_signalling(custom_app):
         'gate',
         next_states=NoNextStates(),
         exit_condition=ExitConditionProgram('false'),
-        triggers=[TimeTrigger(datetime.time(12, 0))],
+        triggers=[SystemTimeTrigger(datetime.time(12, 0))],
     )
     app = create_app(custom_app, [gate])
     state_machine = app.config.state_machines['test_machine']
@@ -193,7 +193,7 @@ def test_cron_job_does_not_forward_exceptions(custom_app):
         'gate',
         next_states=NoNextStates(),
         exit_condition=ExitConditionProgram('false'),
-        triggers=[TimeTrigger(datetime.time(12, 0))],
+        triggers=[SystemTimeTrigger(datetime.time(12, 0))],
     )
     app = create_app(custom_app, [gate])
     state_machine = app.config.state_machines['test_machine']

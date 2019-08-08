@@ -9,7 +9,6 @@ from routemaster.config.model import (
     Webhook,
     FeedConfig,
     NextStates,
-    TimeTrigger,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -18,6 +17,7 @@ from routemaster.config.model import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    SystemTimeTrigger,
     LoggingPluginConfig,
     ContextNextStatesOption,
 )
@@ -36,7 +36,6 @@ __all__ = (
     'FeedConfig',
     'NextStates',
     'ConfigError',
-    'TimeTrigger',
     'NoNextStates',
     'StateMachine',
     'DatabaseConfig',
@@ -45,6 +44,7 @@ __all__ = (
     'MetadataTrigger',
     'ConstantNextState',
     'ContextNextStates',
+    'SystemTimeTrigger',
     'LoggingPluginConfig',
     'ContextNextStatesOption',
 )

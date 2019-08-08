@@ -14,10 +14,10 @@ from routemaster.config import (
     Gate,
     State,
     Action,
-    TimeTrigger,
     StateMachine,
     IntervalTrigger,
     MetadataTrigger,
+    SystemTimeTrigger,
 )
 from routemaster.state_machine import (
     LabelStateProcessor,
@@ -118,7 +118,7 @@ def _configure_schedule_for_state(
         )
     elif isinstance(state, Gate):
         for trigger in state.triggers:
-            if isinstance(trigger, TimeTrigger):
+            if isinstance(trigger, SystemTimeTrigger):
                 scheduler.every().day.at(
                     f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
                 ).do(

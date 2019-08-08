@@ -20,7 +20,6 @@ from routemaster.config.model import (
     Webhook,
     FeedConfig,
     NextStates,
-    TimeTrigger,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -29,6 +28,7 @@ from routemaster.config.model import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    SystemTimeTrigger,
     LoggingPluginConfig,
     ContextNextStatesOption,
 )
@@ -269,7 +269,7 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
         )
 
 
-def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
+def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> SystemTimeTrigger:
     format_ = '%Hh%Mm'
     try:
         dt = datetime.datetime.strptime(str(yaml_trigger['time']), format_)
@@ -279,7 +279,7 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
             f"does not meet expected format: {format_}.",
         ) from None
-    return TimeTrigger(time=trigger)
+    return SystemTimeTrigger(time=trigger)
 
 
 RE_INTERVAL = re.compile(

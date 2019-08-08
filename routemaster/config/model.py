@@ -22,8 +22,13 @@ if TYPE_CHECKING:
     from routemaster.context import Context  # noqa
 
 
-class TimeTrigger(NamedTuple):
-    """Time based trigger for exit condition evaluation."""
+class SystemTimeTrigger(NamedTuple):
+    """
+    System time based trigger for exit condition evaluation.
+
+    This trigger runs at the given time according to the system on which
+    routemaster is running.
+    """
     time: datetime.time
 
 
@@ -53,7 +58,7 @@ class OnEntryTrigger:
     """Trigger on entry to a given gate."""
 
 
-Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
+Trigger = Union[SystemTimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
 
 
 class ConstantNextState(NamedTuple):

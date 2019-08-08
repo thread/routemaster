@@ -15,7 +15,6 @@ from routemaster.config import (
     Webhook,
     FeedConfig,
     ConfigError,
-    TimeTrigger,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -24,6 +23,7 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    SystemTimeTrigger,
     LoggingPluginConfig,
     ContextNextStatesOption,
     load_config,
@@ -99,7 +99,7 @@ def test_realistic_config():
                     Gate(
                         name='start',
                         triggers=[
-                            TimeTrigger(time=datetime.time(18, 30)),
+                            SystemTimeTrigger(time=datetime.time(18, 30)),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
@@ -306,7 +306,7 @@ def test_environment_variables_override_config_file_for_database_config():
                     Gate(
                         name='start',
                         triggers=[
-                            TimeTrigger(time=datetime.time(18, 30)),
+                            SystemTimeTrigger(time=datetime.time(18, 30)),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
