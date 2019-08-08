@@ -58,7 +58,12 @@ class OnEntryTrigger:
     """Trigger on entry to a given gate."""
 
 
-Trigger = Union[SystemTimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
+Trigger = Union[
+    SystemTimeTrigger,
+    IntervalTrigger,
+    MetadataTrigger,
+    OnEntryTrigger,
+]
 
 
 class ConstantNextState(NamedTuple):
