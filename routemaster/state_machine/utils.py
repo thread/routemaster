@@ -25,7 +25,7 @@ def get_state_machine(app: App, label: LabelRef) -> StateMachine:
     """Finds the state machine instance by name in the app config."""
     try:
         return app.config.state_machines[label.state_machine]
-    except KeyError as k:
+    except KeyError:
         raise UnknownStateMachine(label.state_machine)
 
 
