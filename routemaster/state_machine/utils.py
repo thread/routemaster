@@ -3,7 +3,7 @@
 import datetime
 import functools
 import contextlib
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Sequence, Collection
 
 import dateutil.tz
 from sqlalchemy import func
@@ -134,6 +134,34 @@ def labels_in_state(
 ) -> List[str]:
     """Util to get all the labels in an action state that need retrying."""
     return _labels_in_state(app, state_machine, state, True)
+
+
+def labels_in_state_with_metadata(
+    app: App,
+    state_machine: StateMachine,
+    state: State,
+    path: Sequence[str],
+    values: Collection[str],
+) -> List[str]:
+    """
+    Util to get all the labels in a given state with some metadata value.
+
+    The metadata lookup happens at the given path, allowing for any of the
+    posible values given.
+    """
+    if not values:
+        raise ValueError("Must specify at least one possible value")
+
+    metadata_lookup = Label.metadata
+    for part in path:
+        metadata_lookup = metadata_lookup[part]  # type: ignore
+
+    return _labels_in_state(
+        app,
+        state_machine,
+        state,
+        metadata_lookup.astext.in_(values),  # type: ignore
+    )
 
 
 def labels_needing_metadata_update_retry_in_gate(

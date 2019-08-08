@@ -15,6 +15,7 @@ from routemaster.state_machine.api import (
 from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.utils import (
     labels_in_state,
+    labels_in_state_with_metadata,
     labels_needing_metadata_update_retry_in_gate,
 )
 from routemaster.state_machine.actions import process_action
@@ -43,5 +44,6 @@ __all__ = (
     'LabelStateProcessor',
     'UnknownStateMachine',
     'update_metadata_for_label',
+    'labels_in_state_with_metadata',
     'labels_needing_metadata_update_retry_in_gate',
 )
