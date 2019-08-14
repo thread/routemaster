@@ -1,0 +1,8 @@
+state_machines:
+  example:
+    states:
+      - gate: start
+        triggers:
+          - time: 18h00m
+            timezone: IS_NOT_A_TIMEZONE
+        exit_condition: false

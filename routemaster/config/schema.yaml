@@ -68,6 +68,9 @@ properties:
                             time:
                               type: string
                               pattern: '^[0-9]{1,2}h[0-9]{2}m$'
+                            timezone:
+                              type: string
+                              pattern: '^([a-zA-Z]+/[a-zA-Z_]+|metadata\.\S+)$'
                           required:
                             - time
                           additionalProperties: false

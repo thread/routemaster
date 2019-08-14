@@ -3,13 +3,14 @@
 import os
 import re
 import datetime
-from typing import Any, Dict, List, Iterable, Optional
+from typing import Any, Dict, List, Union, Iterable, Optional
 
 import yaml
 import jsonschema
 import pkg_resources
 import jsonschema.exceptions
 
+from routemaster.timezones import get_known_timezones
 from routemaster.text_utils import join_comma_or
 from routemaster.config.model import (
     Gate,
@@ -20,7 +21,6 @@ from routemaster.config.model import (
     Webhook,
     FeedConfig,
     NextStates,
-    TimeTrigger,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -29,8 +29,11 @@ from routemaster.config.model import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    SystemTimeTrigger,
     LoggingPluginConfig,
+    TimezoneAwareTrigger,
     ContextNextStatesOption,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.exit_conditions import ExitConditionProgram
 from routemaster.config.exceptions import ConfigError
@@ -249,11 +252,6 @@ def _load_gate(path: Path, yaml_state: Yaml, feed_names: List[str]) -> Gate:
 
 
 def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
-    if len(yaml_trigger.keys()) > 1:  # pragma: no branch
-        raise ConfigError(  # pragma: no cover
-            f"Trigger at path {'.'.join(path)} cannot be of multiple types.",
-        )
-
     if 'time' in yaml_trigger:
         return _load_time_trigger(path, yaml_trigger)
     elif 'metadata' in yaml_trigger:
@@ -269,7 +267,22 @@ def _load_trigger(path: Path, yaml_trigger: Yaml) -> Trigger:
         )
 
 
-def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
+def _validate_known_timezone(path: Path, timezone: str) -> None:
+    if timezone not in get_known_timezones():
+        raise ConfigError(
+            f"Timezone '{timezone}' at path {'.'.join(path)} is not a known "
+            f"timezone.",
+        )
+
+
+def _load_time_trigger(
+    path: Path,
+    yaml_trigger: Yaml,
+) -> Union[
+    SystemTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
+]:
     format_ = '%Hh%Mm'
     try:
         dt = datetime.datetime.strptime(str(yaml_trigger['time']), format_)
@@ -279,7 +292,21 @@ def _load_time_trigger(path: Path, yaml_trigger: Yaml) -> TimeTrigger:
             f"Time trigger '{yaml_trigger['time']}' at path {'.'.join(path)} "
             f"does not meet expected format: {format_}.",
         ) from None
-    return TimeTrigger(time=trigger)
+
+    if 'timezone' in yaml_trigger:
+        timezone_path = path + ['timezone']
+        timezone: str = yaml_trigger['timezone']
+        if timezone.startswith('metadata.'):
+            _validate_context_lookups(timezone_path, [timezone], [])
+            return MetadataTimezoneAwareTrigger(
+                time=trigger,
+                timezone_metadata_path=timezone.split('.')[1:],
+            )
+        else:
+            _validate_known_timezone(timezone_path, timezone)
+            return TimezoneAwareTrigger(time=trigger, timezone=timezone)
+
+    return SystemTimeTrigger(time=trigger)
 
 
 RE_INTERVAL = re.compile(
