@@ -19,7 +19,9 @@ from routemaster.config.model import (
     ContextNextStates,
     SystemTimeTrigger,
     LoggingPluginConfig,
+    TimezoneAwareTrigger,
     ContextNextStatesOption,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.config.loader import load_config, load_database_config
 from routemaster.config.exceptions import ConfigError
@@ -46,5 +48,7 @@ __all__ = (
     'ContextNextStates',
     'SystemTimeTrigger',
     'LoggingPluginConfig',
+    'TimezoneAwareTrigger',
     'ContextNextStatesOption',
+    'MetadataTimezoneAwareTrigger',
 )

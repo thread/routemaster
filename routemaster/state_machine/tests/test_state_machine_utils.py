@@ -275,3 +275,73 @@ def test_labels_in_state(app, mock_test_feed, mock_webhook, create_label, create
             test_machine,
             gate,
         ) == [label_in_state.name]
+
+
+def test_labels_in_state_with_metadata(app, mock_test_feed, mock_webhook, create_label, create_deleted_label, current_state):
+    label_matching_metadata = create_label('label_matching_metadata', 'test_machine', {'foo': 'bar'})
+    label_other_metadata = create_label('label_other_metadata', 'test_machine', {'foo': 'other'})
+    label_empty_metadata = create_label('label_empty_metadata', 'test_machine', {})
+    label_deleted = create_deleted_label('label_deleted', 'test_machine')
+
+    with mock_test_feed(), mock_webhook():
+        label_not_in_state = create_label(
+            'label_not_in_state',
+            'test_machine',
+            {'should_progress': True},
+        )
+
+    test_machine = app.config.state_machines['test_machine']
+    gate = test_machine.states[0]
+
+    assert current_state(label_matching_metadata) == 'start'
+    assert current_state(label_empty_metadata) == 'start'
+    assert current_state(label_other_metadata) == 'start'
+    assert current_state(label_deleted) is None
+    assert current_state(label_not_in_state) == 'end'
+
+    # But only label_unprocessed should be pending a metadata update
+    with app.new_session():
+        assert utils.labels_in_state_with_metadata(
+            app,
+            test_machine,
+            gate,
+            path=['foo'],
+            values=['bar', 'quox'],
+        ) == [label_matching_metadata.name]
+
+
+def test_labels_in_state_with_metadata_nested(app, mock_test_feed, mock_webhook, create_label, create_deleted_label, current_state):
+    label_matching_metadata = create_label('label_matching_metadata', 'test_machine', {'foo': {'bar': 'quox'}})
+    label_other_metadata_1 = create_label('label_other_metadata_1', 'test_machine', {'foo': {'bar': 'other'}})
+    label_other_metadata_2 = create_label('label_other_metadata_2', 'test_machine', {'foo': 'bar'})
+    label_other_metadata_3 = create_label('label_other_metadata_3', 'test_machine', {'foo': 'other'})
+    label_empty_metadata = create_label('label_empty_metadata', 'test_machine', {})
+    label_deleted = create_deleted_label('label_deleted', 'test_machine')
+
+    with mock_test_feed(), mock_webhook():
+        label_not_in_state = create_label(
+            'label_not_in_state',
+            'test_machine',
+            {'should_progress': True},
+        )
+
+    test_machine = app.config.state_machines['test_machine']
+    gate = test_machine.states[0]
+
+    assert current_state(label_matching_metadata) == 'start'
+    assert current_state(label_empty_metadata) == 'start'
+    assert current_state(label_other_metadata_1) == 'start'
+    assert current_state(label_other_metadata_2) == 'start'
+    assert current_state(label_other_metadata_3) == 'start'
+    assert current_state(label_deleted) is None
+    assert current_state(label_not_in_state) == 'end'
+
+    # But only label_unprocessed should be pending a metadata update
+    with app.new_session():
+        assert utils.labels_in_state_with_metadata(
+            app,
+            test_machine,
+            gate,
+            path=['foo', 'bar'],
+            values=['quox'],
+        ) == [label_matching_metadata.name]

@@ -4,7 +4,7 @@ import time
 import functools
 import itertools
 import threading
-from typing import List, Callable, Iterable
+from typing import Callable, Iterable
 
 import schedule
 from typing_extensions import Protocol
@@ -18,8 +18,11 @@ from routemaster.config import (
     IntervalTrigger,
     MetadataTrigger,
     SystemTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.state_machine import (
+    LabelProvider,
     LabelStateProcessor,
     process_cron,
     process_gate,
@@ -27,13 +30,12 @@ from routemaster.state_machine import (
     labels_in_state,
     labels_needing_metadata_update_retry_in_gate,
 )
+from routemaster.cron_processors import (
+    TimezoneAwareProcessor,
+    MetadataTimezoneAwareProcessor,
+)
 
 IsTerminating = Callable[[], bool]
-
-# Note: This function will be called in a different transaction to where we
-# iterate over the results, so to prevent confusion or the possible
-# introduction of errors, we require all the data up-front.
-LabelProvider = Callable[[App, StateMachine, State], List[str]]
 
 
 class CronProcessor(Protocol):
@@ -125,6 +127,22 @@ def _configure_schedule_for_state(
                     processor,
                     fn=process_gate,
                     label_provider=labels_in_state,
+                )
+            elif isinstance(trigger, TimezoneAwareTrigger):
+                func = functools.partial(
+                    processor,
+                    fn=process_gate,
+                    label_provider=labels_in_state,
+                )
+                scheduler.every().minute.do(
+                    TimezoneAwareProcessor(func, trigger),
+                )
+            elif isinstance(trigger, MetadataTimezoneAwareTrigger):
+                scheduler.every().minute.do(
+                    MetadataTimezoneAwareProcessor(
+                        functools.partial(processor, fn=process_gate),
+                        trigger,
+                    ),
                 )
             elif isinstance(trigger, IntervalTrigger):
                 scheduler.every(
