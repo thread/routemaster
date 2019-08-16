@@ -12,6 +12,7 @@ setup(
     url='https://github.com/thread/routemaster',
     description="Prometheus metrics reporting for Routemaster.",
     long_description=long_description,
+    long_description_content_type="text/markdown",
 
     author="Thread",
     author_email="tech@thread.com",
