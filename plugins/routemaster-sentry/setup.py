@@ -3,7 +3,7 @@
 import version
 from setuptools import setup, find_packages
 
-with open('README.md', 'r', encoding='utf-8') as f:
+with open('README.rst', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
@@ -12,7 +12,6 @@ setup(
     url='https://github.com/thread/routemaster',
     description="Sentry error reporting for Routemaster.",
     long_description=long_description,
-    long_description_content_type="text/markdown",
 
     author="Thread",
     author_email="tech@thread.com",
