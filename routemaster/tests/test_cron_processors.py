@@ -1,8 +1,4 @@
-from routemaster.state_machine import (
-    labels_in_state_with_metadata,
-)
 import datetime
-
 from unittest import mock
 
 import freezegun
@@ -11,6 +7,7 @@ from routemaster.config import (
     TimezoneAwareTrigger,
     MetadataTimezoneAwareTrigger,
 )
+from routemaster.state_machine import labels_in_state_with_metadata
 from routemaster.cron_processors import (
     TimezoneAwareProcessor,
     MetadataTimezoneAwareProcessor,
