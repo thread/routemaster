@@ -1,16 +1,13 @@
 import os
-import socket
 import pathlib
-import contextlib
-import subprocess
 from typing import Any, Dict, Type, Tuple, Iterable
 
 import pytest
 import requests
 from flask import Flask
 from routemaster_sentry import SentryLogger
-from routemaster_prometheus import PrometheusLogger
 from prometheus_client.core import Sample
+from routemaster_prometheus import PrometheusLogger
 from prometheus_client.parser import text_string_to_metric_families
 
 from routemaster.logging import BaseLogger, SplitLogger
