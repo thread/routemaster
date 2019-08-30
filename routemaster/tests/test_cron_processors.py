@@ -16,6 +16,16 @@ from routemaster.cron_processors import (
 # Test TimezoneAwareProcessor
 
 
+def test_timezone_aware_processor_repr() -> None:
+    mock_callable = mock.Mock()
+    trigger = TimezoneAwareTrigger(datetime.time(12, 0), 'Etc/UTC')
+
+    processor = TimezoneAwareProcessor(mock_callable, trigger)
+
+    assert 'Etc/UTC' in repr(processor)
+    assert '12:00' in repr(processor)
+
+
 @freezegun.freeze_time('2019-08-01 12:00 UTC')
 def test_timezone_aware_processor_runs_on_time() -> None:
     mock_callable = mock.Mock()
@@ -61,6 +71,16 @@ def test_timezone_aware_processor_doesnt_run_at_wrong_time() -> None:
 
 
 # Test MetadataTimezoneAwareProcessor
+
+
+def test_metadata_timezone_aware_processor_repr() -> None:
+    mock_callable = mock.Mock()
+    trigger = MetadataTimezoneAwareTrigger(datetime.time(12, 0), ['tz'])
+
+    processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
+
+    assert 'tz' in repr(processor)
+    assert '12:00' in repr(processor)
 
 
 @freezegun.freeze_time('2019-01-01 12:00 UTC')
