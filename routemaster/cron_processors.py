@@ -1,7 +1,8 @@
 """Processor classes to support cron scheduled jobs."""
 
+import logging
 import functools
-from typing import Callable
+from typing import Any, Type, Callable
 
 from typing_extensions import Protocol
 
@@ -14,6 +15,10 @@ from routemaster.state_machine import (
     LabelProvider,
     labels_in_state_with_metadata,
 )
+
+
+def _logger_for_type(type_: Type[Any]) -> logging.Logger:
+    return logging.getLogger(f"({type_.__module__}.{type_.__name__}")
 
 
 class ProcessingSpecificCronProcessor(Protocol):
@@ -42,14 +47,25 @@ class TimezoneAwareProcessor:
     ) -> None:
         self.processor = processor
         self.trigger = trigger
+        self._logger = _logger_for_type(type(self))
 
     def __call__(self) -> None:
         """Run the cron processing."""
         timezones = where_is_this_the_time(self.trigger.time)
 
         if self.trigger.timezone not in timezones:
+            self._logger.debug(
+                f"Not currently time to do processing (waiting for "
+                f"{self.trigger.time} in {self.trigger.timezone})",
+                extra={
+                    'timezones': timezones,
+                },
+            )
             return
 
+        self._logger.info(
+            f"Processing {self.trigger.time} in {self.trigger.timezone}",
+        )
         self.processor()
 
     def __repr__(self) -> str:
@@ -75,12 +91,17 @@ class MetadataTimezoneAwareProcessor:
     ) -> None:
         self.processor = processor
         self.trigger = trigger
+        self._logger = _logger_for_type(type(self))
 
     def __call__(self) -> None:
         """Run the cron processing."""
         timezones = where_is_this_the_time(self.trigger.time)
 
         if not timezones:
+            self._logger.debug(
+                f"Not currently time to do processing (waiting for "
+                f"{self.trigger.time})",
+            )
             return
 
         label_provider = functools.partial(
@@ -89,6 +110,10 @@ class MetadataTimezoneAwareProcessor:
             values=timezones,
         )
 
+        self._logger.info(
+            f"Processing {self.trigger.time} in {timezones} for "
+            f"{self.trigger.timezone_metadata_path}",
+        )
         self.processor(label_provider=label_provider)
 
     def __repr__(self) -> str:
