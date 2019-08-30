@@ -69,6 +69,7 @@ class TimezoneAwareProcessor:
         self.processor()
 
     def __repr__(self) -> str:
+        """Return a useful debug representation."""
         return (
             f'<TimezoneAwareProcessor: {self.trigger.time} in '
             f'{self.trigger.timezone}>'
@@ -117,6 +118,7 @@ class MetadataTimezoneAwareProcessor:
         self.processor(label_provider=label_provider)
 
     def __repr__(self) -> str:
+        """Return a useful debug representation."""
         return (
             f'<MetadataTimezoneAwareProcessor: {self.trigger.time} for '
             f'{self.trigger.timezone_metadata_path}>'
