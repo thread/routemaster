@@ -13,6 +13,7 @@ from routemaster.config import (
     MetadataTimezoneAwareTrigger,
 )
 from routemaster.timezones import where_is_this_the_time
+from routemaster.time_utils import time_appears_in_range
 from routemaster.state_machine import (
     LabelProvider,
     labels_in_state_with_metadata,
@@ -80,17 +81,22 @@ class TimezoneAwareProcessor:
     def __call__(self) -> None:
         """Run the cron processing."""
         last_call = self._last_call
-        self._last_call = datetime.datetime.now(dateutil.tz.tzutc())
+        self._last_call = now = datetime.datetime.now(dateutil.tz.tzutc())
 
-        timezones = _where_was_this_the_time(self.trigger.time, last_call)
+        trigger_time = self.trigger.time.replace(
+            tzinfo=dateutil.tz.gettz(self.trigger.timezone),
+        )
 
-        if self.trigger.timezone not in timezones:
+        should_process = time_appears_in_range(
+            when=trigger_time,
+            start=last_call,
+            end=now,
+        )
+
+        if not should_process:
             self._logger.debug(
                 f"Not currently time to do processing (waiting for "
                 f"{self.trigger.time} in {self.trigger.timezone})",
-                extra={
-                    'timezones': timezones,
-                },
             )
             return
 

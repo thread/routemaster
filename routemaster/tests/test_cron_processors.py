@@ -2,6 +2,7 @@ import datetime
 from unittest import mock
 
 import freezegun
+import dateutil.tz
 
 from routemaster.config import (
     TimezoneAwareTrigger,
@@ -12,6 +13,19 @@ from routemaster.cron_processors import (
     TimezoneAwareProcessor,
     MetadataTimezoneAwareProcessor,
 )
+
+UTC = dateutil.tz.gettz('UTC')
+
+
+def recently() -> datetime.datetime:
+    """
+    Helper for getting a time shortly before now. This is mostly expected to be
+    used for the construction of cron processors, so that their construction
+    time is separate to (and earlier than) the current time when they're run
+    but otherwise very close (to avoid changing the semantics of the test).
+    """
+    return datetime.datetime.now(UTC) - datetime.timedelta(microseconds=1)
+
 
 # Test TimezoneAwareProcessor
 
@@ -31,7 +45,9 @@ def test_timezone_aware_processor_runs_on_time() -> None:
     mock_callable = mock.Mock()
     trigger = TimezoneAwareTrigger(datetime.time(12, 0), 'Etc/UTC')
 
-    processor = TimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = TimezoneAwareProcessor(mock_callable, trigger)
+
     processor()
 
     mock_callable.assert_called_once_with()
@@ -42,7 +58,9 @@ def test_timezone_aware_processor_runs_on_time_other_timezone() -> None:
     mock_callable = mock.Mock()
     trigger = TimezoneAwareTrigger(datetime.time(13, 0), 'Europe/London')
 
-    processor = TimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = TimezoneAwareProcessor(mock_callable, trigger)
+
     processor()
 
     mock_callable.assert_called_once_with()
@@ -53,7 +71,9 @@ def test_timezone_aware_processor_doesnt_run_when_timezone_doesnt_match() -> Non
     mock_callable = mock.Mock()
     trigger = TimezoneAwareTrigger(datetime.time(12, 0), 'Europe/London')
 
-    processor = TimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = TimezoneAwareProcessor(mock_callable, trigger)
+
     processor()
 
     mock_callable.assert_not_called()
@@ -64,7 +84,9 @@ def test_timezone_aware_processor_doesnt_run_at_wrong_time() -> None:
     mock_callable = mock.Mock()
     trigger = TimezoneAwareTrigger(datetime.time(12, 0), 'Etc/UTC')
 
-    processor = TimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = TimezoneAwareProcessor(mock_callable, trigger)
+
     processor()
 
     mock_callable.assert_not_called()
