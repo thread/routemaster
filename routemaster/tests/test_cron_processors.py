@@ -149,7 +149,8 @@ def test_metadata_timezone_aware_processor_repr() -> None:
     mock_callable = mock.Mock()
     trigger = MetadataTimezoneAwareTrigger(datetime.time(12, 0), ['tz'])
 
-    processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
     assert 'tz' in repr(processor)
     assert '12:00' in repr(processor)
@@ -160,7 +161,8 @@ def test_metadata_timezone_aware_processor_runs_on_time() -> None:
     mock_callable = mock.Mock()
     trigger = MetadataTimezoneAwareTrigger(datetime.time(12, 0), ['tz'])
 
-    processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
     with mock.patch('functools.partial') as mock_partial:
         processor()
@@ -184,7 +186,8 @@ def test_metadata_timezone_aware_processor_runs_on_time_other_timezone() -> None
     mock_callable = mock.Mock()
     trigger = MetadataTimezoneAwareTrigger(datetime.time(13, 0), ['tz'])
 
-    processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
     with mock.patch('functools.partial') as mock_partial:
         processor()
@@ -208,7 +211,8 @@ def test_metadata_timezone_processor_doesnt_run_at_wrong_time() -> None:
     mock_callable = mock.Mock()
     trigger = MetadataTimezoneAwareTrigger(datetime.time(12, 0), ['tz'])
 
-    processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
+    with freezegun.freeze_time(recently()):
+        processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
     with mock.patch('functools.partial') as mock_partial:
         processor()

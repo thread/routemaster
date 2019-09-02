@@ -3,7 +3,7 @@
 import logging
 import datetime
 import functools
-from typing import Any, Set, Type, Callable, Iterator
+from typing import Any, List, Type, Callable
 
 import dateutil.tz
 from typing_extensions import Protocol
@@ -12,7 +12,7 @@ from routemaster.config import (
     TimezoneAwareTrigger,
     MetadataTimezoneAwareTrigger,
 )
-from routemaster.timezones import where_is_this_the_time
+from routemaster.timezones import get_known_timezones
 from routemaster.time_utils import time_appears_in_range
 from routemaster.state_machine import (
     LabelProvider,
@@ -22,25 +22,6 @@ from routemaster.state_machine import (
 
 def _logger_for_type(type_: Type[Any]) -> logging.Logger:
     return logging.getLogger(f"({type_.__module__}.{type_.__name__}")
-
-
-def _every_minute_to_now(
-    time: datetime.datetime,
-) -> Iterator[datetime.datetime]:
-    now = datetime.datetime.now(dateutil.tz.tzutc())
-    while time <= now:
-        yield time
-        time += datetime.timedelta(minutes=1)
-
-
-def _where_was_this_the_time(
-    wall_clock: datetime.time,
-    since: datetime.datetime,
-) -> Set[str]:
-    timezones: Set[str] = set()
-    for time in _every_minute_to_now(since):
-        timezones |= where_is_this_the_time(wall_clock, now=time)
-    return timezones
 
 
 class ProcessingSpecificCronProcessor(Protocol):
@@ -141,9 +122,20 @@ class MetadataTimezoneAwareProcessor:
     def __call__(self) -> None:
         """Run the cron processing."""
         last_call = self._last_call
-        self._last_call = datetime.datetime.now(dateutil.tz.tzutc())
+        self._last_call = now = datetime.datetime.now(dateutil.tz.tzutc())
 
-        timezones = _where_was_this_the_time(self.trigger.time, last_call)
+        timezones: List[str] = []
+        for timezone in get_known_timezones():
+            trigger_time = self.trigger.time.replace(
+                tzinfo=dateutil.tz.gettz(timezone),
+            )
+            matches = time_appears_in_range(
+                when=trigger_time,
+                start=last_call,
+                end=now,
+            )
+            if matches:
+                timezones.append(timezone)
 
         if not timezones:
             self._logger.debug(
