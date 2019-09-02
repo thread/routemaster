@@ -9,7 +9,7 @@ def time_appears_in_range(
     end: datetime.datetime,
 ) -> bool:
     """
-    Determine whether the given time appears within the given time range.
+    Determine whether the given time appears within the given datetime range.
 
     Note: the comparison does not include the start instant, but does include
     the end instant.
