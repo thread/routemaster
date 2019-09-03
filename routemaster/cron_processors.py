@@ -68,11 +68,17 @@ class TimezoneAwareProcessor:
             tzinfo=dateutil.tz.gettz(self.trigger.timezone),
         )
 
-        should_process = time_appears_in_range(
-            when=trigger_time,
-            start=last_call,
-            end=now,
-        )
+        try:
+            should_process = time_appears_in_range(
+                when=trigger_time,
+                start=last_call,
+                end=now,
+            )
+        except ValueError:
+            self._logger.exception(
+                "Failed to determine whether trigger time has passed",
+            )
+            return
 
         if not should_process:
             self._logger.debug(
@@ -124,18 +130,24 @@ class MetadataTimezoneAwareProcessor:
         last_call = self._last_call
         self._last_call = now = datetime.datetime.now(dateutil.tz.tzutc())
 
-        timezones: List[str] = []
-        for timezone in get_known_timezones():
-            trigger_time = self.trigger.time.replace(
-                tzinfo=dateutil.tz.gettz(timezone),
+        try:
+            timezones: List[str] = []
+            for timezone in get_known_timezones():
+                trigger_time = self.trigger.time.replace(
+                    tzinfo=dateutil.tz.gettz(timezone),
+                )
+                matches = time_appears_in_range(
+                    when=trigger_time,
+                    start=last_call,
+                    end=now,
+                )
+                if matches:
+                    timezones.append(timezone)
+        except ValueError:
+            self._logger.exception(
+                "Failed to determine whether trigger time has passed",
             )
-            matches = time_appears_in_range(
-                when=trigger_time,
-                start=last_call,
-                end=now,
-            )
-            if matches:
-                timezones.append(timezone)
+            return
 
         if not timezones:
             self._logger.debug(

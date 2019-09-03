@@ -143,6 +143,32 @@ def test_timezone_aware_processor_doesnt_run_multiple_times() -> None:
     mock_callable.assert_called_once_with()
 
 
+def test_timezone_aware_processor_doesnt_doesnt_bubble_internal_exceptions() -> None:
+    # Note: the processor assumes that the callable they're passed won't raise,
+    # because that is assumed to be `cron.process_job` which has its own error
+    # handling. The processor does howver need to ensure that other errors it
+    # may encounter while checking whether to run are handled.
+    mock_callable = mock.Mock()
+    trigger = TimezoneAwareTrigger(datetime.time(12, 0), 'Etc/UTC')
+
+    with freezegun.freeze_time('2019-08-01 01:00 UTC'):
+        processor = TimezoneAwareProcessor(mock_callable, trigger)
+
+    with freezegun.freeze_time('2019-08-01 11:00 UTC'):
+        processor()
+
+    mock_callable.assert_not_called()  # not yet
+
+    with freezegun.freeze_time('2019-08-01 15:00 UTC'):
+        processor()
+        # Deliberately reproduce the impossible scenario which
+        # test_timezone_aware_processor_doesnt_run_multiple_times carefully
+        # avoids
+        processor()
+
+    mock_callable.assert_called_once_with()
+
+
 # Test MetadataTimezoneAwareProcessor
 
 
@@ -301,5 +327,26 @@ def test_metadata_timezone_processor_doesnt_run_multiply() -> None:
 
     assert 'Etc/UTC' in timezones
     assert 'Europe/London' not in timezones
+
+    mock_callable.assert_called_once_with(label_provider=mock.ANY)
+
+
+def test_metadata_timezone_processor_doesnt_bubble_internal_exceptions() -> None:
+    # Note: the processor assumes that the callable they're passed won't raise,
+    # because that is assumed to be `cron.process_job` which has its own error
+    # handling. The processor does howver need to ensure that other errors it
+    # may encounter while checking whether to run are handled.
+    mock_callable = mock.Mock()
+    trigger = MetadataTimezoneAwareTrigger(datetime.time(12, 0), ['tz'])
+
+    with freezegun.freeze_time('2019-08-01 11:58 UTC'):
+        processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
+
+    with freezegun.freeze_time('2019-08-01 12:05 UTC'):
+        processor()
+        # Deliberately reproduce the impossible scenario which
+        # test_metadata_timezone_processor_doesnt_run_multiply carefully
+        # avoids
+        processor()
 
     mock_callable.assert_called_once_with(label_provider=mock.ANY)
