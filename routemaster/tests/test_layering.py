@@ -43,6 +43,7 @@ DEPENDENCIES = (
     ('cron_processors', 'app'),
     ('cron_processors', 'state_machine'),
     ('cron_processors', 'timezones'),
+    ('cron_processors', 'time_utils'),
 
     ('validation', 'app'),
     ('validation', 'config'),

@@ -1,9 +1,8 @@
 """Helpers for working with timezones."""
 
 
-import datetime
 import functools
-from typing import Set, Optional, FrozenSet
+from typing import FrozenSet
 
 import dateutil.tz
 import dateutil.zoneinfo
@@ -31,50 +30,3 @@ def get_known_timezones() -> FrozenSet[str]:
     )
 
     return frozenset(info.zones.keys())
-
-
-def where_is_this_the_time(
-    when: datetime.time,
-    delta: datetime.timedelta = datetime.timedelta(minutes=1),
-    now: Optional[datetime.datetime] = None,
-) -> Set[str]:
-    """
-    Find timezones that consider wall-clock time `when` to be the current time.
-
-    Optionally takes:
-    - a maximum delta between the current and the expected time (defaulting to
-      one minute to match the granularity of our triggers)
-    - a reference for the reference current time (specified as a timezone-aware
-      `datetime.time`)
-    """
-
-    if when.tzinfo is not None:
-        raise ValueError(
-            "May only specify a wall-clock time as timezone naive",
-        )
-
-    if now is None:
-        now = datetime.datetime.now(dateutil.tz.tzutc())
-    elif now.tzinfo is None:
-        raise ValueError("May only specify a timezone-aware reference time")
-
-    delta = abs(delta)
-
-    def is_matching_time(timezone: str, reference: datetime.datetime) -> bool:
-        tzinfo = dateutil.tz.gettz(timezone)
-        local = reference.astimezone(tzinfo)
-        # ignore type due to `tzinfo` argument not being in the version of the
-        # typeshed we have available.
-        desired = datetime.datetime.combine(  # type: ignore
-            reference.date(),
-            when,
-            tzinfo,
-        )
-        difference = abs(local - desired)
-        return difference <= delta
-
-    return set(
-        timezone
-        for timezone in get_known_timezones()
-        if is_matching_time(timezone, now)
-    )
