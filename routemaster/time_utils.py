@@ -14,6 +14,11 @@ def time_appears_in_range(
     Note: the comparison does not include the start instant, but does include
     the end instant.
     """
+    if start >= end:
+        raise ValueError(
+            f"Must be passed a valid range to check (got {start} until {end})",
+        )
+
     if (end - start) >= datetime.timedelta(days=1):
         return True
 

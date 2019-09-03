@@ -1,11 +1,30 @@
 import datetime
 
 import dateutil.tz
+from pytest import raises
 
 from routemaster.time_utils import time_appears_in_range
 
 London = dateutil.tz.gettz('Europe/London')
 Paris = dateutil.tz.gettz('Europe/Paris')
+
+
+def test_rejects_instantaneous_range() -> None:
+    when = datetime.time(12, 0)
+    start = datetime.datetime(2019, 1, 1, 11, 0)
+    end = datetime.datetime(2019, 1, 1, 11, 0)
+
+    with raises(ValueError):
+        time_appears_in_range(when, start, end)
+
+
+def test_rejects_negative_range() -> None:
+    when = datetime.time(12, 0)
+    start = datetime.datetime(2019, 1, 1, 12, 0)
+    end = datetime.datetime(2019, 1, 1, 11, 0)
+
+    with raises(ValueError):
+        time_appears_in_range(when, start, end)
 
 
 def test_time_appears_in_same_day_range() -> None:
