@@ -123,7 +123,6 @@ def test_timezone_aware_processor_runs_if_delayed_since_last_run() -> None:
     mock_callable.assert_called_once_with()
 
 
-@freezegun.freeze_time('2019-08-01 15:00 UTC')
 def test_timezone_aware_processor_doesnt_run_multiple_times() -> None:
     mock_callable = mock.Mock()
     trigger = TimezoneAwareTrigger(datetime.time(12, 0), 'Etc/UTC')
@@ -136,8 +135,10 @@ def test_timezone_aware_processor_doesnt_run_multiple_times() -> None:
 
     mock_callable.assert_not_called()  # not yet
 
-    processor()
-    processor()
+    with freezegun.freeze_time('2019-08-01 15:00 UTC') as frozen_time:
+        processor()
+        frozen_time.tick(delta=datetime.timedelta(microseconds=10))
+        processor()
 
     mock_callable.assert_called_once_with()
 
@@ -277,7 +278,6 @@ def test_metadata_timezone_processor_runs_if_delayed_since_last_run() -> None:
     mock_callable.assert_called_once_with(label_provider=mock.ANY)
 
 
-@freezegun.freeze_time('2019-08-01 12:05 UTC')
 def test_metadata_timezone_processor_doesnt_run_multiply() -> None:
     mock_callable = mock.Mock()
     trigger = MetadataTimezoneAwareTrigger(datetime.time(12, 0), ['tz'])
@@ -285,15 +285,17 @@ def test_metadata_timezone_processor_doesnt_run_multiply() -> None:
     with freezegun.freeze_time('2019-08-01 11:58 UTC'):
         processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
-    with mock.patch('functools.partial') as mock_partial:
-        processor()
-        processor()
+    with freezegun.freeze_time('2019-08-01 12:05 UTC') as frozen_time:
+        with mock.patch('functools.partial') as mock_partial:
+            processor()
+            frozen_time.tick(delta=datetime.timedelta(microseconds=10))
+            processor()
 
-        mock_partial.assert_called_once_with(
-            labels_in_state_with_metadata,
-            path=['tz'],
-            values=mock.ANY,
-        )
+            mock_partial.assert_called_once_with(
+                labels_in_state_with_metadata,
+                path=['tz'],
+                values=mock.ANY,
+            )
 
     timezones = mock_partial.call_args[1]['values']
 
