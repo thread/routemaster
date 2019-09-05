@@ -101,6 +101,31 @@ def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
     return metadata
 
 
+def restore_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:
+    """Restores a label that was previously deleted."""
+    state_machine = get_state_machine(app, label)
+
+    try:
+        row = lock_label(app, label)
+    except UnknownLabel:
+        return
+
+    # Record the label as having been restored and add its initial metadata
+    row.metadata = metadata
+    row.deleted = False
+
+    # Add a history entry for the deletion.
+    current_state = get_current_state(app, label, state_machine)
+
+    if current_state is not None:
+        raise AssertionError(f"Deleted label {label} has current state!")
+
+    row.history.append(History(
+        old_state=None,
+        new_state=state_machine.states[0].name,
+    ))
+
+
 def update_metadata_for_label(
     app: App,
     label: LabelRef,
