@@ -157,10 +157,20 @@ def create_label(state_machine_name, label_name):
     try:
         initial_state_name = \
             app.config.state_machines[state_machine_name].states[0].name
-        metadata = state_machine.create_label(app, label, initial_metadata)
+        if 'restore_label_and_restart' in data:
+            metadata = state_machine.restore_label_and_restart(
+                app,
+                label,
+                initial_metadata,
+            )
+        else:
+            metadata = state_machine.create_label(app, label, initial_metadata)
         return jsonify(metadata=metadata, state=initial_state_name), 201
     except LookupError:
         msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+    except UnknownLabel:
+        msg = f"Label '{label}' does not exist"
         abort(404, msg)
     except LabelAlreadyExists:
         msg = f"Label {label_name} already exists in '{state_machine_name}'"

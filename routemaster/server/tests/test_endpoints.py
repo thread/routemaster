@@ -326,6 +326,42 @@ def test_create_label_409_for_deleted_label(client, create_label):
     assert response.status_code == 409
 
 
+def test_restore_label(app, client, create_label, delete_label):
+    create_label('foo', 'test_machine', {})
+    delete_label('foo', 'test_machine')
+
+    label_metadata = {'bar': 'baz'}
+    response = client.post(
+        '/state-machines/test_machine/labels/foo',
+        data=json.dumps({
+            'metadata': label_metadata,
+            'restore_label_and_restart': True,
+        }),
+        content_type='application/json',
+    )
+
+    assert response.status_code == 201
+    assert response.json['metadata'] == label_metadata
+
+    with app.new_session():
+        label = app.session.query(Label).one()
+        assert label.metadata == label_metadata
+        assert label.deleted is False
+
+
+def test_restore_unknown_label(client, create_label):
+    response = client.post(
+        '/state-machines/test_machine/labels/foo',
+        data=json.dumps({
+            'metadata': {},
+            'restore_label_and_restart': True,
+        }),
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
 def test_update_label_410_for_deleted_label(
     client,
     create_deleted_label,

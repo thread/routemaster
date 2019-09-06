@@ -10,6 +10,7 @@ from routemaster.state_machine.api import (
     process_cron,
     get_label_state,
     get_label_metadata,
+    restore_label_and_restart,
     update_metadata_for_label,
 )
 from routemaster.state_machine.gates import process_gate
@@ -44,6 +45,7 @@ __all__ = (
     'LabelStateProcessor',
     'UnknownStateMachine',
     'update_metadata_for_label',
+    'restore_label_and_restart',
     'labels_in_state_with_metadata',
     'labels_needing_metadata_update_retry_in_gate',
 )

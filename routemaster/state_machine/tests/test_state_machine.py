@@ -371,6 +371,88 @@ def test_delete_label_only_deletes_target_label(app, assert_history, mock_test_f
         )
 
 
+def test_restore_deleted_label(app, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+
+    with mock_test_feed(), app.new_session():
+        state_machine.create_label(app, label_foo, {})
+        state_machine.delete_label(app, label_foo)
+        state_machine.restore_label_and_restart(app, label_foo, {})
+
+    with app.new_session():
+        state_machine.get_label_metadata(
+            app,
+            label_foo,
+        )
+
+    assert_history([
+        (None, 'start'),
+        ('start', None),
+        (None, 'start'),
+    ])
+
+
+def test_restore_undeleted_label(app, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+
+    with mock_test_feed(), app.new_session():
+        state_machine.create_label(app, label_foo, {})
+
+    with app.new_session():
+        with pytest.raises(AssertionError):
+            state_machine.restore_label_and_restart(
+                app,
+                label_foo,
+                {},
+            )
+
+
+def test_restore_unknown_label(app, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+
+    with app.new_session():
+        with pytest.raises(UnknownLabel):
+            state_machine.restore_label_and_restart(
+                app,
+                label_foo,
+                {},
+            )
+
+
+def test_delete_restored_label(app, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+
+    with mock_test_feed(), app.new_session():
+        state_machine.create_label(app, label_foo, {})
+        state_machine.delete_label(app, label_foo)
+        state_machine.restore_label_and_restart(app, label_foo, {})
+        state_machine.delete_label(app, label_foo)
+
+    with app.new_session():
+        with pytest.raises(DeletedLabel):
+            state_machine.get_label_metadata(
+                app,
+                label_foo,
+            )
+
+
+def test_metadata_replaced_not_merged(app, assert_history, mock_test_feed):
+    label_foo = LabelRef('foo', 'test_machine')
+
+    with mock_test_feed(), app.new_session():
+        state_machine.create_label(app, label_foo, {'a': 1})
+        state_machine.delete_label(app, label_foo)
+        state_machine.restore_label_and_restart(app, label_foo, {'b': 2})
+
+    with app.new_session():
+        metadata = state_machine.get_label_metadata(
+            app,
+            label_foo,
+        )
+        assert 'a' not in metadata
+        assert metadata['b'] == 2
+
+
 def test_handles_label_state_change_race_condition(app, create_deleted_label):
     test_machine = app.config.state_machines['test_machine']
     state = test_machine.states[1]
