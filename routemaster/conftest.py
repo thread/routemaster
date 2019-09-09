@@ -373,13 +373,17 @@ def delete_label(app):
 
 
 @pytest.fixture()
-def create_deleted_label(create_label, delete_label):
+def create_deleted_label(create_label, delete_label, metadata={}):
     """
     Create a label in the database and then delete it.
     """
 
-    def _create_and_delete(name: str, state_machine_name: str) -> LabelRef:
-        create_label(name, state_machine_name, {})
+    def _create_and_delete(
+        name: str,
+        state_machine_name: str,
+        metadata: dict = {},
+    ) -> LabelRef:
+        create_label(name, state_machine_name, metadata)
         delete_label(name, state_machine_name)
         return LabelRef(name, state_machine_name)
 

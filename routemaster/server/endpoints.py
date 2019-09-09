@@ -157,14 +157,52 @@ def create_label(state_machine_name, label_name):
     try:
         initial_state_name = \
             app.config.state_machines[state_machine_name].states[0].name
-        if 'restore_label_and_restart' in data:
-            metadata = state_machine.restore_label_and_restart(
-                app,
-                label,
-                initial_metadata,
-            )
-        else:
-            metadata = state_machine.create_label(app, label, initial_metadata)
+        metadata = state_machine.create_label(app, label, initial_metadata)
+        return jsonify(metadata=metadata, state=initial_state_name), 201
+    except LookupError:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+    except LabelAlreadyExists:
+        msg = f"Label {label_name} already exists in '{state_machine_name}'"
+        abort(409, msg)
+
+
+@server.route(
+    '/state-machines/<state_machine_name>/labels/<label_name>/restore_and_restart', # noqa
+    methods=['POST'],
+)
+def restore_and_restart_label(state_machine_name, label_name):
+    """
+    Restore a label that was previously deleted.
+
+    It resets the label with a given metadata, and starts it back at the
+    initial state machine location.
+
+    Returns:
+    - 201 Created: if the label is successfully restored and restarted
+    - 404 Not Found: if the state machine, or the specified label, does
+      not exist.
+    - 400 Bad Request: if the request body is not a valid metadata.
+
+    Successful return codes return the full created metadata for the label.
+    """
+    app = server.config.app
+    label = LabelRef(label_name, state_machine_name)
+    data = request.get_json()
+
+    try:
+        initial_metadata = data['metadata']
+    except KeyError:
+        abort(400, "No metadata given")
+
+    try:
+        initial_state_name = \
+            app.config.state_machines[state_machine_name].states[0].name
+        metadata = state_machine.restore_label_and_restart(
+            app,
+            label,
+            initial_metadata,
+        )
         return jsonify(metadata=metadata, state=initial_state_name), 201
     except LookupError:
         msg = f"State machine '{state_machine_name}' does not exist"
@@ -172,9 +210,6 @@ def create_label(state_machine_name, label_name):
     except UnknownLabel:
         msg = f"Label '{label}' does not exist"
         abort(404, msg)
-    except LabelAlreadyExists:
-        msg = f"Label {label_name} already exists in '{state_machine_name}'"
-        abort(409, msg)
 
 
 @server.route(
