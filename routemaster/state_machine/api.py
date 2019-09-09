@@ -106,7 +106,14 @@ def restore_label_and_restart(
     label: LabelRef,
     replacement_metadata: Metadata,
 ) -> Metadata:
-    """Restores a label that was previously deleted."""
+    """
+    Restores a label that was previously deleted.
+
+    We replace the metadata entirely rather than merging it, so as to prevent
+    old and stale data remaining in the system longer than it needs to. This
+    function restarting the label into a completely fresh state cuts down on
+    the number of possible states a label can exist in.
+    """
     state_machine = get_state_machine(app, label)
 
     row = lock_label(app, label)
