@@ -10,6 +10,7 @@ from routemaster.state_machine import (
     LabelRef,
     DeletedLabel,
     UnknownLabel,
+    LabelAlreadyExists,
     UnknownStateMachine,
 )
 from routemaster.state_machine.gates import process_gate
@@ -399,7 +400,7 @@ def test_restore_undeleted_label(app, assert_history, mock_test_feed):
         state_machine.create_label(app, label_foo, {})
 
     with app.new_session():
-        with pytest.raises(AssertionError):
+        with pytest.raises(LabelAlreadyExists):
             state_machine.restore_label_and_restart(
                 app,
                 label_foo,

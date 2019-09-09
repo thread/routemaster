@@ -113,7 +113,7 @@ def restore_label_and_restart(
 
     # Record the label as having been restored and add its initial metadata
     if not row.deleted:
-        raise AssertionError(f"Label {label} is not marked as deleted!")
+        raise LabelAlreadyExists(f"Label {label} is not marked as deleted!")
 
     row.metadata = replacement_metadata
     row.deleted = False
@@ -122,7 +122,7 @@ def restore_label_and_restart(
     current_state = get_current_state(app, label, state_machine)
 
     if current_state is not None:
-        raise AssertionError(f"Deleted label {label} has current state!")
+        raise LabelAlreadyExists(f"Deleted label {label} has current state!")
 
     row.history.append(History(
         old_state=None,
