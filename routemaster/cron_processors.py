@@ -21,7 +21,7 @@ from routemaster.state_machine import (
 
 
 def _logger_for_type(type_: Type[Any]) -> logging.Logger:
-    return logging.getLogger(f"({type_.__module__}.{type_.__name__}")
+    return logging.getLogger(f"{type_.__module__}.{type_.__name__}")
 
 
 class ProcessingSpecificCronProcessor(Protocol):
