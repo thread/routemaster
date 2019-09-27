@@ -63,7 +63,6 @@ def process_gate(
     app.session.add(History(
         label_state_machine=state_machine.name,
         label_name=label.name,
-        created=func.now(),
         old_state=gate.name,
         new_state=destination.name,
     ))

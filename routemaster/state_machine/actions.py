@@ -90,7 +90,6 @@ def process_action(
     app.session.add(History(
         label_state_machine=state_machine.name,
         label_name=label.name,
-        created=func.now(),
         old_state=action.name,
         new_state=next_state.name,
     ))
