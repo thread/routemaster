@@ -4,8 +4,6 @@ import json
 import hashlib
 import functools
 
-from sqlalchemy import func
-
 from routemaster.db import History
 from routemaster.app import App
 from routemaster.utils import template_url

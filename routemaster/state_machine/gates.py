@@ -1,6 +1,4 @@
 """Processing for gate states."""
-from sqlalchemy import func
-
 from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.config import Gate, State, StateMachine
