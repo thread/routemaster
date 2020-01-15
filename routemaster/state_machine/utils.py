@@ -169,11 +169,11 @@ def labels_needing_metadata_update_retry_in_gate(
     state_machine: StateMachine,
     state: State,
 ) -> List[str]:
-    """Util to get all the labels in an action state that need retrying."""
+    """Util to get all the labels in a gate state that need retrying."""
     if not isinstance(state, Gate):  # pragma: no branch
         raise ValueError(  # pragma: no cover
             f"labels_needing_metadata_update_retry_in_gate called with "
-            f"{state.name} which is not an Gate",
+            f"{state.name} which is not a Gate",
         )
 
     return _labels_in_state(
