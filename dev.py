@@ -5,6 +5,7 @@ Use with `python -i dev.py` for a useful interactive shell.
 """
 
 import yaml
+import layer_loader
 
 from routemaster.db import *  # noqa: F403, F401
 from routemaster.app import App
@@ -17,8 +18,12 @@ def app_from_config(config_path):
 
     By default, will use the example.yaml file.
     """
-    with open(config_path, 'r') as f:
-        config = load_config(yaml.load(f))
+    config = load_config(
+        layer_loader.load_files(
+            [config_path],
+            loader=yaml.load,
+        ),
+    )
 
     class InteractiveApp(App):
         """

@@ -7,6 +7,7 @@ from unittest import mock
 
 import yaml
 import pytest
+import layer_loader
 
 from routemaster.config import (
     Gate,
@@ -427,7 +428,12 @@ def test_example_config_loads():
 
     assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
 
-    example_config = load_config(yaml.load(example_yaml.read_text()))
+    example_config = load_config(
+        layer_loader.load_files(
+            [example_yaml],
+            loader=yaml.load,
+        ),
+    )
 
     # Some basic assertions that we got the right thing loaded
     assert list(example_config.state_machines.keys()) == ['user_lifecycle']
