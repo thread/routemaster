@@ -3,6 +3,7 @@ import logging
 
 import yaml
 import click
+import layer_loader
 
 from routemaster.app import App
 from routemaster.cron import CronThread
@@ -19,17 +20,24 @@ logger = logging.getLogger(__name__)
 @click.option(
     '-c',
     '--config-file',
+    'config_files',
     help="Path to the service config file.",
     type=click.File(encoding='utf-8'),
     required=True,
+    multiple=True,
 )
 @click.pass_context
-def main(ctx, config_file):
+def main(ctx, config_files):
     """Shared entrypoint configuration."""
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
+    config_data = layer_loader.load_files(
+        config_files,
+        loader=yaml.load,
+    )
+
     try:
-        config = load_config(yaml.load(config_file))
+        config = load_config(config_data)
     except ConfigError:
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)

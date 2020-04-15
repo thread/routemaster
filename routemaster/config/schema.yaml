@@ -170,6 +170,14 @@ properties:
           required:
             - class
           additionalProperties: false
+  # A root element for placeholders which can be overriden within the layers of
+  # configuration files. Since these end up in the structure but are ignored,
+  # the schema needs to allow them to exist though cannot describe the children
+  # of the node in detail.
+  placeholders:
+    type: object
+    additionalProperties:
+      type: string
 required:
   - state_machines
 additionalProperties: false

@@ -39,6 +39,7 @@ setup(
 
     install_requires=(
         'click',
+        'layer-loader',
         'pyyaml',
         'jsonschema >=2.6, <3',
         'flask',
