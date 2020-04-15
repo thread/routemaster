@@ -101,6 +101,8 @@ jobs:
           TOXENV: py37
           COVERALLS: false
 
+      - *postgres-container
+
   test-38:
     <<: *test-template
     docker:
@@ -109,6 +111,8 @@ jobs:
           <<: *steps-environment
           TOXENV: py38
           COVERALLS: false
+
+      - *postgres-container
 
   lint:
     working_directory: ~/routemaster
