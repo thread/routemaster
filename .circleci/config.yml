@@ -7,20 +7,20 @@ jobs:
       # First container is where our steps run.
       - image: circleci/python:3.6.3
         environment:
-          - PG_HOST=localhost
-          - PG_PORT=5432
-          - PG_DB=routemaster
-          - PG_USER=routemaster
-          - PG_PASS=routemaster
-          - TOXENV=py36
-          - COVERALLS=true
+          PG_HOST: localhost
+          PG_PORT: 5432
+          PG_DB: routemaster
+          PG_USER: routemaster
+          PG_PASS: routemaster
+          TOXENV: py36
+          COVERALLS: true
 
       # Ancilliary containers
       - image: postgres:9.6
         environment:
-          - POSTGRES_USER=routemaster
-          - POSTGRES_DB=routemaster
-          - POSTGRES_PASSWORD=routemaster
+          POSTGRES_USER: routemaster
+          POSTGRES_DB: routemaster
+          POSTGRES_PASSWORD: routemaster
 
     steps:
       - checkout
