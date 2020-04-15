@@ -9,23 +9,17 @@ references:
       POSTGRES_DB: routemaster
       POSTGRES_PASSWORD: routemaster
 
+  steps-environment: &steps-environment
+    PG_HOST: localhost
+    PG_PORT: 5432
+    PG_DB: routemaster
+    PG_USER: routemaster
+    PG_PASS: routemaster
+    TOXENV: py36
+    COVERALLS: true
 
-jobs:
-  test-36: &test-template
+  test-template: &test-template
     working_directory: ~/routemaster
-    docker:
-      # First container is where our steps run.
-      - image: circleci/python:3.6.3
-        environment: &steps-environment
-          PG_HOST: localhost
-          PG_PORT: 5432
-          PG_DB: routemaster
-          PG_USER: routemaster
-          PG_PASS: routemaster
-          TOXENV: py36
-          COVERALLS: true
-
-      - *postgres-container
 
     steps:
       - checkout
@@ -91,6 +85,18 @@ jobs:
             if [ "$COVERALLS" != "true" ]; then exit 0; fi
             . venv/bin/activate
             coveralls
+
+jobs:
+  test-36:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          <<: *steps-environment
+          TOXENV: py36
+          COVERALLS: true
+
+      - *postgres-container
 
   test-37:
     <<: *test-template
