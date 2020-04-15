@@ -1,4 +1,5 @@
 import datetime
+import contextlib
 from unittest import mock
 
 import freezegun
@@ -15,6 +16,15 @@ from routemaster.cron_processors import (
 )
 
 UTC = dateutil.tz.gettz('UTC')
+
+
+@contextlib.contextmanager
+def mock_cron_processors_functools_partial():
+    with mock.patch(
+        'routemaster.cron_processors.functools',
+        autospec=True,
+    ) as mock_functools:
+        yield mock_functools.partial
 
 
 def recently() -> datetime.datetime:
@@ -191,7 +201,7 @@ def test_metadata_timezone_aware_processor_runs_on_time() -> None:
     with freezegun.freeze_time(recently()):
         processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
-    with mock.patch('functools.partial') as mock_partial:
+    with mock_cron_processors_functools_partial() as mock_partial:
         processor()
 
         mock_partial.assert_called_once_with(
@@ -216,7 +226,7 @@ def test_metadata_timezone_aware_processor_runs_on_time_other_timezone() -> None
     with freezegun.freeze_time(recently()):
         processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
-    with mock.patch('functools.partial') as mock_partial:
+    with mock_cron_processors_functools_partial() as mock_partial:
         processor()
 
         mock_partial.assert_called_once_with(
@@ -241,7 +251,7 @@ def test_metadata_timezone_processor_doesnt_run_at_wrong_time() -> None:
     with freezegun.freeze_time(recently()):
         processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
-    with mock.patch('functools.partial') as mock_partial:
+    with mock_cron_processors_functools_partial() as mock_partial:
         processor()
 
     mock_partial.assert_not_called()
@@ -256,7 +266,7 @@ def test_metadata_timezone_processor_runs_if_delayed_since_construction() -> Non
     with freezegun.freeze_time('2019-08-01 11:59 UTC'):
         processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
-    with mock.patch('functools.partial') as mock_partial:
+    with mock_cron_processors_functools_partial() as mock_partial:
         processor()
 
         mock_partial.assert_called_once_with(
@@ -282,12 +292,12 @@ def test_metadata_timezone_processor_runs_if_delayed_since_last_run() -> None:
         processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
     with freezegun.freeze_time('2019-08-01 11:58 UTC'):
-        with mock.patch('functools.partial') as mock_partial:
+        with mock_cron_processors_functools_partial() as mock_partial:
             processor()
 
             mock_partial.assert_not_called()  # not yet
 
-    with mock.patch('functools.partial') as mock_partial:
+    with mock_cron_processors_functools_partial() as mock_partial:
         processor()
 
         mock_partial.assert_called_once_with(
@@ -312,7 +322,7 @@ def test_metadata_timezone_processor_doesnt_run_multiply() -> None:
         processor = MetadataTimezoneAwareProcessor(mock_callable, trigger)
 
     with freezegun.freeze_time('2019-08-01 12:05 UTC') as frozen_time:
-        with mock.patch('functools.partial') as mock_partial:
+        with mock_cron_processors_functools_partial() as mock_partial:
             processor()
             frozen_time.tick(delta=datetime.timedelta(microseconds=10))
             processor()
