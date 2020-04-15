@@ -12,6 +12,7 @@ jobs:
           - PG_DB=routemaster
           - PG_USER=routemaster
           - PG_PASS=routemaster
+          - TOXENV=py36
           - COVERALLS=true
 
       # Ancilliary containers
@@ -61,7 +62,7 @@ jobs:
           name: Test
           command: |
             . venv/bin/activate
-            TOXENV=py36 tox
+            tox
       - save_cache:
           name: Save .tox cache
           key: deps-tox-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
