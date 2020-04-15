@@ -97,7 +97,7 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
 
     if invalid_labels_and_states:
         summary = "\n - ".join(
-            f"{name}: {count}" for name, count in state_counts.items(),
+            (f"{name}: {count}" for name, count in state_counts.items()),
         )
         raise ValidationError(
             f"{sum(state_counts.values())} nodes in states that no "
