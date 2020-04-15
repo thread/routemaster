@@ -2,7 +2,7 @@ tox
 pytest
 pytest-cov
 pytest-env
-pytest-randomly<3.3  # https://github.com/pytest-dev/pytest-randomly/issues/246
+pytest-randomly
 pytest-faulthandler
 freezegun
 mypy
