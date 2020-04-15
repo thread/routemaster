@@ -49,7 +49,12 @@ jobs:
       - run:
           name: Build combined checksum file
           command: |
-            rm .checksum
+            if [ -e .checksum ]
+            then
+              echo "Checksum file should not already exist"
+              exit 1
+            fi
+
             for file in tox.ini setup.py scripts/linting/requirements.txt scripts/typechecking/requirements.txt scripts/testing/requirements.txt
             do
               echo $file >> .checksum
