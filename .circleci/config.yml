@@ -11,12 +11,14 @@ jobs:
           - PG_PORT=5432
           - PG_DB=routemaster
           - PG_USER=routemaster
+          - PG_PASS=routemaster
 
       # Ancilliary containers
       - image: postgres:9.6
         environment:
           - POSTGRES_USER=routemaster
           - POSTGRES_DB=routemaster
+          - POSTGRES_PASSWORD=routemaster
 
     steps:
       - checkout
