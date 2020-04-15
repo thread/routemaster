@@ -12,6 +12,7 @@ jobs:
           - PG_DB=routemaster
           - PG_USER=routemaster
           - PG_PASS=routemaster
+          - COVERALLS=true
 
       # Ancilliary containers
       - image: postgres:9.6
@@ -74,8 +75,9 @@ jobs:
           path: build/artifacts/coverage
           destination: coverage
       - run:
-          name: Report coverage
+          name: Report coverage (if enabled for this job)
           command: |
+            if [ "$COVERALLS" != "true" ]; then exit 0; fi
             . venv/bin/activate
             coveralls
 
