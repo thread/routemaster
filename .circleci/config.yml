@@ -26,18 +26,16 @@ jobs:
         # Set up a cached virtualenv in which to install tox
       - restore_cache:
           name: Restore build dependency cache
-          key: deps-venv-18.0-2.9.1-1.10.0
+          key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum "scripts/testing/requirements-ci.txt" }}
       - run:
           name: Install tox
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install pip==18.0
-            pip install tox==2.9.1
-            pip install coveralls==1.10.0
+            pip install -r scripts/testing/requirements-ci.txt
       - save_cache:
           name: Save build dependency cache
-          key: deps-venv-18.0-2.9.1-1.10.0
+          key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum "scripts/testing/requirements-ci.txt" }}
           paths:
             - "venv"
 

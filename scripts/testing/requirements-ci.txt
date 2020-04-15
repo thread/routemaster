@@ -1,0 +1,5 @@
+# Requirements for top level CI operations.
+# Don't include Routemaster's own requirements here.
+pip==18.0
+tox==2.9.1
+coveralls==1.10.0
