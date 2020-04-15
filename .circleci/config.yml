@@ -44,9 +44,18 @@ jobs:
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
       # Run tox, caching the .tox directory
+      - run:
+          name: Build combined checksum file
+          command: |
+            rm .checksum
+            for file in tox.ini setup.py scripts/linting/requirements.txt scripts/typechecking/requirements.txt scripts/testing/requirements.txt
+            do
+              echo $file >> .checksum
+              cat $file >> .checksum
+            done
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
       - run:
           name: Test
           command: |
@@ -54,7 +63,7 @@ jobs:
             TOXENV=py36 tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
           paths:
             - ".tox"
 
