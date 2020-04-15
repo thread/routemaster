@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  test-36:
+  test-36: &test-template
     working_directory: ~/routemaster
     docker:
       # First container is where our steps run.
@@ -81,6 +81,22 @@ jobs:
             if [ "$COVERALLS" != "true" ]; then exit 0; fi
             . venv/bin/activate
             coveralls
+
+  test-37:
+    <<: *test-template
+    environment:
+        TOXENV: py37
+        COVERALLS: false
+    docker:
+      - image: circleci/python:3.7
+
+  test-38:
+    <<: *test-template
+    environment:
+        TOXENV: py38
+        COVERALLS: false
+    docker:
+      - image: circleci/python:3.8
 
   lint:
     working_directory: ~/routemaster
@@ -221,6 +237,14 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - test-37:
+          filters:
+            tags:
+              only: /.*/
+      - test-38:
+          filters:
+            tags:
+              only: /.*/
       - lint:
           filters:
             tags:
@@ -232,6 +256,8 @@ workflows:
       - release:
           requires:
             - test-36
+            - test-37
+            - test-38
             - lint
             - typecheck
           filters:
