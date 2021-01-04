@@ -5,7 +5,6 @@ pytest-env
 pytest-randomly
 pytest-faulthandler
 freezegun
-mypy
 httpretty
 pytest-pythonpath
 werkzeug>=0.15.0    # contains fix https://github.com/pallets/werkzeug/pull/1280
