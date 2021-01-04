@@ -13,6 +13,15 @@ Postgres for its data storage.
    script.
 
 2. Set up access credentials for the database in your environment variables.
+
+    You'll probably want to set `DB_USER` (defaults to `routemaster`) and
+    `DB_PASS` for running, though you also need to set `PG_USER` and `PG_PASS`
+    for the tests to use.
+
+    A convenient way to do this is to add these to a `.env` file in the root of
+    the repo and then source that file as part of `postactivate` in your
+    virtualenv.
+
 3. Run `alembic upgrade head`
 
 
