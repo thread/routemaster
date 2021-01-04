@@ -4,9 +4,9 @@ import logging
 import datetime
 import functools
 from typing import Any, List, Type, Callable
+from typing_extensions import Protocol
 
 import dateutil.tz
-from typing_extensions import Protocol
 
 from routemaster.config import (
     TimezoneAwareTrigger,
