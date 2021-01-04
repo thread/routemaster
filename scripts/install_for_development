@@ -1,3 +1,5 @@
+pip install -r scripts/linting/requirements.txt -r scripts/testing/requirements.txt -r scripts/typechecking/requirements.txt
+
 pip install -e .
 pip install -e ./plugins/routemaster-sentry
 pip install -e ./plugins/routemaster-prometheus
