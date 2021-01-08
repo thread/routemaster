@@ -1,3 +1,2 @@
-include README.md
 include version.py
 include routemaster/config/schema.yaml

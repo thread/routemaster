@@ -18,27 +18,36 @@ references:
     TOXENV: py36
     COVERALLS: true
 
+  # Set up a cached virtualenv in which to install our CI dependencies
+  restore-build-dependency-cache: &restore-build-dependency-cache
+    restore_cache:
+      name: Restore build dependency cache
+      key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+
+  install-build-dependencies: &install-build-dependencies
+    run:
+      name: Install build dependencies
+      command: |
+        python3 -m venv venv
+        . venv/bin/activate
+        pip install -r .circleci/requirements.txt
+
+  save-build-dependency-cache: &save-build-dependency-cache
+    save_cache:
+      name: Save build dependency cache
+      key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+      paths:
+        - "venv"
+
   test-template: &test-template
     working_directory: ~/routemaster
 
     steps:
       - checkout
 
-        # Set up a cached virtualenv in which to install tox
-      - restore_cache:
-          name: Restore build dependency cache
-          key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
-      - run:
-          name: Install tox
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install -r .circleci/requirements.txt
-      - save_cache:
-          name: Save build dependency cache
-          key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
-          paths:
-            - "venv"
+      - *restore-build-dependency-cache
+      - *install-build-dependencies
+      - *save-build-dependency-cache
 
       - run:
           name: Wait for Database with Dockerize
@@ -126,21 +135,11 @@ jobs:
       - image: circleci/python:3.6.3
     steps:
       - checkout
-      - restore_cache:
-          name: Restore build dependency cache
-          key: deps-venv-18.0-2.9.1
-      - run:
-          name: Install tox
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install pip==18.0
-            pip install tox==2.9.1
-      - save_cache:
-          name: Save build dependency cache
-          key: deps-venv-18.0-2.9.1
-          paths:
-            - "venv"
+
+      - *restore-build-dependency-cache
+      - *install-build-dependencies
+      - *save-build-dependency-cache
+
       - restore_cache:
           name: Restore .tox cache
           key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
@@ -163,21 +162,11 @@ jobs:
       - image: circleci/python:3.6.3
     steps:
       - checkout
-      - restore_cache:
-          name: Restore build dependency cache
-          key: deps-venv-18.0-2.9.1
-      - run:
-          name: Install tox
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install pip==18.0
-            pip install tox==2.9.1
-      - save_cache:
-          name: Save build dependency cache
-          key: deps-venv-18.0-2.9.1
-          paths:
-            - "venv"
+
+      - *restore-build-dependency-cache
+      - *install-build-dependencies
+      - *save-build-dependency-cache
+
       - restore_cache:
           name: Restore .tox cache
           key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
