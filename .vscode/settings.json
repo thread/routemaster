@@ -2,5 +2,5 @@
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.linting.mypyEnabled": true,
-    "python.pythonPath": "${env:VIRTUAL_ENV}/bin/python3"
+    "python.pythonPath": "${env:VIRTUAL_ENV}/bin/python3",
 }
