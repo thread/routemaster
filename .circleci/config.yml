@@ -202,10 +202,9 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install pip==20.3.3
-            pip install setuptools>=36.4
-            pip install twine>=1.15.0
-            pip install wheel>=0.36.2
+            pip install pip==18.0
+            pip install twine>=1.11.0
+            pip install wheel>=0.31.0
 
             python setup.py sdist
             python setup.py bdist_wheel
