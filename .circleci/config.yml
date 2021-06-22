@@ -202,7 +202,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install pip==18.0
+            pip install pip==21.1.2 setuptools==57.0.0
             pip install twine>=1.11.0
             pip install wheel>=0.31.0
 
