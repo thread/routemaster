@@ -8,7 +8,7 @@ StartResponse = Callable[
         List[Tuple[str, str]],
         Any,
     ],
-    None,
+    Callable[[bytes], Any],
 ]
 
 WSGIEnvironment = Dict[str, Any]
