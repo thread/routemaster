@@ -1,6 +1,6 @@
 """WSGI middlewares used in routemaster."""
 
-from typing import Any, Dict, List, Callable, Iterable, Optional
+from typing import Any, Dict, List, Tuple, Callable, Iterable, Optional
 
 from routemaster.app import App
 from routemaster.utils import WSGICallable, StartResponse, WSGIEnvironment
@@ -36,7 +36,7 @@ def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
     ) -> Iterable[bytes]:
         def wrapped_start_response(
             status: str,
-            headers: Dict[str, str],
+            headers: List[Tuple[str, str]],
             exc_info: Optional[Any] = None,
         ) -> None:
             start_response(status, headers, exc_info)
@@ -60,7 +60,7 @@ def logging_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
 
         def wrapped_start_response(
             status: str,
-            headers: Dict[str, str],
+            headers: List[Tuple[str, str]],
             exc_info: Optional[Any] = None,
         ) -> None:
             kwargs['status'] = status.split()[0]
