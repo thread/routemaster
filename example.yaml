@@ -91,6 +91,13 @@ plugins:
       kwargs:
         path: /metrics
 
+    - class: routemaster_statsd:StatsDLogger
+      kwargs:
+        host: localhost
+        port: 8125
+        tags:
+          environment: production
+
     - class: routemaster_sentry:SentryLogger
       kwargs:
         dsn: https://xxxxxxx:xxxxxxx@sentry.io/xxxxxxx

@@ -54,6 +54,22 @@ plugins:
     - class: routemaster_prometheus.logger:PrometheusLogger
 ```
 
+### StatsD Logger
+
+The StatsD logger is also maintained in the Routemaster repo. It exports metrics to a provided statsd server over UDP.
+
+Several metrics about the behaviour and performance of Routemaster are
+exposed, including timings and status codes of the API, webhook requests and
+feed requests, as well as the processing of jobs in the internal cron system.
+
+
+```yaml
+plugins:
+  logging:
+    - class: routemaster_statsd.logger:StatsDLogger
+```
+
+The target StatsD server can be configured through the plugin keyword arguments or using the `STATSD_HOST` and `STATSD_PORT` environment variables.
 
 ## Implementing a logging plugin
 

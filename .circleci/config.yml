@@ -233,6 +233,11 @@ jobs:
             python setup.py bdist_wheel
             twine upload dist/*
 
+            cd plugins/routemaster-statsd
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
       - setup_remote_docker
 
       - run:
