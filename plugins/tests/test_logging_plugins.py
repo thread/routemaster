@@ -6,6 +6,7 @@ import pytest
 import requests
 from flask import Flask
 from routemaster_sentry import SentryLogger
+from routemaster_statsd import StatsDLogger
 from prometheus_client.core import Sample
 from routemaster_prometheus import PrometheusLogger
 from prometheus_client.parser import text_string_to_metric_families
@@ -19,10 +20,16 @@ SENTRY_KWARGS = {
 PROMETHEUS_KWARGS = {
     'path': '/metrics',
 }
+STATSD_KWARGS = {
+    'tags': {
+        'env': 'testing',
+    },
+}
 
 TEST_CASES: Iterable[Tuple[Type[BaseLogger], Dict[str, Any]]] = [
     (SentryLogger, SENTRY_KWARGS),
     (PrometheusLogger, PROMETHEUS_KWARGS),
+    (StatsDLogger, STATSD_KWARGS),
     (SplitLogger, {'loggers': [
         SentryLogger(None, **SENTRY_KWARGS),
         PrometheusLogger(None, **PROMETHEUS_KWARGS),

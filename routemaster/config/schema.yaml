@@ -166,7 +166,12 @@ properties:
               title: Logging plugin kwargs
               type: object
               additionalProperties:
-                type: string
+                anyOf:
+                  - type: string
+                  - type: integer
+                  - type: object
+                    additionalProperties:
+                      type: string
           required:
             - class
           additionalProperties: false
