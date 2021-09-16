@@ -89,7 +89,7 @@ class StatsDLogger(BaseLogger):
             'feed_url': feed_url,
             'state_machine': state_machine.name,
             'state': state.name,
-            'status_code': response.status_code,
+            'status_code': str(response.status_code),
         })
 
     def webhook_response(
@@ -102,7 +102,7 @@ class StatsDLogger(BaseLogger):
         self.statsd.increment('webhook_requests', tags={
             'state_machine': state_machine.name,
             'state': state.name,
-            'status_code': response.status_code,
+            'status_code': str(response.status_code),
         })
 
     def process_request_started(self, environ):
