@@ -1,14 +1,14 @@
 """Shared utilities."""
 import contextlib
-from typing import Any, Dict, Callable, Iterable, Sequence
+from typing import Any, Dict, List, Tuple, Callable, Iterable, Sequence
 
 StartResponse = Callable[
     [
         str,
-        Dict[str, str],
+        List[Tuple[str, str]],
         Any,
     ],
-    None,
+    Callable[[bytes], Any],
 ]
 
 WSGIEnvironment = Dict[str, Any]

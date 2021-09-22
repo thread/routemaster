@@ -1,6 +1,6 @@
 """WSGI middlewares used in routemaster."""
 
-from typing import Any, Dict, List, Callable, Iterable, Optional
+from typing import Any, Dict, List, Tuple, Callable, Iterable, Optional
 
 from routemaster.app import App
 from routemaster.utils import WSGICallable, StartResponse, WSGIEnvironment
@@ -36,12 +36,12 @@ def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
     ) -> Iterable[bytes]:
         def wrapped_start_response(
             status: str,
-            headers: Dict[str, str],
+            headers: List[Tuple[str, str]],
             exc_info: Optional[Any] = None,
-        ) -> None:
-            start_response(status, headers, exc_info)
+        ) -> Callable[[bytes], Any]:
             if exc_info is not None:  # pragma: no branch
                 app.set_rollback()  # pragma: no cover
+            return start_response(status, headers, exc_info)
 
         with app.new_session():
             yield from wsgi(environ, wrapped_start_response)
@@ -60,13 +60,13 @@ def logging_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
 
         def wrapped_start_response(
             status: str,
-            headers: Dict[str, str],
+            headers: List[Tuple[str, str]],
             exc_info: Optional[Any] = None,
-        ) -> None:
+        ) -> Callable[[bytes], Any]:
             kwargs['status'] = status.split()[0]
             kwargs['headers'] = headers
             kwargs['exc_info'] = exc_info
-            start_response(status, headers, exc_info)
+            return start_response(status, headers, exc_info)
 
         app.logger.process_request_started(environ)
         yield from wsgi(environ, wrapped_start_response)
