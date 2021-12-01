@@ -39,7 +39,7 @@ def status():
             'state-machines': '/state-machines',
             'version': version,
         })
-    except Exception:
+    except Exception:  # noqa: B902
         return jsonify({
             'status': 'error',
             'message': 'Cannot connect to database',

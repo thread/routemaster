@@ -35,7 +35,7 @@ class PythonLogger(BaseLogger):
             time_start = time.time()
             yield
             duration = time.time() - time_start
-        except Exception:
+        except Exception:  # noqa: B902
             self.logger.exception(f"Error while processing cron {fn_name}")
             raise
 

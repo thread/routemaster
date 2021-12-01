@@ -47,7 +47,7 @@ class SentryLogger(BaseLogger):
         """Send cron exceptions to Sentry."""
         try:
             yield
-        except Exception:
+        except Exception:  # noqa: B902
             self.client.captureException()
             raise
 
@@ -56,7 +56,7 @@ class SentryLogger(BaseLogger):
         """Send webhook request exceptions to Sentry."""
         try:
             yield
-        except Exception:
+        except Exception:  # noqa: B902
             self.client.captureException()
             raise
 
@@ -65,7 +65,7 @@ class SentryLogger(BaseLogger):
         """Send feed request exceptions to Sentry."""
         try:
             yield
-        except Exception:
+        except Exception:  # noqa: B902
             self.client.captureException()
             raise
 

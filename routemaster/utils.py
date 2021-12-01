@@ -59,7 +59,7 @@ def suppress_exceptions(logger):
     """Catch all exceptions and log to a provided logger."""
     try:
         yield
-    except Exception:
+    except Exception:  # noqa: B902
         logger.exception("Error suppressed")
 
 

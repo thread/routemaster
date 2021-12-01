@@ -103,7 +103,7 @@ def process_job(
                 state=state,
                 state_machine=state_machine,
             )
-    except Exception:
+    except Exception:  # noqa: B902
         return
 
 
