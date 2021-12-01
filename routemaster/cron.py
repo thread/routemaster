@@ -5,9 +5,9 @@ import functools
 import itertools
 import threading
 from typing import Callable, Iterable
+from typing_extensions import Protocol
 
 import schedule
-from typing_extensions import Protocol
 
 from routemaster.app import App
 from routemaster.config import (

@@ -1,7 +1,6 @@
 """The core of the state machine logic."""
 
 from typing import List, Callable, Iterable, Optional
-
 from typing_extensions import Protocol
 
 from routemaster.db import Label, History

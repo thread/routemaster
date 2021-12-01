@@ -13,7 +13,6 @@ from typing import (
     Sequence,
     NamedTuple,
 )
-
 from dataclasses import dataclass
 
 from routemaster.exit_conditions import ExitConditionProgram
