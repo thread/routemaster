@@ -5,7 +5,6 @@ import contextlib
 from pathlib import Path
 from unittest import mock
 
-import yaml
 import pytest
 import layer_loader
 
@@ -29,6 +28,7 @@ from routemaster.config import (
     TimezoneAwareTrigger,
     ContextNextStatesOption,
     MetadataTimezoneAwareTrigger,
+    yaml_load,
     load_config,
 )
 from routemaster.exit_conditions import ExitConditionProgram
@@ -40,7 +40,7 @@ def reset_environment():
 
 def yaml_data(name: str):
     with open(f'test_data/{name}.yaml') as f:
-        return yaml.load(f)
+        return yaml_load(f)
 
 
 @contextlib.contextmanager
@@ -431,7 +431,7 @@ def test_example_config_loads():
     example_config = load_config(
         layer_loader.load_files(
             [example_yaml],
-            loader=yaml.load,
+            loader=yaml_load,
         ),
     )
 

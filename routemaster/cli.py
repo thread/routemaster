@@ -1,13 +1,12 @@
 """CLI handling for `routemaster`."""
 import logging
 
-import yaml
 import click
 import layer_loader
 
 from routemaster.app import App
 from routemaster.cron import CronThread
-from routemaster.config import ConfigError, load_config
+from routemaster.config import ConfigError, yaml_load, load_config
 from routemaster.server import server
 from routemaster.middleware import wrap_application
 from routemaster.validation import ValidationError, validate_config
@@ -33,7 +32,7 @@ def main(ctx, config_files):
 
     config_data = layer_loader.load_files(
         config_files,
-        loader=yaml.load,
+        loader=yaml_load,
     )
 
     try:

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import yaml
 import pytest
 import layer_loader
 
@@ -11,6 +10,7 @@ from routemaster.config import (
     ConstantNextState,
     ContextNextStates,
     ContextNextStatesOption,
+    yaml_load,
     load_config,
 )
 from routemaster.validation import (
@@ -220,7 +220,7 @@ def test_example_config_is_valid(app):
     example_config = load_config(
         layer_loader.load_files(
             [example_yaml],
-            loader=yaml.load,
+            loader=yaml_load,
         ),
     )
 

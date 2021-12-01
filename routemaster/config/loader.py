@@ -3,7 +3,7 @@
 import os
 import re
 import datetime
-from typing import Any, Dict, List, Union, Iterable, Optional
+from typing import IO, Any, Dict, List, Union, Iterable, Optional
 
 import yaml
 import jsonschema
@@ -42,6 +42,11 @@ Yaml = Dict[str, Any]
 Path = List[str]
 
 
+def yaml_load(stream: Union[IO[str], str]) -> Any:
+    """Parse the first YAML document from the given stream."""
+    return yaml.load(stream, getattr(yaml, 'CLoader', yaml.Loader))
+
+
 def load_config(yaml: Yaml) -> Config:
     """Unpack a parsed YAML file into a `Config` object."""
     _schema_validate(yaml)
@@ -75,7 +80,7 @@ def _schema_validate(config: Yaml) -> None:
         'routemaster.config',
         'schema.yaml',
     ).decode('utf-8')
-    schema_yaml = yaml.load(schema_raw)
+    schema_yaml = yaml_load(schema_raw)
 
     try:
         jsonschema.validate(config, schema_yaml)
