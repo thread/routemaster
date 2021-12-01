@@ -49,7 +49,7 @@ class StatsDLogger(BaseLogger):
         """Send cron exceptions to Statsd."""
         try:
             yield
-        except Exception:
+        except Exception:  # noqa: B902
             self.statsd.increment('exceptions', tags={'type': 'cron'})
             raise
         finally:
@@ -64,7 +64,7 @@ class StatsDLogger(BaseLogger):
         """Send webhook request exceptions to Statsd."""
         try:
             yield
-        except Exception:
+        except Exception:  # noqa: B902
             self.statsd.increment('exceptions', tags={'type': 'webhook'})
             raise
 
@@ -73,7 +73,7 @@ class StatsDLogger(BaseLogger):
         """Send feed request exceptions to Statsd."""
         try:
             yield
-        except Exception:
+        except Exception:  # noqa: B902
             self.statsd.increment('exceptions', tags={'type': 'feed'})
             raise
 

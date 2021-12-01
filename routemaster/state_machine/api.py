@@ -143,7 +143,7 @@ def update_metadata_for_label(
                 state_machine,
                 current_state,
             )
-        except Exception:
+        except Exception:  # noqa: B902
             # This is allowed to fail here. We have successfully saved the new
             # metadata, and it has a metadata_triggers_processed=False flag so
             # will be picked up again for processing later.
