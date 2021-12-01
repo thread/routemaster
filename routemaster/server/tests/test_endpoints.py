@@ -272,7 +272,7 @@ def test_delete_non_existent_label(client, app):
     # When deleting a non-existent label, we do nothing.
 
     response = client.delete(
-        f'/state-machines/test_machine/labels/foo',
+        '/state-machines/test_machine/labels/foo',
         content_type='application/json',
     )
 
