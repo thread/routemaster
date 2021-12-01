@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Union, Optional
 
 from sqlalchemy import MetaData
 
-
 # Imperfect JSON type (see https://github.com/python/typing/issues/182)
 _JSON = Union[str, int, float, bool, None, Dict[str, Any], List[Any]]
 
