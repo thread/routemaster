@@ -1,9 +1,9 @@
 """Creation and fetching of feed data."""
 import threading
 from typing import Any, Dict, Callable, Optional
+from dataclasses import InitVar, dataclass
 
 import requests
-from dataclasses import InitVar, dataclass
 
 from routemaster.utils import get_path, template_url
 

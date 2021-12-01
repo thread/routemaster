@@ -1,9 +1,6 @@
 """
 Versioning utils.
 """
-
-__all__ = ('get_version')
-
 import os
 import re
 import logging
@@ -12,6 +9,9 @@ import subprocess
 from os.path import dirname
 
 import pkg_resources
+
+__all__ = ('get_version')
+
 
 version_re = re.compile('^Version: (.+)$', re.M)
 

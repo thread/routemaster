@@ -1,7 +1,6 @@
 """The core of the state machine logic."""
 
 from typing import List, Callable, Iterable, Optional
-
 from typing_extensions import Protocol
 
 from routemaster.db import Label, History
@@ -15,8 +14,9 @@ from routemaster.state_machine.utils import (
     get_current_state,
     get_state_machine,
 )
-from routemaster.state_machine.utils import \
-    get_label_metadata as get_label_metadata_internal
+from routemaster.state_machine.utils import (
+    get_label_metadata as get_label_metadata_internal,
+)
 from routemaster.state_machine.utils import (
     needs_gate_evaluation_for_metadata_change,
 )
