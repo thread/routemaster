@@ -1,1 +1,2 @@
-mypy==v0.560
+# 0.900 moves typeshed packages out, which we're not ready to switch to yet.
+mypy<0.900

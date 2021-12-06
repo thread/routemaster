@@ -1,11 +1,23 @@
 """WSGI middlewares used in routemaster."""
 
-from typing import Any, Dict, List, Tuple, Callable, Iterable, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Tuple,
+    Callable,
+    Iterable,
+    Optional,
+)
 
 from routemaster.app import App
-from routemaster.utils import WSGICallable, StartResponse, WSGIEnvironment
 
-WSGIMiddleware = Callable[[App, WSGICallable], WSGICallable]
+if TYPE_CHECKING:
+    from _typeshed.wsgi import StartResponse, WSGIApplication, WSGIEnvironment
+
+
+WSGIMiddleware = Callable[[App, 'WSGIApplication'], 'WSGIApplication']
 
 ACTIVE_MIDDLEWARES: List[WSGIMiddleware]
 ACTIVE_MIDDLEWARES = []
@@ -17,7 +29,7 @@ def middleware(fn: WSGIMiddleware):
     return fn
 
 
-def wrap_application(app: App, wsgi: WSGICallable) -> WSGICallable:
+def wrap_application(app: App, wsgi: 'WSGIApplication') -> 'WSGIApplication':
     """Wrap a given WSGI callable in all active middleware."""
     for middleware_instance in reversed(ACTIVE_MIDDLEWARES):
         wsgi = middleware_instance(app, wsgi)
@@ -28,11 +40,11 @@ def wrap_application(app: App, wsgi: WSGICallable) -> WSGICallable:
 
 
 @middleware
-def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
+def session_middleware(app: App, wsgi: 'WSGIApplication') -> 'WSGIApplication':
     """Manage an ORM session around each request."""
     def inner(
-        environ: WSGIEnvironment,
-        start_response: StartResponse,
+        environ: 'WSGIEnvironment',
+        start_response: 'StartResponse',
     ) -> Iterable[bytes]:
         def wrapped_start_response(
             status: str,
@@ -49,11 +61,11 @@ def session_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
 
 
 @middleware
-def logging_middleware(app: App, wsgi: WSGICallable) -> WSGICallable:
+def logging_middleware(app: App, wsgi: 'WSGIApplication') -> 'WSGIApplication':
     """Log requests as they come in."""
     def inner(
-        environ: WSGIEnvironment,
-        start_response: StartResponse,
+        environ: 'WSGIEnvironment',
+        start_response: 'StartResponse',
     ) -> Iterable[bytes]:
 
         kwargs: Dict[str, Any] = {}

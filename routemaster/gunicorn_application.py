@@ -1,10 +1,11 @@
 """Top-level gunicorn application for `routemaster serve`."""
 
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import gunicorn.app.base
 
-from routemaster.utils import WSGICallable
+if TYPE_CHECKING:
+    from _typeshed.wsgi import WSGIApplication
 
 
 class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
@@ -12,7 +13,7 @@ class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
 
     def __init__(
         self,
-        app: WSGICallable,
+        app: 'WSGIApplication',
         *,
         bind: str,
         debug: bool,
@@ -41,7 +42,7 @@ class GunicornWSGIApplication(gunicorn.app.base.BaseApplication):
             self.cfg.set('reload', True)
             self.cfg.set('accesslog', '-')
 
-    def load(self) -> WSGICallable:
+    def load(self) -> 'WSGIApplication':
         """
         Load gunicorn WSGI callable.
 

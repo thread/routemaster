@@ -1,25 +1,6 @@
 """Shared utilities."""
 import contextlib
-from typing import Any, Dict, List, Tuple, Callable, Iterable, Sequence
-
-StartResponse = Callable[
-    [
-        str,
-        List[Tuple[str, str]],
-        Any,
-    ],
-    Callable[[bytes], Any],
-]
-
-WSGIEnvironment = Dict[str, Any]
-
-WSGICallable = Callable[
-    [
-        WSGIEnvironment,
-        StartResponse,
-    ],
-    Iterable[bytes],
-]
+from typing import Any, Dict, Sequence
 
 
 def dict_merge(d1, d2):

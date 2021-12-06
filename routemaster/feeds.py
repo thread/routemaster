@@ -37,7 +37,10 @@ class Feed:
     """A feed fetcher, able to retreive a feed and read keys out of it."""
     url: str
     state_machine: str
-    data: InitVar[Optional[Dict[str, Any]]] = None
+
+    def __post_init__(self) -> None:
+        """Record that we have some data too."""
+        self.data: Optional[Dict[str, Any]] = None
 
     def prefetch(
         self,
