@@ -1,7 +1,7 @@
 """Creation and fetching of feed data."""
 import threading
 from typing import Any, Dict, Callable, Optional
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
 
 import requests
 
