@@ -12,6 +12,7 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
+assert config.config_file_name is not None  # placate mypy
 fileConfig(config.config_file_name)
 
 target_metadata = routemaster_metadata
