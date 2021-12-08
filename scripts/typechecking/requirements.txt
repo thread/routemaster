@@ -1,5 +1,6 @@
 mypy
 
+types-dataclasses; python_version < '3.7'
 types-freezegun
 types-python-dateutil
 types-PyYAML
