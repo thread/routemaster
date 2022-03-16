@@ -1,7 +1,7 @@
 version: 2
 
 references:
-  # Ancilliary containers
+  # Ancillary containers
   postgres-container: &postgres-container
     image: postgres:9.6
     environment:
