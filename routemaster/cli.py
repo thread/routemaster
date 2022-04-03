@@ -1,12 +1,12 @@
 """CLI handling for `routemaster`."""
 import logging
 
-import yaml
 import click
+import layer_loader
 
 from routemaster.app import App
 from routemaster.cron import CronThread
-from routemaster.config import ConfigError, load_config
+from routemaster.config import ConfigError, yaml_load, load_config
 from routemaster.server import server
 from routemaster.middleware import wrap_application
 from routemaster.validation import ValidationError, validate_config
@@ -19,17 +19,24 @@ logger = logging.getLogger(__name__)
 @click.option(
     '-c',
     '--config-file',
+    'config_files',
     help="Path to the service config file.",
     type=click.File(encoding='utf-8'),
     required=True,
+    multiple=True,
 )
 @click.pass_context
-def main(ctx, config_file):
+def main(ctx, config_files):
     """Shared entrypoint configuration."""
     logging.getLogger('schedule').setLevel(logging.CRITICAL)
 
+    config_data = layer_loader.load_files(
+        config_files,
+        loader=yaml_load,
+    )
+
     try:
-        config = load_config(yaml.load(config_file))
+        config = load_config(config_data)
     except ConfigError:
         logger.exception("Configuration Error")
         click.get_current_context().exit(1)
@@ -78,12 +85,14 @@ def serve(ctx, bind, debug, workers):  # pragma: no cover
     if debug:
         server.config['DEBUG'] = True
 
-    app.logger.init_flask(server)
-
     cron_thread = CronThread(app)
     cron_thread.start()
 
     wrapped_server = wrap_application(app, server)
+
+    def post_fork():
+        app.initialise()
+        app.logger.init_flask(server)
 
     try:
         instance = GunicornWSGIApplication(
@@ -91,6 +100,7 @@ def serve(ctx, bind, debug, workers):  # pragma: no cover
             bind=bind,
             debug=debug,
             workers=workers,
+            post_fork=post_fork,
         )
         instance.run()
     finally:

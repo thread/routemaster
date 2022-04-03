@@ -35,7 +35,7 @@ class PythonLogger(BaseLogger):
             time_start = time.time()
             yield
             duration = time.time() - time_start
-        except Exception:
+        except Exception:  # noqa: B902
             self.logger.exception(f"Error while processing cron {fn_name}")
             raise
 
@@ -44,15 +44,20 @@ class PythonLogger(BaseLogger):
             f"in {state_machine.name} in {duration:.2f} seconds",
         )
 
-    @contextlib.contextmanager
-    def process_request(self, environ):
+    def process_request_finished(
+        self,
+        environ,
+        *,
+        status,
+        headers,
+        exc_info,
+    ):
         """Process a web request and log some basic info about it."""
-        self.info("{method} {path}".format(
+        self.info("{method} {path} {status}".format(
             method=environ.get('REQUEST_METHOD'),
             path=environ.get('PATH_INFO'),
+            status=status,
         ))
-
-        yield
 
     def __getattr__(self, name):
         """Fall back to the logger API."""

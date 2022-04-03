@@ -3,7 +3,7 @@
 import datetime
 import functools
 import contextlib
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional, Sequence, Collection
 
 import dateutil.tz
 from sqlalchemy import func
@@ -25,7 +25,7 @@ def get_state_machine(app: App, label: LabelRef) -> StateMachine:
     """Finds the state machine instance by name in the app config."""
     try:
         return app.config.state_machines[label.state_machine]
-    except KeyError as k:
+    except KeyError:
         raise UnknownStateMachine(label.state_machine)
 
 
@@ -55,9 +55,12 @@ def get_current_state(
     app: App,
     label: LabelRef,
     state_machine: StateMachine,
-) -> State:
+) -> Optional[State]:
     """Get the current state of a label, based on its last history entry."""
     history_entry = get_current_history(app, label)
+    if history_entry.new_state is None:
+        # label has been deleted
+        return None
     return state_machine.get_state(history_entry.new_state)
 
 
@@ -67,7 +70,11 @@ def get_current_history(app: App, label: LabelRef) -> History:
         label_name=label.name,
         label_state_machine=label.state_machine,
     ).order_by(
-        History.id.desc(),
+        # Our model type stubs define the `id` attribute as `int`, yet
+        # sqlalchemy actually allows the attribute to be used for ordering like
+        # this; ignore the type check here specifically rather than complicate
+        # our type definitions.
+        History.id.desc(),  # type: ignore
     ).first()
 
     if history_entry is None:
@@ -87,6 +94,12 @@ def needs_gate_evaluation_for_metadata_change(
     """
 
     current_state = get_current_state(app, label, state_machine)
+
+    if current_state is None:
+        raise ValueError(
+            f"Cannot determine gate evaluation for deleted label {label} "
+            "(deleted labels have no current state)",
+        )
 
     if not isinstance(current_state, Gate):
         # Label is not a gate state so there's no trigger to resolve.
@@ -123,16 +136,44 @@ def labels_in_state(
     return _labels_in_state(app, state_machine, state, True)
 
 
+def labels_in_state_with_metadata(
+    app: App,
+    state_machine: StateMachine,
+    state: State,
+    path: Sequence[str],
+    values: Collection[str],
+) -> List[str]:
+    """
+    Util to get all the labels in a given state with some metadata value.
+
+    The metadata lookup happens at the given path, allowing for any of the
+    posible values given.
+    """
+    if not values:
+        raise ValueError("Must specify at least one possible value")
+
+    metadata_lookup = Label.metadata
+    for part in path:
+        metadata_lookup = metadata_lookup[part]  # type: ignore
+
+    return _labels_in_state(
+        app,
+        state_machine,
+        state,
+        metadata_lookup.astext.in_(values),  # type: ignore
+    )
+
+
 def labels_needing_metadata_update_retry_in_gate(
     app: App,
     state_machine: StateMachine,
     state: State,
 ) -> List[str]:
-    """Util to get all the labels in an action state that need retrying."""
+    """Util to get all the labels in a gate state that need retrying."""
     if not isinstance(state, Gate):  # pragma: no branch
         raise ValueError(  # pragma: no cover
             f"labels_needing_metadata_update_retry_in_gate called with "
-            f"{state.name} which is not an Gate",
+            f"{state.name} which is not a Gate",
         )
 
     return _labels_in_state(
@@ -155,7 +196,11 @@ def _labels_in_state(
         History.label_name,
         History.new_state,
         func.row_number().over(
-            order_by=History.id.desc(),
+            # Our model type stubs define the `id` attribute as `int`, yet
+            # sqlalchemy actually allows the attribute to be used for ordering
+            # like this; ignore the type check here specifically rather than
+            # complicate our type definitions.
+            order_by=History.id.desc(),  # type: ignore
             partition_by=History.label_name,
         ).label('rank'),
     ).filter_by(

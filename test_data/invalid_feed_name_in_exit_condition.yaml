@@ -1,0 +1,12 @@
+state_machines:
+  the_workflow:
+    feeds:
+      - name: jacquard
+        url: http://localhost:1212/<label_id>
+    states:
+      - gate: choice
+        triggers:
+          - event: entry
+        # This exit condition should error as it has an invalid feed name (it
+        # should be `feeds.jacquard.has_option_b`)
+        exit_condition: feeds.nope.has_option_b

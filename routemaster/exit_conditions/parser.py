@@ -1,6 +1,8 @@
 """Parser and compiler for exit conditions."""
 
-from routemaster.exit_conditions.tokenizer import TokenKind, tokenize
+from typing import Any, List, Tuple, Union, Iterator, Sequence
+
+from routemaster.exit_conditions.tokenizer import Token, TokenKind, tokenize
 from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.operations import Operation
 
@@ -10,33 +12,40 @@ OPERATOR_DID_YOU_MEAN = {
     '<>': '/=',
 }
 
+Instruction = Union[
+    Tuple[Operation],
+    Tuple[Operation, Any],
+    Tuple[Operation, Tuple[Any, ...]],
+    Tuple[Operation, Tuple[Any, ...], Tuple[Any, ...]],
+]
+
 
 class _TokenSource(object):
     """A source of tokens in a form which is convenient for parsing."""
 
-    def __init__(self, iterable):
+    def __init__(self, iterable: Iterator[Token]) -> None:
         self.iterable = iterable
         self.previous_location = None
-        self.head = object()
+        self.head: Token = object()  # type: ignore # [assignment]
         self._advance()
 
-    def _advance(self):
+    def _advance(self) -> None:
         assert self.head is not None
 
         try:
             self.previous_location = getattr(self.head, 'location', None)
             self.head = next(self.iterable)
         except StopIteration:
-            self.head = None
+            self.head = None  # type: ignore # [assignment]
 
-    def try_eat_next(self, *kinds):
+    def try_eat_next(self, *kinds: TokenKind) -> bool:
         if not self.match_next(*kinds):
             return False
 
         self._advance()
         return True
 
-    def match_next(self, *kinds):
+    def match_next(self, *kinds: TokenKind) -> bool:
         if self.head is None:
             return False
 
@@ -44,7 +53,7 @@ class _TokenSource(object):
             return True
         return False
 
-    def eat_next(self, *kinds):
+    def eat_next(self, *kinds: TokenKind) -> Token:
         if self.head is None:
             if self.previous_location is None:
                 # Empty program
@@ -74,7 +83,7 @@ class _TokenSource(object):
         ), self.head.location)
 
 
-def _parse_and_expr(source):
+def _parse_and_expr(source: _TokenSource) -> Iterator[Instruction]:
     already_bool_converted = False
 
     yield from _parse_or_expr(source)
@@ -88,7 +97,7 @@ def _parse_and_expr(source):
         yield (Operation.AND,)
 
 
-def _parse_or_expr(source):
+def _parse_or_expr(source: _TokenSource) -> Iterator[Instruction]:
     already_bool_converted = False
 
     yield from _parse_base_expr(source)
@@ -102,7 +111,7 @@ def _parse_or_expr(source):
         yield (Operation.OR,)
 
 
-def _parse_base_expr(source):
+def _parse_base_expr(source: _TokenSource) -> Iterator[Instruction]:
     negated = False
     while source.try_eat_next(TokenKind.NOT):
         negated = not negated
@@ -119,7 +128,7 @@ def _parse_base_expr(source):
             # Must be a prepositional phrase
             adjective = ()
 
-        prepositions = []
+        prepositions: List[Any] = []
         while source.match_next(TokenKind.PREPOSITION):
             prepositions.append(source.head.value)
             source.eat_next(TokenKind.PREPOSITION)
@@ -182,7 +191,7 @@ def _parse_base_expr(source):
         yield (Operation.NOT,)
 
 
-def _parse_value(source):
+def _parse_value(source: _TokenSource) -> Iterator[Instruction]:
     # Immediate special-case: parentheticals
     if source.try_eat_next(TokenKind.LEFT_PAREN):
         yield from _parse_and_expr(source)
@@ -242,7 +251,7 @@ def _parse_value(source):
             )
 
 
-def _parse_tokens(token_stream):
+def _parse_tokens(token_stream: Iterator[Token]) -> Iterator[Instruction]:
     source = _TokenSource(token_stream)
     yield from _parse_and_expr(source)
     # Always end in a final TO_BOOL
@@ -256,6 +265,6 @@ def _parse_tokens(token_stream):
         )
 
 
-def parse(source):
+def parse(source: str) -> Sequence[Instruction]:
     """Compile from arbitrary source to a sequence of program instructions."""
     return tuple(_parse_tokens(tokenize(source)))

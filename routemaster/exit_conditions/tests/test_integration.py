@@ -5,7 +5,6 @@ from typing import Optional, NamedTuple
 import pytest
 import dateutil.tz
 
-from routemaster.context import Context
 from routemaster.exit_conditions import ExitConditionProgram
 
 PROGRAMS = [

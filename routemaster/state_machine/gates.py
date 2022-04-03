@@ -1,6 +1,4 @@
 """Processing for gate states."""
-from sqlalchemy import func
-
 from routemaster.db import Label, History
 from routemaster.app import App
 from routemaster.config import Gate, State, StateMachine
@@ -63,7 +61,6 @@ def process_gate(
     app.session.add(History(
         label_state_machine=state_machine.name,
         label_name=label.name,
-        created=func.now(),
         old_state=gate.name,
         new_state=destination.name,
     ))

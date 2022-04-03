@@ -12,6 +12,7 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
+assert config.config_file_name is not None  # placate mypy
 fileConfig(config.config_file_name)
 
 target_metadata = routemaster_metadata
@@ -59,7 +60,7 @@ def run_migrations_online():
     with engine.connect() as connection:
         context.configure(
             connection=connection,
-            target_metadata=target_metadata
+            target_metadata=target_metadata,
         )
 
         with context.begin_transaction():

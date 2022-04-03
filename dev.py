@@ -3,12 +3,11 @@ Development interactive script.
 
 Use with `python -i dev.py` for a useful interactive shell.
 """
-
-import yaml
+import layer_loader
 
 from routemaster.db import *  # noqa: F403, F401
 from routemaster.app import App
-from routemaster.config import load_config
+from routemaster.config import yaml_load, load_config
 
 
 def app_from_config(config_path):
@@ -17,8 +16,12 @@ def app_from_config(config_path):
 
     By default, will use the example.yaml file.
     """
-    with open(config_path, 'r') as f:
-        config = load_config(yaml.load(f))
+    config = load_config(
+        layer_loader.load_files(
+            [config_path],
+            loader=yaml_load,
+        ),
+    )
 
     class InteractiveApp(App):
         """
@@ -26,6 +29,7 @@ def app_from_config(config_path):
 
         Provides a global database session.
         """
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self._session = self._sessionmaker()

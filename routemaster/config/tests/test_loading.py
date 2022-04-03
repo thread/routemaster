@@ -4,8 +4,8 @@ import datetime
 import contextlib
 from unittest import mock
 
-import yaml
 import pytest
+import layer_loader
 
 from routemaster.config import (
     Gate,
@@ -14,7 +14,6 @@ from routemaster.config import (
     Webhook,
     FeedConfig,
     ConfigError,
-    TimeTrigger,
     NoNextStates,
     StateMachine,
     DatabaseConfig,
@@ -23,8 +22,12 @@ from routemaster.config import (
     MetadataTrigger,
     ConstantNextState,
     ContextNextStates,
+    SystemTimeTrigger,
     LoggingPluginConfig,
+    TimezoneAwareTrigger,
     ContextNextStatesOption,
+    MetadataTimezoneAwareTrigger,
+    yaml_load,
     load_config,
 )
 from routemaster.exit_conditions import ExitConditionProgram
@@ -36,7 +39,7 @@ def reset_environment():
 
 def yaml_data(name: str):
     with open(f'test_data/{name}.yaml') as f:
-        return yaml.load(f)
+        return yaml_load(f)
 
 
 @contextlib.contextmanager
@@ -61,8 +64,8 @@ def test_trivial_config():
                         next_states=NoNextStates(),
                         exit_condition=ExitConditionProgram('false'),
                     ),
-                ]
-            )
+                ],
+            ),
         },
         database=DatabaseConfig(
             host='localhost',
@@ -98,7 +101,15 @@ def test_realistic_config():
                     Gate(
                         name='start',
                         triggers=[
-                            TimeTrigger(time=datetime.time(18, 30)),
+                            SystemTimeTrigger(time=datetime.time(18, 30)),
+                            TimezoneAwareTrigger(
+                                time=datetime.time(12, 25),
+                                timezone='Europe/London',
+                            ),
+                            MetadataTimezoneAwareTrigger(
+                                time=datetime.time(13, 37),
+                                timezone_metadata_path=['timezone'],
+                            ),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
@@ -112,7 +123,7 @@ def test_realistic_config():
                         name='stage2',
                         triggers=[],
                         next_states=ContextNextStates(
-                            path='foo.bar',
+                            path='metadata.foo.bar',
                             destinations=[
                                 ContextNextStatesOption(
                                     state='stage3',
@@ -126,7 +137,7 @@ def test_realistic_config():
                             default='end',
                         ),
                         exit_condition=ExitConditionProgram(
-                            'foo.bar is defined',
+                            'metadata.foo.bar is defined',
                         ),
                     ),
                     Action(
@@ -165,6 +176,38 @@ def test_realistic_config():
         assert load_config(data) == expected
 
 
+def test_raises_for_invalid_top_level_context_name_in_path():
+    with assert_config_error(
+        "Invalid context lookup at "
+        "state_machines.the_workflow.states.0.next.path: key "
+        "jacquard.has_option_b must start with one of 'feeds', 'history' or "
+        "'metadata'.",
+    ):
+        load_config(yaml_data('invalid_top_level_context_name_in_path'))
+
+
+def test_raises_for_invalid_top_level_context_name_in_exit_condition():
+    with assert_config_error(
+        "Invalid context lookup at "
+        "state_machines.the_workflow.states.0.exit_condition: key "
+        "jacquard.has_option_b must start with one of 'feeds', 'history' or "
+        "'metadata'.",
+    ):
+        load_config(yaml_data(
+            'invalid_top_level_context_name_in_exit_condition',
+        ))
+
+
+def test_raises_for_invalid_feed_name_in_lookup():
+    with assert_config_error(
+        "Invalid feed name at "
+        "state_machines.the_workflow.states.0.exit_condition: key "
+        "feeds.nope.has_option_b references unknown feed 'nope' (configured "
+        "feeds are: 'jacquard')",
+    ):
+        load_config(yaml_data('invalid_feed_name_in_exit_condition'))
+
+
 def test_raises_for_action_and_gate_state():
     with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('action_and_gate_invalid'))
@@ -193,6 +236,11 @@ def test_raises_for_neither_time_nor_context_trigger():
 def test_raises_for_invalid_time_format_in_trigger():
     with assert_config_error("Could not validate config file against schema."):
         load_config(yaml_data('trigger_time_format_invalid'))
+
+
+def test_raises_for_invalid_timezone_name_in_trigger():
+    with assert_config_error("Could not validate config file against schema."):
+        load_config(yaml_data('trigger_timezone_name_invalid'))
 
 
 def test_raises_for_invalid_path_format_in_trigger():
@@ -236,8 +284,8 @@ def test_next_states_shorthand_results_in_constant_config():
                         next_states=NoNextStates(),
                         exit_condition=ExitConditionProgram('false'),
                     ),
-                ]
-            )
+                ],
+            ),
         },
         database=DatabaseConfig(
             host='localhost',
@@ -273,7 +321,15 @@ def test_environment_variables_override_config_file_for_database_config():
                     Gate(
                         name='start',
                         triggers=[
-                            TimeTrigger(time=datetime.time(18, 30)),
+                            SystemTimeTrigger(time=datetime.time(18, 30)),
+                            TimezoneAwareTrigger(
+                                time=datetime.time(12, 25),
+                                timezone='Europe/London',
+                            ),
+                            MetadataTimezoneAwareTrigger(
+                                time=datetime.time(13, 37),
+                                timezone_metadata_path=['timezone'],
+                            ),
                             MetadataTrigger(metadata_path='foo.bar'),
                             IntervalTrigger(
                                 interval=datetime.timedelta(hours=1),
@@ -287,7 +343,7 @@ def test_environment_variables_override_config_file_for_database_config():
                         name='stage2',
                         triggers=[],
                         next_states=ContextNextStates(
-                            path='foo.bar',
+                            path='metadata.foo.bar',
                             destinations=[
                                 ContextNextStatesOption(
                                     state='stage3',
@@ -301,7 +357,7 @@ def test_environment_variables_override_config_file_for_database_config():
                             default='end',
                         ),
                         exit_condition=ExitConditionProgram(
-                            'foo.bar is defined',
+                            'metadata.foo.bar is defined',
                         ),
                     ),
                     Action(
@@ -370,7 +426,12 @@ def test_example_config_loads(repo_root):
 
     assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
 
-    example_config = load_config(yaml.load(example_yaml.read_text()))
+    example_config = load_config(
+        layer_loader.load_files(
+            [example_yaml],
+            loader=yaml_load,
+        ),
+    )
 
     # Some basic assertions that we got the right thing loaded
     assert list(example_config.state_machines.keys()) == ['user_lifecycle']

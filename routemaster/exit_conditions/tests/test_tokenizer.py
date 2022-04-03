@@ -43,4 +43,4 @@ def test_tokenize_exhaustive():
 
 def test_parse_error_on_invalid_characters():
     with pytest.raises(ParseError):
-        print(list(tokenize("abc]")))
+        print(list(tokenize("abc]")))  # noqa:T001

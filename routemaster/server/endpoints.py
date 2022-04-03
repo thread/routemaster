@@ -14,6 +14,7 @@ from routemaster.state_machine import (
 )
 
 server = Flask('routemaster')
+server.config['PROPAGATE_EXCEPTIONS'] = True
 
 
 @server.route('/', methods=['GET'])
@@ -39,7 +40,7 @@ def status():
             'state-machines': '/state-machines',
             'version': version,
         })
-    except Exception:
+    except Exception:  # noqa: B902
         return jsonify({
             'status': 'error',
             'message': 'Cannot connect to database',
@@ -115,7 +116,7 @@ def get_labels(state_machine_name):
 
     try:
         state_machine_instance = app.config.state_machines[state_machine_name]
-    except KeyError as k:
+    except KeyError:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
 

@@ -1,9 +1,9 @@
 """Creation and fetching of feed data."""
 import threading
 from typing import Any, Dict, Callable, Optional
+from dataclasses import dataclass
 
 import requests
-from dataclasses import InitVar, dataclass
 
 from routemaster.utils import get_path, template_url
 
@@ -37,7 +37,10 @@ class Feed:
     """A feed fetcher, able to retreive a feed and read keys out of it."""
     url: str
     state_machine: str
-    data: InitVar[Optional[Dict[str, Any]]] = None
+
+    def __post_init__(self) -> None:
+        """Record that we have some data too."""
+        self.data: Optional[Dict[str, Any]] = None
 
     def prefetch(
         self,

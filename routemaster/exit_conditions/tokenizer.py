@@ -3,12 +3,12 @@
 import re
 import enum
 import unicodedata
-from typing import Any, Tuple, Iterable, NamedTuple
+from typing import Any, Tuple, Iterable, Generator, NamedTuple
 
 from routemaster.exit_conditions.exceptions import ParseError
 from routemaster.exit_conditions.prepositions import Preposition
 
-RE_DURATION = re.compile('^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$')
+RE_DURATION = re.compile(r'^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$')
 
 
 @enum.unique
@@ -272,7 +272,7 @@ def _digest_atom(raw_token: RawToken) -> Token:
     )
 
 
-def tokenize(src: str) -> Iterable[Token]:
+def tokenize(src: str) -> Generator[Token, None, None]:
     """Split the string `src` into an iterable of `Token`s."""
     for raw_token in raw_tokenize(src):
         if (

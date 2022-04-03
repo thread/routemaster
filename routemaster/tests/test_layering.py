@@ -31,11 +31,19 @@ DEPENDENCIES = (
 
     ('config', 'exit_conditions'),
     ('config', 'context'),
+    ('config', 'text_utils'),
+    ('config', 'timezones'),
     ('config', 'utils'),
     ('db', 'config'),
 
     ('cron', 'app'),
+    ('cron', 'cron_processors'),
     ('cron', 'state_machine'),
+
+    ('cron_processors', 'app'),
+    ('cron_processors', 'state_machine'),
+    ('cron_processors', 'timezones'),
+    ('cron_processors', 'time_utils'),
 
     ('validation', 'app'),
     ('validation', 'config'),
@@ -135,8 +143,6 @@ def test_layers():
         code = compile(contents, module_name, 'exec')
 
         last_import_source = None
-
-        top_level_import = False
 
         for instruction in dis.get_instructions(code):
             if instruction.opname == 'IMPORT_NAME':

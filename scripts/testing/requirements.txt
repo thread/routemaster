@@ -1,10 +1,13 @@
 tox
 pytest
 pytest-cov
+pytest-env
 pytest-randomly
 pytest-faulthandler
 freezegun
-mypy
 httpretty
 pytest-pythonpath
-git+https://github.com/danpalmer/werkzeug
+
+# 0.15.0 contains fix https://github.com/pallets/werkzeug/pull/1280
+# 2.1 has breaking BaseResponse removal
+werkzeug >=0.15.0, <2.1

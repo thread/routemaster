@@ -4,7 +4,8 @@ import time
 import functools
 import itertools
 import threading
-from typing import Any, List, Callable
+from typing import Callable, Iterable
+from typing_extensions import Protocol
 
 import schedule
 
@@ -13,12 +14,15 @@ from routemaster.config import (
     Gate,
     State,
     Action,
-    TimeTrigger,
     StateMachine,
     IntervalTrigger,
     MetadataTrigger,
+    SystemTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
 )
 from routemaster.state_machine import (
+    LabelProvider,
     LabelStateProcessor,
     process_cron,
     process_gate,
@@ -26,18 +30,41 @@ from routemaster.state_machine import (
     labels_in_state,
     labels_needing_metadata_update_retry_in_gate,
 )
+from routemaster.cron_processors import (
+    TimezoneAwareProcessor,
+    MetadataTimezoneAwareProcessor,
+)
 
 IsTerminating = Callable[[], bool]
 
-# Note: This function will be called in a different transaction to where we
-# iterate over the results, so to prevent confusion or the possible
-# introduction of errors, we require all the data up-front.
-LabelProvider = Callable[[StateMachine, State, Any], List[str]]
 
-CronProcessor = Callable[
-    [LabelStateProcessor, LabelProvider, State, StateMachine],
-    None,
-]
+class CronProcessor(Protocol):
+    """Type signature for the cron processor callable."""
+
+    def __call__(
+        self,
+        *,
+        app: App,
+        state: State,
+        state_machine: StateMachine,
+        fn: LabelStateProcessor,
+        label_provider: LabelProvider,
+    ) -> None:
+        """Type signature for the cron processor callable."""
+        ...
+
+
+class StateSpecificCronProcessor(Protocol):
+    """Type signature for the a state-specific cron processor callable."""
+
+    def __call__(
+        self,
+        *,
+        fn: LabelStateProcessor,
+        label_provider: LabelProvider,
+    ) -> None:
+        """Type signature for a state-specific cron processor callable."""
+        ...
 
 
 # The cron configuration works by building up a partially applied function
@@ -58,7 +85,10 @@ def process_job(
 ):
     """Process a single instance of a single cron job."""
 
-    def _iter_labels_until_terminating(state_machine, state):
+    def _iter_labels_until_terminating(
+        state_machine: StateMachine,
+        state: State,
+    ) -> Iterable[str]:
         return itertools.takewhile(
             lambda _: not is_terminating(),
             label_provider(app, state_machine, state),
@@ -73,13 +103,13 @@ def process_job(
                 state=state,
                 state_machine=state_machine,
             )
-    except Exception:
+    except Exception:  # noqa: B902
         return
 
 
 def _configure_schedule_for_state(
     scheduler: schedule.Scheduler,
-    processor: CronProcessor,
+    processor: StateSpecificCronProcessor,
     state: State,
 ) -> None:
     if isinstance(state, Action):
@@ -90,13 +120,29 @@ def _configure_schedule_for_state(
         )
     elif isinstance(state, Gate):
         for trigger in state.triggers:
-            if isinstance(trigger, TimeTrigger):
+            if isinstance(trigger, SystemTimeTrigger):
                 scheduler.every().day.at(
                     f"{trigger.time.hour:02d}:{trigger.time.minute:02d}",
                 ).do(
                     processor,
                     fn=process_gate,
                     label_provider=labels_in_state,
+                )
+            elif isinstance(trigger, TimezoneAwareTrigger):
+                func = functools.partial(
+                    processor,
+                    fn=process_gate,
+                    label_provider=labels_in_state,
+                )
+                scheduler.every().minute.do(
+                    TimezoneAwareProcessor(func, trigger),
+                )
+            elif isinstance(trigger, MetadataTimezoneAwareTrigger):
+                scheduler.every().minute.do(
+                    MetadataTimezoneAwareProcessor(
+                        functools.partial(processor, fn=process_gate),
+                        trigger,
+                    ),
                 )
             elif isinstance(trigger, IntervalTrigger):
                 scheduler.every(

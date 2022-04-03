@@ -53,6 +53,8 @@ sync_label_updated_column = DDL(
 class Label(Base):
     """A single label including context."""
 
+    # Note: type annotations for this class are provided by a stubs file
+
     __table__ = Table(
         'labels',
         metadata,
@@ -81,6 +83,8 @@ class Label(Base):
 
 class History(Base):
     """A single historical state transition of a label."""
+
+    # Note: type annotations for this class are provided by a stubs file
 
     __table__ = Table(
         'history',

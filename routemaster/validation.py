@@ -91,8 +91,15 @@ def _validate_no_labels_in_nonexistent_states(state_machine, app):
         ),
     ).all()
 
+    state_counts = collections.Counter(
+        x.new_state for x in invalid_labels_and_states
+    )
+
     if invalid_labels_and_states:
+        summary = "\n - ".join(
+            (f"{name}: {count}" for name, count in state_counts.items()),
+        )
         raise ValidationError(
-            f"{len(invalid_labels_and_states)} nodes in states that no "
-            f"longer exist",
+            f"{sum(state_counts.values())} nodes in states that no "
+            f"longer exist:\n - {summary}",
         )

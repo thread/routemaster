@@ -1,0 +1,12 @@
+state_machines:
+  the_workflow:
+    feeds:
+      - name: jacquard
+        url: http://localhost:1212/<label_id>
+    states:
+      - gate: choice
+        triggers:
+          - event: entry
+        # This exit condition should error because it is missing the `feeds`
+        # prefix (the correct spelling would be `feeds.jacquard.has_option_b`)
+        exit_condition: jacquard.has_option_b

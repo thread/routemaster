@@ -1,0 +1,19 @@
+{
+  // See http://go.microsoft.com/fwlink/?LinkId=827846 to learn about workspace recommendations.
+  // Extension identifier format: ${publisher}.${name}. Example: vscode.csharp
+
+  // List of extensions which should be recommended for users of this workspace.
+  // Please keep the list alphabetically sorted within each group
+  "recommendations": [
+    "EditorConfig.EditorConfig",
+    "ms-python.python",
+
+    // Generally useful tools which are useful here
+    "bradymholt.pgformatter",
+    "stkb.rewrap",
+    "wmaurer.change-case"
+  ],
+
+  // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
+  "unwantedRecommendations": []
+}

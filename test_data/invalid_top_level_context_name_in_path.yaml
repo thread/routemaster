@@ -1,0 +1,25 @@
+state_machines:
+  the_workflow:
+    feeds:
+      - name: jacquard
+        url: http://localhost:1212/<label_id>
+    states:
+      - gate: choice
+        triggers:
+          - event: entry
+        exit_condition: true
+        next:
+          type: context
+          # This path should error because it is missing the `feeds` prefix (the
+          # correct spelling would be `feeds.jacquard.has_option_b`)
+          path: jacquard.has_option_b
+          default: option_a
+          destinations:
+            - value: true
+              state: option_b
+
+      - gate: option_a
+        exit_condition: false
+
+      - gate: option_b
+        exit_condition: false

@@ -1,59 +1,84 @@
 version: 2
 
-jobs:
-  test:
-    working_directory: ~/routemaster
-    docker:
-      # First container is where our steps run.
-      - image: circleci/python:3.6.3
-        environment:
-          - PG_HOST=localhost
-          - PG_PORT=5432
-          - PG_DB=routemaster
-          - PG_USER=routemaster
+references:
+  # Ancillary containers
+  postgres-container: &postgres-container
+    image: postgres:9.6
+    environment:
+      POSTGRES_USER: routemaster
+      POSTGRES_DB: routemaster
+      POSTGRES_PASSWORD: routemaster
 
-      # Ancilliary containers
-      - image: postgres:9.6
-        environment:
-          - POSTGRES_USER=routemaster
-          - POSTGRES_DB=routemaster
+  steps-environment: &steps-environment
+    PG_HOST: localhost
+    PG_PORT: 5432
+    PG_DB: routemaster
+    PG_USER: routemaster
+    PG_PASS: routemaster
+    TOXENV: py36
+    COVERALLS: true
+
+  # Set up a cached virtualenv in which to install our CI dependencies
+  restore-build-dependency-cache: &restore-build-dependency-cache
+    restore_cache:
+      name: Restore build dependency cache
+      key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+
+  install-build-dependencies: &install-build-dependencies
+    run:
+      name: Install build dependencies
+      command: |
+        python3 -m venv venv
+        . venv/bin/activate
+        pip install -r .circleci/requirements.txt
+
+  save-build-dependency-cache: &save-build-dependency-cache
+    save_cache:
+      name: Save build dependency cache
+      key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+      paths:
+        - "venv"
+
+  test-template: &test-template
+    working_directory: ~/routemaster
 
     steps:
       - checkout
 
-        # Set up a cached virtualenv in which to install tox
-      - restore_cache:
-          name: Restore build dependency cache
-          key: deps-venv-2.9.1-1.2.0
-      - run:
-          name: Install tox
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install tox==2.9.1
-            pip install coveralls==1.2.0
-      - save_cache:
-          name: Save build dependency cache
-          key: deps-venv-2.9.1-1.2.0
-          paths:
-            - "venv"
+      - *restore-build-dependency-cache
+      - *install-build-dependencies
+      - *save-build-dependency-cache
 
       - run:
           name: Wait for Database with Dockerize
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
       # Run tox, caching the .tox directory
+      - run:
+          name: Build combined checksum file
+          command: |
+            if [ -e .checksum ]
+            then
+              echo "Checksum file should not already exist"
+              exit 1
+            fi
+
+            for file in tox.ini setup.py scripts/linting/requirements.txt scripts/typechecking/requirements.txt scripts/testing/requirements.txt
+            do
+              echo $file >> .checksum
+              cat $file >> .checksum
+            done
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
       - run:
           name: Test
           command: |
             . venv/bin/activate
-            TOXENV=py36 tox
+            tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}-{{ checksum "scripts/typechecking/requirements.txt" }}-{{ checksum "scripts/testing/requirements.txt" }}-{{ checksum "setup.py" }}
+          key: deps-tox-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
           paths:
             - ".tox"
 
@@ -64,10 +89,56 @@ jobs:
           path: build/artifacts/coverage
           destination: coverage
       - run:
-          name: Report coverage
+          name: Report coverage (if enabled for this job)
           command: |
+            if [ "$COVERALLS" != "true" ]; then exit 0; fi
             . venv/bin/activate
             coveralls
+
+jobs:
+  test-36:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          <<: *steps-environment
+          TOXENV: py36
+          COVERALLS: true
+
+      - *postgres-container
+
+  test-37:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          <<: *steps-environment
+          TOXENV: py37
+          COVERALLS: false
+
+      - *postgres-container
+
+  test-38:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.8
+        environment:
+          <<: *steps-environment
+          TOXENV: py38
+          COVERALLS: false
+
+      - *postgres-container
+
+  test-39:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.9
+        environment:
+          <<: *steps-environment
+          TOXENV: py39
+          COVERALLS: false
+
+      - *postgres-container
 
   lint:
     working_directory: ~/routemaster
@@ -75,20 +146,11 @@ jobs:
       - image: circleci/python:3.6.3
     steps:
       - checkout
-      - restore_cache:
-          name: Restore build dependency cache
-          key: deps-venv-2.9.1
-      - run:
-          name: Install tox
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install tox==2.9.1
-      - save_cache:
-          name: Save build dependency cache
-          key: deps-venv-2.9.1
-          paths:
-            - "venv"
+
+      - *restore-build-dependency-cache
+      - *install-build-dependencies
+      - *save-build-dependency-cache
+
       - restore_cache:
           name: Restore .tox cache
           key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
@@ -111,20 +173,11 @@ jobs:
       - image: circleci/python:3.6.3
     steps:
       - checkout
-      - restore_cache:
-          name: Restore build dependency cache
-          key: deps-venv-2.9.1
-      - run:
-          name: Install tox
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install tox==2.9.1
-      - save_cache:
-          name: Save build dependency cache
-          key: deps-venv-2.9.1
-          paths:
-            - "venv"
+
+      - *restore-build-dependency-cache
+      - *install-build-dependencies
+      - *save-build-dependency-cache
+
       - restore_cache:
           name: Restore .tox cache
           key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
@@ -160,7 +213,9 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install twine wheel
+            pip install pip==21.1.2 setuptools==57.0.0
+            pip install twine>=1.11.0
+            pip install wheel>=0.31.0
 
             python setup.py sdist
             python setup.py bdist_wheel
@@ -177,6 +232,15 @@ jobs:
             python setup.py sdist
             python setup.py bdist_wheel
             twine upload dist/*
+
+            cd ../..
+
+            cd plugins/routemaster-statsd
+            python setup.py sdist
+            python setup.py bdist_wheel
+            twine upload dist/*
+
+            cd ../..
 
       - setup_remote_docker
 
@@ -200,7 +264,19 @@ workflows:
   version: 2
   build-release:
     jobs:
-      - test:
+      - test-36:
+          filters:
+            tags:
+              only: /.*/
+      - test-37:
+          filters:
+            tags:
+              only: /.*/
+      - test-38:
+          filters:
+            tags:
+              only: /.*/
+      - test-39:
           filters:
             tags:
               only: /.*/
@@ -214,7 +290,9 @@ workflows:
               only: /.*/
       - release:
           requires:
-            - test
+            - test-36
+            - test-37
+            - test-38
             - lint
             - typecheck
           filters:

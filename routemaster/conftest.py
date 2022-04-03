@@ -3,9 +3,11 @@
 import os
 import re
 import json
+import socket
 import datetime
 import functools
 import contextlib
+import subprocess
 from typing import Any, Dict
 from pathlib import Path
 from unittest import mock
@@ -41,7 +43,7 @@ from routemaster.config import (
 )
 from routemaster.server import server
 from routemaster.context import Context
-from routemaster.logging import BaseLogger
+from routemaster.logging import BaseLogger, SplitLogger, register_loggers
 from routemaster.webhooks import (
     WebhookResult,
     webhook_runner_for_state_machine,
@@ -237,7 +239,7 @@ class TestApp(App):
     def __init__(self, config):
         self.config = config
         self.session_used = False
-        self.logger = mock.MagicMock()
+        self.logger = SplitLogger(config, loggers=register_loggers(config))
         self._session = None
         self._needs_rollback = False
         self._current_session = None
@@ -263,17 +265,8 @@ class TestClientResponse(BaseResponse):
         return json.loads(self.data)
 
 
-@pytest.fixture()
-def client():
-    """Create a werkzeug test client."""
-    _app = app()
-    server.config.app = _app
-    return Client(wrap_application(_app, server), TestClientResponse)
-
-
-@pytest.fixture()
-def app(**kwargs):
-    """Create an `App` config object for testing."""
+def get_test_app(**kwargs):
+    """Instantiate an app with testing parameters."""
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
         database=kwargs.get('database', TEST_DATABASE_CONFIG),
@@ -287,9 +280,24 @@ def app(**kwargs):
 
 
 @pytest.fixture()
+def client(custom_app=None):
+    """Create a werkzeug test client."""
+    _app = get_test_app() if custom_app is None else custom_app
+    server.config.app = _app
+    _app.logger.init_flask(server)
+    return Client(wrap_application(_app, server), TestClientResponse)
+
+
+@pytest.fixture()
+def app(**kwargs):
+    """Create an `App` config object for testing."""
+    return get_test_app(**kwargs)
+
+
+@pytest.fixture()
 def custom_app():
-    """Return the app config fixture directly so that we can modify config."""
-    return app
+    """Return the test app generator so that we can pass in custom config."""
+    return get_test_app
 
 
 @pytest.fixture()
@@ -511,4 +519,64 @@ def current_state(app):
             ).order_by(
                 History.id.desc(),
             ).limit(1).scalar()
+    return _inner
+
+
+@pytest.fixture()
+def unused_tcp_port():
+    """Returns an unused TCP port, inspired by pytest-asyncio."""
+    with contextlib.closing(socket.socket()) as sock:
+        sock.bind(('127.0.0.1', 0))
+        return sock.getsockname()[1]
+
+
+@pytest.fixture()
+def routemaster_serve_subprocess(unused_tcp_port):
+    """
+    Fixture to spawn a routemaster server as a subprocess.
+
+    Yields the process reference, and the port that it can be accessed on.
+    """
+
+    @contextlib.contextmanager
+    def _inner(*, wait_for_output=None):
+        env = os.environ.copy()
+        env.update({
+            'DB_HOST': os.environ.get('PG_HOST', 'localhost'),
+            'DB_PORT': os.environ.get('PG_PORT', '5432'),
+            'DB_NAME': os.environ.get('PG_DB', 'routemaster_test'),
+            'DB_USER': os.environ.get('PG_USER', ''),
+            'DB_PASS': os.environ.get('PG_PASS', ''),
+        })
+
+        try:
+            proc = subprocess.Popen(
+                [
+                    'routemaster',
+                    '--config-file=example.yaml',
+                    'serve',
+                    '--bind',
+                    f'127.0.0.1:{unused_tcp_port}',
+                ],
+                env=env,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+
+            if wait_for_output is not None:
+                all_output = b''
+                while True:
+                    assert proc.poll() is None, all_output.decode('utf-8')
+
+                    out_line = proc.stdout.readline()
+                    if wait_for_output in out_line:
+                        break
+
+                    all_output += out_line
+
+            yield proc, unused_tcp_port
+        finally:
+            proc.terminate()
+
     return _inner

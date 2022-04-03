@@ -14,7 +14,6 @@ from typing import (
     Collection,
     NamedTuple,
 )
-
 from dataclasses import dataclass
 
 from routemaster.exit_conditions import ExitConditionProgram
@@ -23,13 +22,41 @@ if TYPE_CHECKING:
     from routemaster.context import Context  # noqa
 
 
-class TimeTrigger(NamedTuple):
-    """Time based trigger for exit condition evaluation."""
+class SystemTimeTrigger(NamedTuple):
+    """
+    System time based trigger for exit condition evaluation.
+
+    This trigger runs at the given time according to the system on which
+    routemaster is running.
+    """
     time: datetime.time
 
 
+class TimezoneAwareTrigger(NamedTuple):
+    """
+    Fixed timezone aware trigger for exit condition evaluation.
+
+    This trigger runs at the time according to the named timezone. The timezone
+    should be spelled using an IANA name, for example: 'Europe/London'.
+    """
+    time: datetime.time
+    timezone: str
+
+
+class MetadataTimezoneAwareTrigger(NamedTuple):
+    """
+    Metadata timezone aware trigger for exit condition evaluation.
+
+    This trigger uses a label's metadata to determine the current timezone and
+    otherwise behaves like a `TimezoneAwareTrigger`. The timezone should be
+    spelled using an IANA name, for example: 'Europe/London'.
+    """
+    time: datetime.time
+    timezone_metadata_path: Sequence[str]
+
+
 class IntervalTrigger(NamedTuple):
-    """Time based trigger for exit condition evaluation."""
+    """Time interval based trigger for exit condition evaluation."""
     interval: datetime.timedelta
 
 
@@ -54,7 +81,14 @@ class OnEntryTrigger:
     """Trigger on entry to a given gate."""
 
 
-Trigger = Union[TimeTrigger, IntervalTrigger, MetadataTrigger, OnEntryTrigger]
+Trigger = Union[
+    SystemTimeTrigger,
+    TimezoneAwareTrigger,
+    MetadataTimezoneAwareTrigger,
+    IntervalTrigger,
+    MetadataTrigger,
+    OnEntryTrigger,
+]
 
 
 class ConstantNextState(NamedTuple):

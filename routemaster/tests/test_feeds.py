@@ -22,7 +22,7 @@ def test_feeds_for_state_machine():
                 next_states=NoNextStates(),
                 exit_condition=ExitConditionProgram('false'),
             ),
-        ]
+        ],
     )
 
     feeds = feeds_for_state_machine(state_machine)

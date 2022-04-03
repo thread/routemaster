@@ -369,3 +369,31 @@ def test_delete_label_only_deletes_target_label(app, assert_history, mock_test_f
             app,
             label_bar,
         )
+
+
+def test_handles_label_state_change_race_condition(app, create_deleted_label):
+    test_machine = app.config.state_machines['test_machine']
+    state = test_machine.states[1]
+
+    # Create a label which is not in the expected state. Doing this and then
+    # returning the affected label from the `get_labels` call is easier and
+    # equivalent to having the state of the label change between the return of
+    # that call and when the label is used.
+    label = create_deleted_label('foo', 'test_machine')
+
+    mock_processor = mock.Mock()
+    mock_get_labels = mock.Mock(return_value=[label.name])
+
+    with mock.patch(
+        'routemaster.state_machine.api.suppress_exceptions',
+    ):
+        state_machine.process_cron(
+            mock_processor,
+            mock_get_labels,
+            app,
+            test_machine,
+            state,
+        )
+
+    # Assert no attempt to process the label
+    mock_processor.assert_not_called()

@@ -1,25 +1,6 @@
 """Shared utilities."""
 import contextlib
-from typing import Any, Dict, Callable, Iterable, Sequence
-
-StartResponse = Callable[
-    [
-        str,
-        Dict[str, str],
-        Any,
-    ],
-    None,
-]
-
-WSGIEnvironment = Dict[str, Any]
-
-WSGICallable = Callable[
-    [
-        WSGIEnvironment,
-        StartResponse,
-    ],
-    Iterable[bytes],
-]
+from typing import Any, Dict, Sequence
 
 
 def dict_merge(d1, d2):
@@ -59,7 +40,7 @@ def suppress_exceptions(logger):
     """Catch all exceptions and log to a provided logger."""
     try:
         yield
-    except Exception:
+    except Exception:  # noqa: B902
         logger.exception("Error suppressed")
 
 

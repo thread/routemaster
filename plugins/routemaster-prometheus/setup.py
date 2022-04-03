@@ -1,10 +1,12 @@
 """Package setup."""
 
-import version
+from pathlib import Path
+
 from setuptools import setup, find_packages
 
-with open('README.md', 'r', encoding='utf-8') as f:
-    long_description = f.read()
+import version
+
+long_description = (Path(__file__).parent / 'README.md').read_text()
 
 setup(
     name='routemaster_prometheus',
@@ -12,6 +14,7 @@ setup(
     url='https://github.com/thread/routemaster',
     description="Prometheus metrics reporting for Routemaster.",
     long_description=long_description,
+    long_description_content_type="text/markdown",
 
     author="Thread",
     author_email="tech@thread.com",
@@ -38,7 +41,6 @@ setup(
 
     install_requires=(
         'routemaster',
-        'prometheus_client',
-        'prometheus_flask_exporter',
+        'prometheus_client>=0.4.2',
     ),
 )

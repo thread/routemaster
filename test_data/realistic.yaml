@@ -11,6 +11,10 @@ state_machines:
       - gate: start
         triggers:
           - time: 18h30m
+          - time: 12h25m
+            timezone: Europe/London
+          - time: 13h37m
+            timezone: metadata.timezone
           - metadata: foo.bar
           - interval: 1h
           - event: entry
@@ -22,10 +26,10 @@ state_machines:
       - gate: stage2
         triggers: []
         exit_condition: >
-          foo.bar is defined
+          metadata.foo.bar is defined
         next:
           type: context
-          path: foo.bar
+          path: metadata.foo.bar
           default: end
           destinations:
             - state: stage3

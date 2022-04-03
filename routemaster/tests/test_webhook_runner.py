@@ -2,10 +2,7 @@ import pytest
 import requests
 import httpretty
 
-from routemaster.webhooks import (
-    WebhookResult,
-    RequestsWebhookRunner,
-)
+from routemaster.webhooks import WebhookResult, RequestsWebhookRunner
 
 
 @httpretty.activate
@@ -60,8 +57,9 @@ def test_requests_webhook_runner_handles_other_failure_modes_as_retry(status):
 
 @httpretty.activate
 def test_requests_webhook_runner_handles_timeout_as_retry():
-    def raise_retry():
+    def raise_retry(*args, **kwargs):
         raise requests.ReadTimeout()
+
     httpretty.register_uri(
         httpretty.POST,
         'http://example.com/',

@@ -1,6 +1,7 @@
 """The core of the state machine logic."""
 
-from typing import Callable, Iterable
+from typing import List, Callable, Iterable, Optional
+from typing_extensions import Protocol
 
 from routemaster.db import Label, History
 from routemaster.app import App
@@ -13,8 +14,9 @@ from routemaster.state_machine.utils import (
     get_current_state,
     get_state_machine,
 )
-from routemaster.state_machine.utils import \
-    get_label_metadata as get_label_metadata_internal
+from routemaster.state_machine.utils import (
+    get_label_metadata as get_label_metadata_internal,
+)
 from routemaster.state_machine.utils import (
     needs_gate_evaluation_for_metadata_change,
 )
@@ -24,6 +26,12 @@ from routemaster.state_machine.exceptions import (
     LabelAlreadyExists,
 )
 from routemaster.state_machine.transitions import process_transitions
+
+# Signature of a function to gather the labels to be operated upon when
+# processing a cron task. This will be called in a different transaction to
+# where we iterate over the results, so to prevent confusion or the possible
+# introduction of errors, we require all the data up-front.
+LabelProvider = Callable[[App, StateMachine, State], List[str]]
 
 
 def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
@@ -39,7 +47,7 @@ def list_labels(app: App, state_machine: StateMachine) -> Iterable[LabelRef]:
         yield LabelRef(name=name, state_machine=state_machine.name)
 
 
-def get_label_state(app: App, label: LabelRef) -> State:
+def get_label_state(app: App, label: LabelRef) -> Optional[State]:
     """Finds the current state of a label."""
     state_machine = get_state_machine(app, label)
     return get_current_state(app, label, state_machine)
@@ -135,7 +143,7 @@ def update_metadata_for_label(
                 state_machine,
                 current_state,
             )
-        except Exception:
+        except Exception:  # noqa: B902
             # This is allowed to fail here. We have successfully saved the new
             # metadata, and it has a metadata_triggers_processed=False flag so
             # will be picked up again for processing later.
@@ -204,13 +212,32 @@ def delete_label(app: App, label: LabelRef) -> None:
 
     # Add a history entry for the deletion
     current_state = get_current_state(app, label, state_machine)
+
+    if current_state is None:
+        raise AssertionError(f"Active label {label} has no current state!")
+
     row.history.append(History(
         old_state=current_state.name,
         new_state=None,
     ))
 
 
-LabelStateProcessor = Callable[[App, State, StateMachine, LabelRef], bool]
+class LabelStateProcessor(Protocol):
+    """Type signature for the label state processor callable."""
+    def __call__(
+        self,
+        *,
+        app: App,
+        state: State,
+        state_machine: StateMachine,
+        label: LabelRef,
+    ) -> bool:
+        """Type signature for the label state processor callable."""
+        ...
+
+    def __name__(self) -> str:
+        """Name of the callable."""
+        ...
 
 
 def process_cron(
@@ -238,7 +265,7 @@ def process_cron(
                 if current_state != state:
                     continue
 
-                could_progress = process(  # type: ignore
+                could_progress = process(
                     app=app,
                     state=state,
                     state_machine=state_machine,
