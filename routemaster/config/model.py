@@ -1,6 +1,7 @@
 """Loading and validation of config files."""
 
 import datetime
+import collections
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -103,6 +104,10 @@ class ConstantNextState(NamedTuple):
         """Returns the constant next state."""
         return [self.state]
 
+    def destinations_for_render(self) -> Mapping[str, str]:
+        """Returns the constant next state."""
+        return {self.state: ""}
+
 
 class ContextNextStatesOption(NamedTuple):
     """Represents an option for a context conditional next state."""
@@ -128,6 +133,30 @@ class ContextNextStates(NamedTuple):
         """Returns all possible destination states."""
         return [x.state for x in self.destinations] + [self.default]
 
+    def destinations_for_render(self) -> Mapping[str, str]:
+        """
+        Returns destination states and a summary of how each might be reached.
+
+        This is intended for use in visualisations, so while the description of
+        how to reach each state is somewhat Pythonic its focus is being
+        human-readable.
+        """
+        destination_reasons = [
+            (x.state, f"{self.path} == {x.value}")
+            for x in self.destinations
+        ] + [
+            (self.default, "default"),
+        ]
+
+        collected = collections.defaultdict(list)
+        for destination, raeson in destination_reasons:
+            collected[destination].append(raeson)
+
+        return {
+            destination: " or ".join(reasons)
+            for destination, reasons in collected.items()
+        }
+
 
 class NoNextStates(NamedTuple):
     """Represents the lack of a next state to progress to."""
@@ -141,6 +170,10 @@ class NoNextStates(NamedTuple):
     def all_destinations(self) -> Collection[str]:
         """Returns no states."""
         return []
+
+    def destinations_for_render(self) -> Mapping[str, str]:
+        """Returns no states."""
+        return {}
 
 
 NextStates = Union[ConstantNextState, ContextNextStates, NoNextStates]

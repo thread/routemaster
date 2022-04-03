@@ -12,54 +12,47 @@ TEST_MACHINE_STATE_AS_NETWORK = [
         'data': {
             'source': 'start',
             'target': 'perform_action',
+            'label': 'feeds.tests.should_do_alternate_action == False or default',
         },
     },
     {
         'data': {
             'source': 'start',
             'target': 'perform_alternate_action',
+            'label': 'feeds.tests.should_do_alternate_action == True',
         },
     },
-    # We emit duplicate edges when the destination is duplicated; this seems to
-    # be fine though.
     {
         'data': {
-            'source': 'start',
-            'target': 'perform_action',
+            'id': 'perform_action',
         },
-    },
-    {
-        'data': {'id': 'perform_action'},
         'classes': 'action',
     },
     {
         'data': {
             'source': 'perform_action',
             'target': 'end',
+            'label': '',
         },
     },
     {
-        'data': {'id': 'perform_alternate_action'},
+        'data': {
+            'id': 'perform_alternate_action',
+        },
         'classes': 'action',
     },
     {
         'data': {
             'source': 'perform_alternate_action',
             'target': 'end',
+            'label': 'feeds.tests.should_loop == False or default',
         },
     },
-    # We emit duplicate edges when the destination is duplicated; this seems to
-    # be fine though.
     {
         'data': {
             'source': 'perform_alternate_action',
             'target': 'start',
-        },
-    },
-    {
-        'data': {
-            'source': 'perform_alternate_action',
-            'target': 'end',
+            'label': 'feeds.tests.should_loop == True',
         },
     },
     {

@@ -20,11 +20,12 @@ def nodes_for_cytoscape(
             'classes': node_kind,
         })
 
-        all_destinations = state.next_states.all_destinations()
-        for destination_name in all_destinations:
+        destinations = state.next_states.destinations_for_render()
+        for destination_name, reason in destinations.items():
             elements.append({'data': {
                 'source': state.name,
                 'target': destination_name,
+                'label': reason,
             }})
 
     return elements

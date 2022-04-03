@@ -128,7 +128,12 @@
             'target-arrow-shape': 'triangle',
             'target-arrow-color': '#ccc',
             'line-color': '#ccc',
+            'text-wrap': 'wrap',
+            'text-max-width': 80,
             'width': 1
+          })
+          .style({
+            'label': 'data(label)',
           })
         .selector(':selected')
           .css({
@@ -157,7 +162,7 @@
       cy.layout(layoutOptions).run();
     }
 
-    var initialSpacingFactor = 0.4 + cy.nodes().length * 0.04;
+    var initialSpacingFactor = 0.5 + cy.nodes().length * 0.05;
     var spacingFactorElem = document.getElementById('spacing-factor');
     spacingFactorElem.addEventListener('change', function() {
         changeSpacing(spacingFactorElem.value / 10);
