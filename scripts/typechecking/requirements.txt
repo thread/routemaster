@@ -6,3 +6,6 @@ types-python-dateutil
 types-PyYAML
 types-requests
 types-setuptools
+
+# 2.1 has breaking BaseResponse removal
+werkzeug <2.1
