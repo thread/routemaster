@@ -13,7 +13,7 @@ Usage, in your Routemaster configuration file:
 This package is based on the official Python Promeutheus bindings in
 [`prometheus_client`](https://pypi.org/project/prometheus_client/). In order
 for that package to operate in a multithreaded program such as Routemaster,
-the environment variable `prometheus_multiproc_dir` must be set to a writeable
+the environment variable `PROMETHEUS_MULTIPROC_DIR` must be set to a writeable
 directory for temporary files. It does not need to be backed up as nothing
 is persisted between application launches.
 

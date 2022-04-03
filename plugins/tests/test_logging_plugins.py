@@ -132,7 +132,7 @@ def test_logger(app, klass, kwargs):
 
 
 def test_prometheus_logger_wipes_directory_on_startup(app):
-    tmp = pathlib.Path(os.environ['prometheus_multiproc_dir'])
+    tmp = pathlib.Path(os.environ['PROMETHEUS_MULTIPROC_DIR'])
     tmp.mkdir(parents=True, exist_ok=True)
 
     filepath = tmp / 'foo.txt'
@@ -181,10 +181,10 @@ def test_prometheus_logger_ignores_metrics_path(routemaster_serve_subprocess):
 
 
 def test_prometheus_logger_validates_metrics_path(app):
-    orig = os.environ['prometheus_multiproc_dir']
-    os.environ['prometheus_multiproc_dir'] = ''
+    orig = os.environ['PROMETHEUS_MULTIPROC_DIR']
+    os.environ['PROMETHEUS_MULTIPROC_DIR'] = ''
 
     with pytest.raises(ValueError):
         PrometheusLogger(app.config)
 
-    os.environ['prometheus_multiproc_dir'] = orig
+    os.environ['PROMETHEUS_MULTIPROC_DIR'] = orig
