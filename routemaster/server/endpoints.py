@@ -81,7 +81,7 @@ def view_state_machine(state_machine_name):
 
     try:
         state_machine = app.config.state_machines[state_machine_name]
-    except KeyError as k:
+    except KeyError:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
 
