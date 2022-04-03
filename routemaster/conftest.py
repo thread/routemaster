@@ -323,7 +323,7 @@ def database_creation(request):
     yield
 
 
-@pytest.yield_fixture(autouse=True)
+@pytest.fixture(autouse=True)
 def database_clear(app):
     """Truncate all tables after each test."""
     yield
