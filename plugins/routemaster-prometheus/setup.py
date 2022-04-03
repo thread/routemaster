@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 import version
 
-long_description = (Path(__file__).parent / 'README.rst').read_text()
+long_description = (Path(__file__).parent / 'README.md').read_text()
 
 setup(
     name='routemaster_prometheus',
