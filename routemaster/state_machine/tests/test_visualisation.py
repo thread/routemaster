@@ -1,6 +1,6 @@
-import yaml
+import layer_loader
 
-from routemaster.config import load_config
+from routemaster.config import yaml_load, load_config
 from routemaster.state_machine import nodes_for_cytoscape
 
 TEST_MACHINE_STATE_AS_NETWORK = [
@@ -80,7 +80,12 @@ def test_convert_example_to_network(app, repo_root):
 
     assert example_yaml.exists(), "Example file is missing! (is this test set up correctly?)"
 
-    example_config = load_config(yaml.load(example_yaml.read_text()))
+    example_config = load_config(
+        layer_loader.load_files(
+            [example_yaml],
+            loader=yaml_load,
+        ),
+    )
 
     # quick check that we've loaded the config we expect
     assert list(example_config.state_machines.keys()) == ['user_lifecycle']
