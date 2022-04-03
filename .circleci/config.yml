@@ -140,6 +140,17 @@ jobs:
 
       - *postgres-container
 
+  test-310:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.10
+        environment:
+          <<: *steps-environment
+          TOXENV: py39
+          COVERALLS: false
+
+      - *postgres-container
+
   lint:
     working_directory: ~/routemaster
     docker:
@@ -280,6 +291,10 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - test-310:
+          filters:
+            tags:
+              only: /.*/
       - lint:
           filters:
             tags:
@@ -293,6 +308,8 @@ workflows:
             - test-36
             - test-37
             - test-38
+            - test-39
+            - test-310
             - lint
             - typecheck
           filters:
