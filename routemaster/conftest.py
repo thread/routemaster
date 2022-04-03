@@ -275,7 +275,7 @@ def client(custom_app=None):
     _app = get_test_app() if custom_app is None else custom_app
     server.config.app = _app
     _app.logger.init_flask(server)
-    return Client(wrap_application(_app, server), werkzeug.wrappers.BaseResponse)
+    return Client(wrap_application(_app, server), werkzeug.Response)
 
 
 @pytest.fixture()

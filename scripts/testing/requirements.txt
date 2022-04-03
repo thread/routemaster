@@ -9,5 +9,4 @@ httpretty
 pytest-pythonpath
 
 # Version 2 has much better testing tooling
-# 2.1 has breaking BaseResponse removal
-werkzeug >=2, <2.1
+werkzeug >=2
