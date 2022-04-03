@@ -41,8 +41,8 @@
   <title>Visualisation of state machine {{ state_machine_name }}</title>
 </head>
 <body>
-  <script type="text/javascript">
-    var state_machine_config = {{ state_machine_config|tojson }};
+  <script type="application/json" id="state-machine-config">
+    {{ state_machine_config|tojson }}
   </script>
   <script
     src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.11/cytoscape.min.js"
@@ -93,6 +93,10 @@
       document.getElementById('spacing-factor-display').innerHTML = precisionRound(layoutOptions.spacingFactor * 10, 1);
     }
 
+    function parseConfig(elementId) {
+      return JSON.parse(document.getElementById(elementId).innerHTML);
+    }
+
     var cy = cytoscape({
       container: document.getElementById('graph-container'),
 
@@ -141,7 +145,7 @@
             'background-color': backgroundColourForNodeClass('.gate'),
           }),
 
-      elements: state_machine_config,
+      elements: parseConfig('state-machine-config'),
 
       layout: layoutOptions
     });
