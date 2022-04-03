@@ -8,6 +8,6 @@ freezegun
 httpretty
 pytest-pythonpath
 
-# 0.15.0 contains fix https://github.com/pallets/werkzeug/pull/1280
+# Version 2 has much better testing tooling
 # 2.1 has breaking BaseResponse removal
-werkzeug >=0.15.0, <2.1
+werkzeug >=2, <2.1
