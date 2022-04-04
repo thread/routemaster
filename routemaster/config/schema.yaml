@@ -111,7 +111,7 @@ properties:
                       - type: object
                         properties:
                           type:
-                            const: 'metadata'
+                            const: 'context'
                           path: *dotted_path_definition
                           default:
                             type: string

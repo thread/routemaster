@@ -46,7 +46,7 @@ setup(
         'click',
         'layer-loader',
         'pyyaml >= 5',
-        'jsonschema >=2.6, <3',
+        'jsonschema >=3, <5',
         'flask',
         'psycopg2-binary',
         'sqlalchemy',
