@@ -62,12 +62,17 @@ class PrometheusLogger(BaseLogger):
         path='/metrics',
     ):
         self.path = path
-        metrics_path = os.environ.get('prometheus_multiproc_dir')
+        # Lower case spelling prometheus_multiproc_dir is deprecated but still
+        # supported by prometheus_client.
+        metrics_path = (
+            os.environ.get('PROMETHEUS_MULTIPROC_DIR') or
+            os.environ.get('prometheus_multiproc_dir')
+        )
 
         if not metrics_path:
             raise ValueError(
                 "PrometheusLogger requires the environment variable "
-                "`prometheus_multiproc_dir` to be set to a writeable "
+                "`PROMETHEUS_MULTIPROC_DIR` to be set to a writeable "
                 "directory.",
             )
 

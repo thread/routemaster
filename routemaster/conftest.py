@@ -12,13 +12,13 @@ from typing import Any, Dict
 from unittest import mock
 
 import pytest
+import werkzeug
 import httpretty
 import dateutil.tz
 import pkg_resources
 from sqlalchemy import create_engine
 from werkzeug.test import Client
 from sqlalchemy.orm import sessionmaker
-from werkzeug.wrappers import BaseResponse
 
 from routemaster import state_machine
 from routemaster.db import Label, History, metadata
@@ -255,15 +255,6 @@ class TestApp(App):
         return super().session
 
 
-class TestClientResponse(BaseResponse):
-    """Test client response format."""
-
-    @property
-    def json(self):
-        """Util property for json responses."""
-        return json.loads(self.data)
-
-
 def get_test_app(**kwargs):
     """Instantiate an app with testing parameters."""
     return TestApp(Config(
@@ -284,7 +275,7 @@ def client(custom_app=None):
     _app = get_test_app() if custom_app is None else custom_app
     server.config.app = _app
     _app.logger.init_flask(server)
-    return Client(wrap_application(_app, server), TestClientResponse)
+    return Client(wrap_application(_app, server), werkzeug.Response)
 
 
 @pytest.fixture()
@@ -323,7 +314,7 @@ def database_creation(request):
     yield
 
 
-@pytest.yield_fixture(autouse=True)
+@pytest.fixture(autouse=True)
 def database_clear(app):
     """Truncate all tables after each test."""
     yield

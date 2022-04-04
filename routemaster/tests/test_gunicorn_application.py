@@ -3,7 +3,6 @@ from unittest import mock
 import pytest
 import werkzeug.test
 import werkzeug.testapp
-import werkzeug.wrappers
 
 from routemaster.gunicorn_application import GunicornWSGIApplication
 
@@ -23,7 +22,7 @@ def test_gunicorn_application_can_be_constructed(debug):
 
     client = werkzeug.test.Client(
         loaded_wsgi_callable,
-        werkzeug.wrappers.BaseResponse,
+        werkzeug.Response,
     )
     response = client.get('/')
     assert response.status_code == 200
