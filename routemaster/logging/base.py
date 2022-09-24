@@ -35,6 +35,7 @@ class BaseLogger:
     def process_request_finished(
         self,
         environ,
+        *,
         status,
         headers,
         exc_info,
