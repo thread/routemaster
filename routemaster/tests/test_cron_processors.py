@@ -344,7 +344,7 @@ def test_metadata_timezone_processor_doesnt_run_multiply() -> None:
 def test_metadata_timezone_processor_doesnt_bubble_internal_exceptions() -> None:
     # Note: the processor assumes that the callable they're passed won't raise,
     # because that is assumed to be `cron.process_job` which has its own error
-    # handling. The processor does howver need to ensure that other errors it
+    # handling. The processor does however need to ensure that other errors it
     # may encounter while checking whether to run are handled.
     mock_callable = mock.Mock()
     trigger = MetadataTimezoneAwareTrigger(datetime.time(12, 0), ['tz'])

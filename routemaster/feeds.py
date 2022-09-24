@@ -34,7 +34,7 @@ def _get_feed_session():
 
 @dataclass
 class Feed:
-    """A feed fetcher, able to retreive a feed and read keys out of it."""
+    """A feed fetcher, able to retrieve a feed and read keys out of it."""
     url: str
     state_machine: str
 

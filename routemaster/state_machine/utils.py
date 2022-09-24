@@ -147,7 +147,7 @@ def labels_in_state_with_metadata(
     Util to get all the labels in a given state with some metadata value.
 
     The metadata lookup happens at the given path, allowing for any of the
-    posible values given.
+    possible values given.
     """
     if not values:
         raise ValueError("Must specify at least one possible value")
