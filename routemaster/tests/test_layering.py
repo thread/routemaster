@@ -1,6 +1,7 @@
 import re
 import dis
 import pathlib
+from typing import Iterable, Iterator
 
 import pytest
 
@@ -23,7 +24,6 @@ DEPENDENCIES = (
     ('cli', 'validation'),
     ('cli', 'middleware'),
 
-    ('exit_conditions', 'context'),
     ('exit_conditions', 'utils'),
 
     ('context', 'utils'),
@@ -112,6 +112,29 @@ def test_layers_are_acyclic():
 RE_ROUTEMASTER_MODULE = re.compile('^routemaster.([a-zA-Z0-9_]+)')
 
 
+def _skip_type_checking_blocks(
+    instructions: Iterable[dis.Instruction],
+) -> Iterator[dis.Instruction]:
+    state = None
+    for instruction in instructions:
+        if (
+            instruction.opname == 'LOAD_NAME' and
+            instruction.argval == 'TYPE_CHECKING'
+        ):
+            state = 'TYPE_CHECKING'
+            continue
+        elif (
+            state == 'TYPE_CHECKING' and
+            instruction.opname == 'POP_JUMP_IF_FALSE'
+        ):
+            state = 'JUMP'
+        elif state == 'JUMP' and not instruction.is_jump_target:
+            continue
+        else:
+            state = None
+            yield instruction
+
+
 @pytest.mark.skipif(networkx is None, reason="networkx is not installed")
 def test_layers():
     root = pathlib.Path(routemaster.__file__).parent
@@ -144,7 +167,7 @@ def test_layers():
 
         last_import_source = None
 
-        for instruction in dis.get_instructions(code):
+        for instruction in _skip_type_checking_blocks(dis.get_instructions(code)):
             if instruction.opname == 'IMPORT_NAME':
                 import_target = instruction.argval
 

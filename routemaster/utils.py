@@ -1,8 +1,9 @@
 """Shared utilities."""
 import contextlib
-from typing import Any, Dict, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Sequence
 
-from routemaster.logging import BaseLogger
+if TYPE_CHECKING:
+    from routemaster.logging import BaseLogger
 
 
 def dict_merge(d1: Dict[str, Any], d2: Dict[str, Any]) -> Dict[str, Any]:
@@ -38,7 +39,7 @@ def get_path(path: Sequence[str], d: Dict[str, Any]) -> Any:
 
 
 @contextlib.contextmanager
-def suppress_exceptions(logger: BaseLogger) -> Iterator[None]:
+def suppress_exceptions(logger: 'BaseLogger') -> Iterator[None]:
     """Catch all exceptions and log to a provided logger."""
     try:
         yield

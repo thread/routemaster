@@ -1,16 +1,28 @@
 """Creation and fetching of feed data."""
 import threading
-from typing import Any, Dict, Union, Callable, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Union,
+    Callable,
+    Optional,
+    Sequence,
+)
 from dataclasses import dataclass
 
 import requests
 from requests.sessions import Session
 
 from routemaster.utils import get_path, template_url
-from routemaster.config import StateMachine
+
+if TYPE_CHECKING:
+    from routemaster.config import StateMachine
 
 
-def feeds_for_state_machine(state_machine: StateMachine) -> Dict[str, 'Feed']:
+def feeds_for_state_machine(
+    state_machine: 'StateMachine',
+) -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
     return {
         x.name: Feed(x.url, state_machine.name)
