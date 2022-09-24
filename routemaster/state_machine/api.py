@@ -235,6 +235,7 @@ class LabelStateProcessor(Protocol):
         """Type signature for the label state processor callable."""
         ...
 
+    @property
     def __name__(self) -> str:
         """Name of the callable."""
         ...
