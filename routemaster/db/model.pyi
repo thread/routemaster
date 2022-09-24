@@ -23,13 +23,13 @@ class Label:
     def __init__(
         self,
         *,
-        name: str=...,
-        state_machine: str=...,
-        metadata: _JSON=...,
-        metadata_triggers_processed: bool=...,
-        deleted: bool=...,
-        updated: datetime.datetime=...,
-        history: List['History']=...,
+        name: str = ...,
+        state_machine: str = ...,
+        metadata: _JSON = ...,
+        metadata_triggers_processed: bool = ...,
+        deleted: bool = ...,
+        updated: datetime.datetime = ...,
+        history: List['History'] = ...,
     ) -> None: ...
 
 
@@ -49,12 +49,12 @@ class History:
     def __init__(
         self,
         *,
-        id: int=...,
-        label_name: str=...,
-        label_state_machine: str=...,
-        created: datetime.datetime=...,
-        forced: bool=...,
-        old_state: Optional[str]=...,
-        new_state: Optional[str]=...,
-        label: Label=...,
+        id: int = ...,
+        label_name: str = ...,
+        label_state_machine: str = ...,
+        created: datetime.datetime = ...,
+        forced: bool = ...,
+        old_state: Optional[str] = ...,
+        new_state: Optional[str] = ...,
+        label: Label = ...,
     ) -> None: ...
