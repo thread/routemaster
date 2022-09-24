@@ -146,7 +146,7 @@ jobs:
       - image: circleci/python:3.10
         environment:
           <<: *steps-environment
-          TOXENV: py39
+          TOXENV: py310
           COVERALLS: false
 
       - *postgres-container
