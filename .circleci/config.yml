@@ -22,7 +22,7 @@ references:
   restore-build-dependency-cache: &restore-build-dependency-cache
     restore_cache:
       name: Restore build dependency cache
-      key: deps-venv-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+      key: deps-venv-1-{{ .Branch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum ".circleci/requirements.txt" }}
 
   install-build-dependencies: &install-build-dependencies
     run:
@@ -35,7 +35,7 @@ references:
   save-build-dependency-cache: &save-build-dependency-cache
     save_cache:
       name: Save build dependency cache
-      key: deps-venv-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+      key: deps-venv-1-{{ .Branch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum ".circleci/requirements.txt" }}
       paths:
         - "venv"
 
@@ -70,7 +70,7 @@ references:
             done
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
+          key: deps-tox-1-{{ .Branch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum ".checksum" }}
       - run:
           name: Test
           command: |
@@ -78,7 +78,7 @@ references:
             tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
+          key: deps-tox-1-{{ .Branch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum ".checksum" }}
           paths:
             - ".tox"
 
