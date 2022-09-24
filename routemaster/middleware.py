@@ -23,7 +23,7 @@ ACTIVE_MIDDLEWARES: List[WSGIMiddleware]
 ACTIVE_MIDDLEWARES = []
 
 
-def middleware(fn: WSGIMiddleware):
+def middleware(fn: WSGIMiddleware) -> Callable:
     """Decorator: add `fn` to ACTIVE_MIDDLEWARES."""
     ACTIVE_MIDDLEWARES.append(fn)
     return fn

@@ -1,5 +1,7 @@
 """Peephole evaluator optimiser."""
 
+from typing import Any, List
+
 from routemaster.exit_conditions.operations import Operation
 
 MATCHERS = [
@@ -77,7 +79,7 @@ MATCHERS = [
 ]
 
 
-def peephole_optimise(instructions):
+def peephole_optimise(instructions: Any) -> List[Any]:
     """Run peephole optimisations over a given instruction sequence."""
     instructions = list(instructions)
 

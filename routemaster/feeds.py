@@ -1,14 +1,16 @@
 """Creation and fetching of feed data."""
 import threading
-from typing import Any, Dict, Callable, Optional
+from typing import Any, Dict, Union, Callable, Optional, Sequence
 from dataclasses import dataclass
 
 import requests
+from requests.sessions import Session
 
 from routemaster.utils import get_path, template_url
+from routemaster.config import StateMachine
 
 
-def feeds_for_state_machine(state_machine) -> Dict[str, 'Feed']:
+def feeds_for_state_machine(state_machine: StateMachine) -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
     return {
         x.name: Feed(x.url, state_machine.name)  # type: ignore
@@ -24,7 +26,7 @@ class FeedNotFetched(Exception):
 _feed_sessions = threading.local()
 
 
-def _get_feed_session():
+def _get_feed_session() -> Session:
     # We cache sessions per thread so that we can use `requests.Session`'s
     # underlying `urllib3` connection pooling.
     if not hasattr(_feed_sessions, 'session'):
@@ -59,7 +61,7 @@ class Feed:
         response.raise_for_status()
         self.data = response.json()
 
-    def lookup(self, path):
+    def lookup(self, path: Union[Sequence[str]]) -> Optional[Union[bool, str]]:
         """Lookup data from a feed's contents."""
         if self.data is None:
             raise FeedNotFetched(self.url)

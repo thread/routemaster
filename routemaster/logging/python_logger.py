@@ -3,7 +3,9 @@
 import time
 import logging
 import contextlib
+from typing import Any, Dict, Type, Tuple, Callable, Iterator, Optional
 
+from routemaster.config import State, StateMachine
 from routemaster.logging.base import BaseLogger
 
 
@@ -25,7 +27,12 @@ class PythonLogger(BaseLogger):
         self.logger.info(f"Started logger with level {log_level}")
 
     @contextlib.contextmanager
-    def process_cron(self, state_machine, state, fn_name):
+    def process_cron(
+        self,
+        state_machine: StateMachine,
+        state: State,
+        fn_name: str,
+    ) -> Iterator[None]:
         """Process a cron job, logging information to the Python logger."""
         self.logger.info(
             f"Started cron {fn_name} for state {state.name} in "
@@ -46,12 +53,12 @@ class PythonLogger(BaseLogger):
 
     def process_request_finished(
         self,
-        environ,
+        environ: Dict[str, Any],
         *,
-        status,
-        headers,
-        exc_info,
-    ):
+        status: int,
+        headers: Dict[str, Any],
+        exc_info: Optional[Tuple[Type[RuntimeError], RuntimeError, None]],
+    ) -> None:
         """Process a web request and log some basic info about it."""
         self.info("{method} {path} {status}".format(
             method=environ.get('REQUEST_METHOD'),
@@ -59,6 +66,6 @@ class PythonLogger(BaseLogger):
             status=status,
         ))
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Callable:
         """Fall back to the logger API."""
         return getattr(self.logger, name)

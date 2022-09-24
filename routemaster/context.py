@@ -1,9 +1,24 @@
 """Context definition for exit condition programs."""
 import datetime
-from typing import Any, Dict, Iterable, Optional, Sequence
+from typing import (
+    Any,
+    Dict,
+    Tuple,
+    Union,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    ContextManager,
+)
+
+import requests
 
 from routemaster.feeds import Feed
 from routemaster.utils import get_path
+
+ResponseLogger = Callable[[requests.Response], None]
+FeedLoggingContext = Callable[[str], ContextManager[ResponseLogger]]
 
 
 class Context(object):
@@ -18,7 +33,7 @@ class Context(object):
         feeds: Dict[str, Feed],
         accessed_variables: Iterable[str],
         current_history_entry: Optional[Any],
-        feed_logging_context,
+        feed_logging_context: FeedLoggingContext,
     ) -> None:
         """Create an execution context."""
         if now.tzinfo is None:
@@ -65,7 +80,12 @@ class Context(object):
             'previous_state': self.current_history_entry.old_state,
         }[variable_name]
 
-    def property_handler(self, property_name, value, **kwargs):
+    def property_handler(
+        self,
+        property_name: Union[Tuple[str, ...]],
+        value: Any,
+        **kwargs: Any,
+    ) -> bool:
         """Handle a property in execution."""
         if property_name == ('passed',):
             epoch = kwargs['since']
@@ -82,8 +102,8 @@ class Context(object):
         self,
         label: str,
         accessed_variables: Iterable[str],
-        logging_context,
-    ):
+        logging_context: FeedLoggingContext,
+    ) -> None:
         for accessed_variable in accessed_variables:
             parts = accessed_variable.split('.')
 

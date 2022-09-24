@@ -3,8 +3,19 @@
 import datetime
 import functools
 import contextlib
-from typing import Any, Dict, List, Tuple, Optional, Sequence, Collection
+from typing import (
+    Any,
+    Dict,
+    List,
+    Tuple,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    Collection,
+)
 
+import requests
 import dateutil.tz
 from sqlalchemy import func
 
@@ -19,6 +30,8 @@ from routemaster.state_machine.exceptions import (
     UnknownLabel,
     UnknownStateMachine,
 )
+
+ResponseLogger = Callable[[requests.Response], None]
 
 
 def get_state_machine(app: App, label: LabelRef) -> StateMachine:
@@ -238,7 +251,7 @@ def context_for_label(
         accessed_variables.append(state.next_states.path)
 
     @contextlib.contextmanager
-    def feed_logging_context(feed_url):
+    def feed_logging_context(feed_url: str) -> Iterator[ResponseLogger]:
         with logger.process_feed(state_machine, state, feed_url):
             yield functools.partial(
                 logger.feed_response,

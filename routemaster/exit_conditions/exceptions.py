@@ -1,10 +1,11 @@
 """Exceptions for use in exit condition handling."""
+from typing import Tuple
 
 
 class ParseError(Exception):
     """Errors that occur when tokenizing or parsing."""
 
-    def __init__(self, message, location):
+    def __init__(self, message: str, location: Tuple[int, int]) -> None:
         """
         Construct by message and location.
 

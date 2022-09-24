@@ -1,7 +1,8 @@
 """Human-readable ParseError handling."""
+from typing import Tuple
 
 
-def _find_line_containing(source, index):
+def _find_line_containing(source: str, index: int) -> Tuple[int, str, int]:
     """Find (line number, line, offset) triple for an index into a string."""
     lines = source.splitlines()
 
@@ -20,7 +21,7 @@ def _find_line_containing(source, index):
     raise AssertionError("index >> len(source)")
 
 
-def format_parse_error_message(*, source, error):
+def format_parse_error_message(*, source, error) -> str:
     """Format a parse error on some source for nicer display."""
     error_line_number, error_line, error_offset = _find_line_containing(
         source,
