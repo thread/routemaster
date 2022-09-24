@@ -22,7 +22,7 @@ references:
   restore-build-dependency-cache: &restore-build-dependency-cache
     restore_cache:
       name: Restore build dependency cache
-      key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+      key: deps-venv-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
 
   install-build-dependencies: &install-build-dependencies
     run:
@@ -35,7 +35,7 @@ references:
   save-build-dependency-cache: &save-build-dependency-cache
     save_cache:
       name: Save build dependency cache
-      key: deps-venv-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
+      key: deps-venv-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".circleci/requirements.txt" }}
       paths:
         - "venv"
 
@@ -70,7 +70,7 @@ references:
             done
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
+          key: deps-tox-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
       - run:
           name: Test
           command: |
@@ -78,7 +78,7 @@ references:
             tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
+          key: deps-tox-1-{{ .Branch }}-{{ .Environment.CIRCLE_STAGE }}-{{ checksum ".checksum" }}
           paths:
             - ".tox"
 
@@ -99,7 +99,7 @@ jobs:
   test-36:
     <<: *test-template
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.6
         environment:
           <<: *steps-environment
           TOXENV: py36
@@ -110,7 +110,7 @@ jobs:
   test-37:
     <<: *test-template
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
         environment:
           <<: *steps-environment
           TOXENV: py37
@@ -121,7 +121,7 @@ jobs:
   test-38:
     <<: *test-template
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
         environment:
           <<: *steps-environment
           TOXENV: py38
@@ -132,7 +132,7 @@ jobs:
   test-39:
     <<: *test-template
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
         environment:
           <<: *steps-environment
           TOXENV: py39
@@ -143,7 +143,7 @@ jobs:
   test-310:
     <<: *test-template
     docker:
-      - image: circleci/python:3.10
+      - image: cimg/python:3.10
         environment:
           <<: *steps-environment
           TOXENV: py310
@@ -154,7 +154,7 @@ jobs:
   lint:
     working_directory: ~/routemaster
     docker:
-      - image: circleci/python:3.6.3
+      - image: cimg/python:3.6
     steps:
       - checkout
 
@@ -164,7 +164,7 @@ jobs:
 
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
+          key: deps-tox-1-{{ checksum "scripts/linting/requirements.txt" }}
       - run:
           name: Lint
           command: |
@@ -172,7 +172,7 @@ jobs:
             TOXENV=lint tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ checksum "scripts/linting/requirements.txt" }}
+          key: deps-tox-1-{{ checksum "scripts/linting/requirements.txt" }}
           paths:
             - ".tox"
       - store_test_results:
@@ -181,7 +181,7 @@ jobs:
   typecheck:
     working_directory: ~/routemaster
     docker:
-      - image: circleci/python:3.6.3
+      - image: cimg/python:3.6
     steps:
       - checkout
 
@@ -191,7 +191,7 @@ jobs:
 
       - restore_cache:
           name: Restore .tox cache
-          key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
+          key: deps-tox-1-{{ checksum "scripts/typechecking/requirements.txt" }}
       - run:
           name: Typecheck
           command: |
@@ -199,7 +199,7 @@ jobs:
             TOXENV=mypy tox
       - save_cache:
           name: Save .tox cache
-          key: deps-tox-{{ checksum "scripts/typechecking/requirements.txt" }}
+          key: deps-tox-1-{{ checksum "scripts/typechecking/requirements.txt" }}
           paths:
             - ".tox"
       - store_test_results:
@@ -208,7 +208,7 @@ jobs:
   release:
     working_directory: ~/routemaster
     docker:
-      - image: circleci/python:3.6.3
+      - image: cimg/python:3.6
     steps:
       - checkout
 
