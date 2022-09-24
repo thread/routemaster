@@ -25,8 +25,8 @@ def get_known_timezones() -> FrozenSet[str]:
     # redundant memory usage.
 
     # ignore types because `dateutil.zoneinfo` isn't present in the typeshed
-    info = dateutil.zoneinfo.ZoneInfoFile(  # type: ignore
-        dateutil.zoneinfo.getzoneinfofile_stream(),  # type: ignore
+    info = dateutil.zoneinfo.ZoneInfoFile(
+        dateutil.zoneinfo.getzoneinfofile_stream(),
     )
 
     return frozenset(info.zones.keys())

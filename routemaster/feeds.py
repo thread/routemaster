@@ -13,7 +13,7 @@ from routemaster.config import StateMachine
 def feeds_for_state_machine(state_machine: StateMachine) -> Dict[str, 'Feed']:
     """Get a mapping of feed prefixes to unfetched feeds."""
     return {
-        x.name: Feed(x.url, state_machine.name)  # type: ignore
+        x.name: Feed(x.url, state_machine.name)
         for x in state_machine.feeds
     }
 
