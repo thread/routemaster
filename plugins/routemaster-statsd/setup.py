@@ -40,5 +40,6 @@ setup(
     install_requires=(
         'routemaster',
         'statsd_python',
+        'werkzeug>=2,<2.1',
     ),
 )

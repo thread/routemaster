@@ -54,6 +54,7 @@ setup(
         'python-dateutil',
         'alembic >=0.9.6',
         'gunicorn >=19.7',
+        'werkzeug>=2,<2.1',
         'schedule',
         'freezegun',
         'requests',
