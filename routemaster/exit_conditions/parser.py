@@ -26,7 +26,7 @@ class _TokenSource(object):
     def __init__(self, iterable: Iterator[Token]) -> None:
         self.iterable = iterable
         self.previous_location = None
-        self.head: Token = object()  # type: ignore # [assignment]
+        self.head: Token = object()  # type: ignore[assignment]
         self._advance()
 
     def _advance(self) -> None:
@@ -36,7 +36,7 @@ class _TokenSource(object):
             self.previous_location = getattr(self.head, 'location', None)
             self.head = next(self.iterable)
         except StopIteration:
-            self.head = None  # type: ignore # [assignment]
+            self.head = None  # type: ignore[assignment]
 
     def try_eat_next(self, *kinds: TokenKind) -> bool:
         if not self.match_next(*kinds):
