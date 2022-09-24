@@ -2,7 +2,7 @@
 Initial state machine
 
 Revision ID: 091a6e84d9ac
-Revises: 
+Revises:
 """
 import sqlalchemy as sa
 

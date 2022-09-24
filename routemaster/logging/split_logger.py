@@ -2,7 +2,7 @@
 
 import functools
 import contextlib
-from typing import List
+from typing import List, Iterator
 
 from routemaster.logging.base import BaseLogger
 
@@ -39,12 +39,12 @@ class SplitLogger(BaseLogger):
         ):
             setattr(self, fn, functools.partial(self._log_all_ctx, fn))
 
-    def _log_all(self, name, *args, **kwargs):
+    def _log_all(self, name: str, *args, **kwargs) -> None:
         for logger in self.loggers:
             getattr(logger, name)(*args, **kwargs)
 
     @contextlib.contextmanager
-    def _log_all_ctx(self, name, *args, **kwargs):
+    def _log_all_ctx(self, name: str, *args, **kwargs) -> Iterator[None]:
         with contextlib.ExitStack() as stack:
             for logger in self.loggers:
                 logger_ctx = getattr(logger, name)

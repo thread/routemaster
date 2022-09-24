@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from routemaster.exit_conditions import ExitConditionProgram
 
 if TYPE_CHECKING:
-    from routemaster.context import Context  # noqa
+    from routemaster.context import Context
 
 
 class SystemTimeTrigger(NamedTuple):

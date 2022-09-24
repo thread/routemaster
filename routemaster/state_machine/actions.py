@@ -95,7 +95,10 @@ def process_action(
     return True
 
 
-def _calculate_idempotency_token(label: LabelRef, latest_history) -> str:
+def _calculate_idempotency_token(
+    label: LabelRef,
+    latest_history: History,
+) -> str:
     """
     We want to make sure that an action is only performed once.
 

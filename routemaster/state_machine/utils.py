@@ -3,8 +3,19 @@
 import datetime
 import functools
 import contextlib
-from typing import Any, Dict, List, Tuple, Optional, Sequence, Collection
+from typing import (
+    Any,
+    Dict,
+    List,
+    Tuple,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    Collection,
+)
 
+import requests
 import dateutil.tz
 from sqlalchemy import func
 
@@ -19,6 +30,8 @@ from routemaster.state_machine.exceptions import (
     UnknownLabel,
     UnknownStateMachine,
 )
+
+ResponseLogger = Callable[[requests.Response], None]
 
 
 def get_state_machine(app: App, label: LabelRef) -> StateMachine:
@@ -74,7 +87,7 @@ def get_current_history(app: App, label: LabelRef) -> History:
         # sqlalchemy actually allows the attribute to be used for ordering like
         # this; ignore the type check here specifically rather than complicate
         # our type definitions.
-        History.id.desc(),  # type: ignore
+        History.id.desc(),  # type: ignore[attr-defined]
     ).first()
 
     if history_entry is None:
@@ -154,13 +167,14 @@ def labels_in_state_with_metadata(
 
     metadata_lookup = Label.metadata
     for part in path:
-        metadata_lookup = metadata_lookup[part]  # type: ignore
+        metadata_lookup = metadata_lookup[part]  # type: ignore[call-overload, index]  # noqa: E501
 
     return _labels_in_state(
         app,
         state_machine,
         state,
-        metadata_lookup.astext.in_(values),  # type: ignore
+        # TODO: use the sqlalchemy mypy plugin rather than our stubs file
+        metadata_lookup.astext.in_(values),  # type: ignore[union-attr]
     )
 
 
@@ -200,7 +214,7 @@ def _labels_in_state(
             # sqlalchemy actually allows the attribute to be used for ordering
             # like this; ignore the type check here specifically rather than
             # complicate our type definitions.
-            order_by=History.id.desc(),  # type: ignore
+            order_by=History.id.desc(),  # type: ignore[attr-defined]
             partition_by=History.label_name,
         ).label('rank'),
     ).filter_by(
@@ -237,7 +251,7 @@ def context_for_label(
         accessed_variables.append(state.next_states.path)
 
     @contextlib.contextmanager
-    def feed_logging_context(feed_url):
+    def feed_logging_context(feed_url: str) -> Iterator[ResponseLogger]:
         with logger.process_feed(state_machine, state, feed_url):
             yield functools.partial(
                 logger.feed_response,

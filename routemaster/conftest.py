@@ -8,7 +8,7 @@ import datetime
 import functools
 import contextlib
 import subprocess
-from typing import Any, Dict
+from typing import Any, Dict, Callable, Iterator, ContextManager
 from unittest import mock
 
 import pytest
@@ -19,6 +19,8 @@ import pkg_resources
 from sqlalchemy import create_engine
 from werkzeug.test import Client
 from sqlalchemy.orm import sessionmaker
+from _pytest.fixtures import SubRequest
+from sqlalchemy.orm.session import Session
 
 from routemaster import state_machine
 from routemaster.db import Label, History, metadata
@@ -45,6 +47,7 @@ from routemaster.context import Context
 from routemaster.logging import BaseLogger, SplitLogger, register_loggers
 from routemaster.webhooks import (
     WebhookResult,
+    WebhookRunner,
     webhook_runner_for_state_machine,
 )
 from routemaster.middleware import wrap_application
@@ -235,7 +238,8 @@ class TestApp(App):
     2. We can set a flag on access to `.db` so that we needn't bother with
        resetting the database if nothing has actually been changed.
     """
-    def __init__(self, config):
+
+    def __init__(self, config: Config) -> None:
         self.config = config
         self.session_used = False
         self.logger = SplitLogger(config, loggers=register_loggers(config))
@@ -249,13 +253,13 @@ class TestApp(App):
         }
 
     @property
-    def session(self):
+    def session(self) -> Session:
         """Start if necessary and return a shared session."""
         self.session_used = True
         return super().session
 
 
-def get_test_app(**kwargs):
+def get_test_app(**kwargs) -> TestApp:
     """Instantiate an app with testing parameters."""
     return TestApp(Config(
         state_machines=kwargs.get('state_machines', TEST_STATE_MACHINES),
@@ -270,28 +274,28 @@ def get_test_app(**kwargs):
 
 
 @pytest.fixture()
-def client(custom_app=None):
+def client(custom_app: None = None) -> Client:
     """Create a werkzeug test client."""
     _app = get_test_app() if custom_app is None else custom_app
-    server.config.app = _app
+    server.config.app = _app  # type: ignore[attr-defined]
     _app.logger.init_flask(server)
     return Client(wrap_application(_app, server), werkzeug.Response)
 
 
 @pytest.fixture()
-def app(**kwargs):
+def app(**kwargs: Any) -> TestApp:
     """Create an `App` config object for testing."""
     return get_test_app(**kwargs)
 
 
 @pytest.fixture()
-def custom_app():
+def custom_app() -> Callable[..., TestApp]:
     """Return the test app generator so that we can pass in custom config."""
     return get_test_app
 
 
 @pytest.fixture()
-def app_env():
+def app_env() -> Dict[str, str]:
     """
     Create a dict of environment variables.
 
@@ -307,7 +311,7 @@ def app_env():
 
 
 @pytest.fixture(autouse=True, scope='session')
-def database_creation(request):
+def database_creation(request: SubRequest) -> Iterator[None]:
     """Wrap test session in creating and destroying all required tables."""
     metadata.drop_all(bind=TEST_ENGINE)
     metadata.create_all(bind=TEST_ENGINE)
@@ -315,7 +319,7 @@ def database_creation(request):
 
 
 @pytest.fixture(autouse=True)
-def database_clear(app):
+def database_clear(app: TestApp) -> Iterator[None]:
     """Truncate all tables after each test."""
     yield
     if app.session_used:
@@ -328,7 +332,10 @@ def database_clear(app):
 
 
 @pytest.fixture()
-def create_label(app, mock_test_feed):
+def create_label(
+    app: TestApp,
+    mock_test_feed: Callable[[], ContextManager[None]],
+) -> Callable[[str, str, Dict[str, Any]], LabelRef]:
     """Create a label in the database."""
 
     def _create(
@@ -348,7 +355,7 @@ def create_label(app, mock_test_feed):
 
 
 @pytest.fixture()
-def delete_label(app):
+def delete_label(app: TestApp) -> Callable[[str, str], None]:
     """
     Mark a label in the database as deleted.
     """
@@ -364,7 +371,10 @@ def delete_label(app):
 
 
 @pytest.fixture()
-def create_deleted_label(create_label, delete_label):
+def create_deleted_label(
+    create_label: Callable[[str, str, Dict[str, Any]], LabelRef],
+    delete_label: Callable[[str, str], None],
+) -> Callable[[str, str], LabelRef]:
     """
     Create a label in the database and then delete it.
     """
@@ -378,7 +388,10 @@ def create_deleted_label(create_label, delete_label):
 
 
 @pytest.fixture()
-def mock_webhook():
+def mock_webhook() -> Callable[
+    [WebhookResult],
+    ContextManager[Callable[[StateMachine], WebhookRunner]],
+]:
     """Mock the test config's webhook call."""
     @contextlib.contextmanager
     def _mock(result=WebhookResult.SUCCESS):
@@ -392,7 +405,7 @@ def mock_webhook():
 
 
 @pytest.fixture()
-def mock_test_feed():
+def mock_test_feed() -> Callable[[Dict[str, Any]], ContextManager[None]]:
     """Mock out the test feed."""
     @contextlib.contextmanager
     def _mock(data={'should_do_alternate_action': False}):
@@ -414,7 +427,7 @@ def mock_test_feed():
 
 
 @pytest.fixture()
-def assert_history(app):
+def assert_history(app: TestApp) -> Callable:
     """Assert that the database history matches what is expected."""
     def _assert(entries):
         with app.new_session():
@@ -432,7 +445,7 @@ def assert_history(app):
 
 
 @pytest.fixture()
-def set_metadata(app):
+def set_metadata(app: TestApp) -> Callable:
     """Directly set the metadata for a label in the database."""
     def _inner(label, update):
         with app.new_session():
@@ -449,7 +462,7 @@ def set_metadata(app):
 
 
 @pytest.fixture()
-def make_context(app):
+def make_context(app: TestApp) -> Callable:
     """Factory for Contexts that provides sane defaults for testing."""
     def _inner(**kwargs):
         logger = BaseLogger(app.config)
@@ -491,9 +504,9 @@ def version():
 
 
 @pytest.fixture()
-def current_state(app):
+def current_state(app: TestApp) -> Callable[[LabelRef], str]:
     """Get the current state of a label."""
-    def _inner(label):
+    def _inner(label: LabelRef) -> str:
         with app.new_session():
             return app.session.query(
                 History.new_state,
@@ -501,13 +514,14 @@ def current_state(app):
                 label_name=label.name,
                 label_state_machine=label.state_machine,
             ).order_by(
-                History.id.desc(),
+                # TODO: use the sqlalchemy mypy plugin rather than our stubs
+                History.id.desc(),  # type: ignore[attr-defined]
             ).limit(1).scalar()
     return _inner
 
 
 @pytest.fixture()
-def unused_tcp_port():
+def unused_tcp_port() -> int:
     """Returns an unused TCP port, inspired by pytest-asyncio."""
     with contextlib.closing(socket.socket()) as sock:
         sock.bind(('127.0.0.1', 0))
@@ -515,7 +529,7 @@ def unused_tcp_port():
 
 
 @pytest.fixture()
-def routemaster_serve_subprocess(unused_tcp_port):
+def routemaster_serve_subprocess(unused_tcp_port: int) -> Callable:
     """
     Fixture to spawn a routemaster server as a subprocess.
 

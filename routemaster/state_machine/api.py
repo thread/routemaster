@@ -128,7 +128,8 @@ def update_metadata_for_label(
             update,
         )
 
-    new_metadata = dict_merge(existing_metadata, update)
+    # FIXME: handle cases where metadata aren't dicts.
+    new_metadata = dict_merge(existing_metadata, update)  # type: ignore[arg-type]  # noqa: E501
 
     row.metadata = new_metadata
     row.metadata_triggers_processed = not needs_gate_evaluation
@@ -159,7 +160,7 @@ def _process_transitions_for_metadata_update(
     label: LabelRef,
     state_machine: StateMachine,
     state_pending_update: State,
-):
+) -> None:
     with app.session.begin_nested():
         lock_label(app, label)
         current_state = get_current_state(app, label, state_machine)
@@ -224,6 +225,7 @@ def delete_label(app: App, label: LabelRef) -> None:
 
 class LabelStateProcessor(Protocol):
     """Type signature for the label state processor callable."""
+
     def __call__(
         self,
         *,
@@ -235,6 +237,7 @@ class LabelStateProcessor(Protocol):
         """Type signature for the label state processor callable."""
         ...
 
+    @property
     def __name__(self) -> str:
         """Name of the callable."""
         ...
@@ -246,7 +249,7 @@ def process_cron(
     app: App,
     state_machine: StateMachine,
     state: State,
-):
+) -> None:
     """
     Cron event entrypoint.
     """

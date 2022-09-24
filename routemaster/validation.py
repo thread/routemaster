@@ -1,5 +1,6 @@
 """Validation of state machines."""
 import collections
+from typing import Union
 
 import networkx
 from sqlalchemy import func
@@ -7,6 +8,7 @@ from sqlalchemy import func
 from routemaster.db import History
 from routemaster.app import App
 from routemaster.config import Config, StateMachine
+from routemaster.conftest import TestApp
 
 
 class ValidationError(Exception):
@@ -14,13 +16,13 @@ class ValidationError(Exception):
     pass
 
 
-def validate_config(app: App, config: Config):
+def validate_config(app: App, config: Config) -> None:
     """Validate that a given config satisfies invariants."""
     for state_machine in config.state_machines.values():
         _validate_state_machine(app, state_machine)
 
 
-def _validate_state_machine(app: App, state_machine: StateMachine):
+def _validate_state_machine(app: App, state_machine: StateMachine) -> None:
     """Validate that a given state machine is internally consistent."""
     with app.new_session():
         _validate_route_start_to_end(state_machine)
@@ -38,13 +40,13 @@ def _build_graph(state_machine: StateMachine) -> networkx.Graph:
     return graph
 
 
-def _validate_route_start_to_end(state_machine):
+def _validate_route_start_to_end(state_machine: StateMachine) -> None:
     graph = _build_graph(state_machine)
     if not networkx.is_connected(graph):
         raise ValidationError("Graph is not fully connected")
 
 
-def _validate_unique_state_names(state_machine):
+def _validate_unique_state_names(state_machine: StateMachine) -> None:
     state_name_counts = collections.Counter([
         x.name for x in state_machine.states
     ])
@@ -58,7 +60,7 @@ def _validate_unique_state_names(state_machine):
         )
 
 
-def _validate_all_states_exist(state_machine):
+def _validate_all_states_exist(state_machine: StateMachine) -> None:
     state_names = set(x.name for x in state_machine.states)
     for state in state_machine.states:
         for destination_name in state.next_states.all_destinations():
@@ -66,14 +68,18 @@ def _validate_all_states_exist(state_machine):
                 raise ValidationError(f"{destination_name} does not exist")
 
 
-def _validate_no_labels_in_nonexistent_states(state_machine, app):
+def _validate_no_labels_in_nonexistent_states(
+    state_machine: StateMachine,
+    app: Union[App, TestApp],
+) -> None:
     states = [x.name for x in state_machine.states]
 
     states_by_rank = app.session.query(
         History.label_name,
         History.new_state,
         func.row_number().over(
-            order_by=History.id.desc(),
+            # TODO: use the sqlalchemy mypy plugin rather than our stubs file
+            order_by=History.id.desc(),  # type: ignore[attr-defined]
             partition_by=History.label_name,
         ).label('rank'),
     ).filter_by(

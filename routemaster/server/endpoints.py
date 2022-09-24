@@ -1,10 +1,14 @@
 """Core API endpoints for routemaster service."""
 
+from typing import Tuple, Union
+
 import sqlalchemy
 import pkg_resources
 from flask import Flask, abort, jsonify, request
+from flask.wrappers import Response
 
 from routemaster import state_machine
+from routemaster.app import App
 from routemaster.state_machine import (
     LabelRef,
     UnknownLabel,
@@ -17,7 +21,7 @@ server.config['PROPAGATE_EXCEPTIONS'] = True
 
 
 @server.route('/', methods=['GET'])
-def status():
+def status() -> Union[Tuple[Response, int], Response]:
     """
     Status check endpoint.
 
@@ -27,13 +31,16 @@ def status():
     - 503 Service Unavailable: if there is any detected reason why the service
                                might not be able to serve requests.
     """
+    by_key = pkg_resources.working_set.by_key  # type: ignore[attr-defined]
     try:
-        version = pkg_resources.working_set.by_key['routemaster'].version
+        version = by_key['routemaster'].version
     except KeyError:  # pragma: no cover
         version = 'development'
 
+    app: App = server.config.app  # type: ignore[attr-defined]  # see cli.py
+
     try:
-        server.config.app.session.query(sqlalchemy.literal(1)).one()
+        app.session.query(sqlalchemy.literal(1)).one()
         return jsonify({
             'status': 'ok',
             'state-machines': '/state-machines',
@@ -48,20 +55,22 @@ def status():
 
 
 @server.route('/state-machines', methods=['GET'])
-def get_state_machines():
+def get_state_machines() -> Response:
     """
     List the state machines known to this server.
 
     Successful return codes return a list of dictionaries containing at least
     the name of each state machine.
     """
+    app: App = server.config.app  # type: ignore[attr-defined]  # see cli.py
+
     return jsonify({
         'state-machines': [
             {
                 'name': x.name,
                 'labels': f'/state-machines/{x.name}/labels',
             }
-            for x in server.config.app.config.state_machines.values()
+            for x in app.config.state_machines.values()
         ],
     })
 
@@ -70,7 +79,7 @@ def get_state_machines():
     '/state-machines/<state_machine_name>/labels',
     methods=['GET'],
 )
-def get_labels(state_machine_name):
+def get_labels(state_machine_name: str) -> Response:
     """
     List the labels in a state machine.
 
@@ -81,7 +90,7 @@ def get_labels(state_machine_name):
     Successful return codes return a list of dictionaries containing at least
     the name of each label.
     """
-    app = server.config.app
+    app: App = server.config.app  # type: ignore[attr-defined]  # see cli.py
 
     try:
         state_machine_instance = app.config.state_machines[state_machine_name]
@@ -100,7 +109,7 @@ def get_labels(state_machine_name):
     '/state-machines/<state_machine_name>/labels/<label_name>',
     methods=['GET'],
 )
-def get_label(state_machine_name, label_name):
+def get_label(state_machine_name: str, label_name: str) -> Response:
     """
     Get a label within a given state machine.
 
@@ -111,7 +120,7 @@ def get_label(state_machine_name, label_name):
 
     Successful return codes return the full metadata for the label.
     """
-    app = server.config.app
+    app: App = server.config.app  # type: ignore[attr-defined]  # see cli.py
     label = LabelRef(label_name, state_machine_name)
 
     try:
@@ -126,6 +135,7 @@ def get_label(state_machine_name, label_name):
         abort(404, f"State machine '{label.state_machine}' does not exist.")
 
     state = state_machine.get_label_state(app, label)
+    assert state is not None  # label deletion handled above
     return jsonify(metadata=metadata, state=state.name)
 
 
@@ -133,7 +143,10 @@ def get_label(state_machine_name, label_name):
     '/state-machines/<state_machine_name>/labels/<label_name>',
     methods=['POST'],
 )
-def create_label(state_machine_name, label_name):
+def create_label(
+    state_machine_name: str,
+    label_name: str,
+) -> Tuple[Response, int]:
     """
     Create a label with a given metadata, and start it in the state machine.
 
@@ -145,14 +158,16 @@ def create_label(state_machine_name, label_name):
 
     Successful return codes return the full created metadata for the label.
     """
-    app = server.config.app
+    app: App = server.config.app  # type: ignore[attr-defined]  # see cli.py
     label = LabelRef(label_name, state_machine_name)
     data = request.get_json()
 
     try:
-        initial_metadata = data['metadata']
+        initial_metadata = data['metadata']  # type: ignore[index]
     except KeyError:
         abort(400, "No metadata given")
+    except TypeError:
+        abort(400, "Metadata must be a mapping")
 
     try:
         initial_state_name = \
@@ -168,10 +183,10 @@ def create_label(state_machine_name, label_name):
 
 
 @server.route(
-    '/state-machines/<state_machine_name>/labels/<label_name>', # noqa
+    '/state-machines/<state_machine_name>/labels/<label_name>',  # noqa
     methods=['PATCH'],
 )
-def update_label(state_machine_name, label_name):
+def update_label(state_machine_name: str, label_name: str) -> Response:
     """
     Update a label in a state machine.
 
@@ -186,12 +201,13 @@ def update_label(state_machine_name, label_name):
 
     Successful return codes return the full new metadata for a label.
     """
-    app = server.config.app
+    app: App = server.config.app  # type: ignore[attr-defined]  # see cli.py
     label = LabelRef(label_name, state_machine_name)
+    data = request.get_json()
 
     try:
-        patch_metadata = request.get_json()['metadata']
-    except KeyError:
+        patch_metadata = data['metadata']  # type: ignore[index]
+    except (TypeError, KeyError):
         abort(400, "No new metadata")
 
     try:
@@ -200,8 +216,6 @@ def update_label(state_machine_name, label_name):
             label,
             patch_metadata,
         )
-        state = state_machine.get_label_state(app, label)
-        return jsonify(metadata=new_metadata, state=state.name)
     except UnknownStateMachine:
         msg = f"State machine '{state_machine_name}' does not exist"
         abort(404, msg)
@@ -212,12 +226,16 @@ def update_label(state_machine_name, label_name):
             f"'{state_machine_name}'.",
         )
 
+    state = state_machine.get_label_state(app, label)
+    assert state is not None  # label deletion handled above
+    return jsonify(metadata=new_metadata, state=state.name)
+
 
 @server.route(
     '/state-machines/<state_machine_name>/labels/<label_name>',
     methods=['DELETE'],
 )
-def delete_label(state_machine_name, label_name):
+def delete_label(state_machine_name: str, label_name: str) -> Tuple[str, int]:
     """
     Delete a label in a state machine.
 
@@ -228,7 +246,7 @@ def delete_label(state_machine_name, label_name):
     - 204 No content: if the label is successfully deleted (or did not exist).
     - 404 Not Found: if the state machine does not exist.
     """
-    app = server.config.app
+    app: App = server.config.app  # type: ignore[attr-defined]  # see cli.py
     label = LabelRef(label_name, state_machine_name)
 
     try:

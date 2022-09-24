@@ -12,7 +12,7 @@ from routemaster.exit_conditions.error_display import (
 )
 
 if TYPE_CHECKING:
-    from routemaster.context import Context  # noqa
+    from routemaster.context import Context
 
 
 class ExitConditionProgram(object):

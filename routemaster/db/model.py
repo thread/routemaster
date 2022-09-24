@@ -74,7 +74,7 @@ class Label(Base):
         ],
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return a useful debug representation."""
         return (
             f"Label(state_machine={self.state_machine!r}, name={self.name!r})"
@@ -117,7 +117,7 @@ class History(Base):
 
     label = relationship(Label, backref='history')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return a useful debug representation."""
         return (
             f"History(id={self.id!r}, "

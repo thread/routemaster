@@ -1,7 +1,7 @@
 """Core App singleton that holds state for the application."""
 import threading
 import contextlib
-from typing import Dict, Optional
+from typing import Dict, Iterator, Optional
 
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.engine import Engine
@@ -32,7 +32,7 @@ class App(threading.local):
         self.config = config
         self.initialise()
 
-    def initialise(self):
+    def initialise(self) -> None:
         """
         Initialise this instance of the app.
 
@@ -66,7 +66,7 @@ class App(threading.local):
 
         return self._current_session
 
-    def set_rollback(self):
+    def set_rollback(self) -> None:
         """Mark the current session as needing rollback."""
         if self._current_session is None:
             raise RuntimeError(
@@ -77,7 +77,7 @@ class App(threading.local):
         self._needs_rollback = True
 
     @contextlib.contextmanager
-    def new_session(self):
+    def new_session(self) -> Iterator[None]:
         """Run a single session in this scope."""
         if self._current_session is not None:
             raise RuntimeError("There is already a session running.")
