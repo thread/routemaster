@@ -128,7 +128,8 @@ def update_metadata_for_label(
             update,
         )
 
-    new_metadata = dict_merge(existing_metadata, update)
+    # FIXME: handle cases where metadata aren't dicts.
+    new_metadata = dict_merge(existing_metadata, update)  # type: ignore[arg-type]  # noqa: E501
 
     row.metadata = new_metadata
     row.metadata_triggers_processed = not needs_gate_evaluation
