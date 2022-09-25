@@ -1,7 +1,7 @@
 """Database model definition."""
 import datetime
 import functools
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import dateutil.tz
 from sqlalchemy import DDL, Table
@@ -16,7 +16,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     func,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -53,7 +53,8 @@ sync_label_updated_column = DDL(
 class Label(Base):
     """A single label including context."""
 
-    # Note: type annotations for this class are provided by a stubs file
+    # Note: type annotations provided below must be manually kept in sync with
+    # the fields defined in the Table.
 
     __table__ = Table(
         'labels',
@@ -74,6 +75,15 @@ class Label(Base):
         ],
     )
 
+    name: Mapped[str]
+    state_machine: Mapped[str]
+    metadata: Mapped[Dict[str, Any]]
+    metadata_triggers_processed: Mapped[bool]
+    deleted: Mapped[bool]
+    updated: Mapped[datetime.datetime]
+
+    history: List['History'] = relationship('History')
+
     def __repr__(self) -> str:
         """Return a useful debug representation."""
         return (
@@ -84,7 +94,8 @@ class Label(Base):
 class History(Base):
     """A single historical state transition of a label."""
 
-    # Note: type annotations for this class are provided by a stubs file
+    # Note: type annotations provided below must be manually kept in sync with
+    # the fields defined in the Table.
 
     __table__ = Table(
         'history',
@@ -115,7 +126,15 @@ class History(Base):
         NullableColumn('new_state', String),
     )
 
-    label = relationship(Label, backref='history')
+    id: Mapped[int]
+    label_name: Mapped[str]
+    label_state_machine: Mapped[str]
+    created: Mapped[datetime.datetime]
+    forced: Mapped[bool]
+    old_state: Mapped[Optional[str]]
+    new_state: Mapped[Optional[str]]
+
+    label: Label = relationship(Label)
 
     def __repr__(self) -> str:
         """Return a useful debug representation."""

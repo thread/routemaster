@@ -50,7 +50,7 @@ setup(
         'jsonschema >=3, <5',
         'flask',
         'psycopg2-binary',
-        'sqlalchemy',
+        'sqlalchemy[mypy]',
         'python-dateutil',
         'alembic >=0.9.6',
         'gunicorn >=19.7',
