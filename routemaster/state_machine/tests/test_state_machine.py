@@ -276,7 +276,8 @@ def test_maintains_updated_field_on_label(app, mock_test_feed):
 
 def test_continues_after_time_since_entering_gate(app, current_state):
     label = LabelRef('foo', 'test_machine_timing')
-    gate = app.config.state_machines['test_machine_timing'].states[0]
+    test_machine = app.config.state_machines['test_machine_timing']
+    gate = test_machine.states[0]
 
     with freeze_time('2018-01-24 12:00:00'), app.new_session():
         state_machine.create_label(
@@ -290,7 +291,7 @@ def test_continues_after_time_since_entering_gate(app, current_state):
         process_gate(
             app=app,
             state=gate,
-            state_machine=state_machine,
+            state_machine=test_machine,
             label=label,
         )
 
@@ -301,7 +302,7 @@ def test_continues_after_time_since_entering_gate(app, current_state):
         process_gate(
             app=app,
             state=gate,
-            state_machine=state_machine,
+            state_machine=test_machine,
             label=label,
         )
 
