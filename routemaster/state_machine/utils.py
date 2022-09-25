@@ -27,6 +27,7 @@ from routemaster.context import Context
 from routemaster.logging import BaseLogger
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (
+    DeletedLabel,
     UnknownLabel,
     UnknownStateMachine,
 )
@@ -52,16 +53,33 @@ def choose_next_state(
     return state_machine.get_state(next_state_name)
 
 
-def get_label_metadata(
+def _get_label_metadata(
     app: App,
     label: LabelRef,
     state_machine: StateMachine,
-) -> Tuple[Dict[str, Any], bool]:
+) -> Optional[Tuple[Dict[str, Any], bool]]:
     """Get the metadata and whether the label has been deleted."""
     return app.session.query(Label.metadata, Label.deleted).filter_by(
         name=label.name,
         state_machine=state_machine.name,
     ).first()
+
+
+def get_label_metadata(app: App, label: LabelRef) -> Metadata:
+    """Returns the metadata associated with a label."""
+    state_machine = get_state_machine(app, label)
+
+    row = _get_label_metadata(app, label, state_machine)
+
+    if row is None:
+        raise UnknownLabel(label)
+
+    metadata, deleted = row
+
+    if deleted:
+        raise DeletedLabel(label)
+
+    return metadata
 
 
 def get_current_state(

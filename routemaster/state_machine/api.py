@@ -9,15 +9,11 @@ from routemaster.utils import dict_merge, suppress_exceptions
 from routemaster.config import Gate, State, StateMachine
 from routemaster.state_machine.gates import process_gate
 from routemaster.state_machine.types import LabelRef, Metadata
-from routemaster.state_machine.utils import (
+from routemaster.state_machine.utils import (  # noqa: F401  # re-export
     lock_label,
     get_current_state,
     get_state_machine,
-)
-from routemaster.state_machine.utils import (
-    get_label_metadata as get_label_metadata_internal,
-)
-from routemaster.state_machine.utils import (
+    get_label_metadata,
     needs_gate_evaluation_for_metadata_change,
 )
 from routemaster.state_machine.exceptions import (
@@ -51,23 +47,6 @@ def get_label_state(app: App, label: LabelRef) -> Optional[State]:
     """Finds the current state of a label."""
     state_machine = get_state_machine(app, label)
     return get_current_state(app, label, state_machine)
-
-
-def get_label_metadata(app: App, label: LabelRef) -> Metadata:
-    """Returns the metadata associated with a label."""
-    state_machine = get_state_machine(app, label)
-
-    row = get_label_metadata_internal(app, label, state_machine)
-
-    if row is None:
-        raise UnknownLabel(label)
-
-    metadata, deleted = row
-
-    if deleted:
-        raise DeletedLabel(label)
-
-    return metadata
 
 
 def create_label(app: App, label: LabelRef, metadata: Metadata) -> Metadata:

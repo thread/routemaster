@@ -16,7 +16,6 @@ from routemaster.state_machine.utils import (
     get_label_metadata,
     get_current_history,
 )
-from routemaster.state_machine.exceptions import DeletedLabel
 
 
 def process_action(
@@ -42,9 +41,7 @@ def process_action(
 
     action = state
 
-    metadata, deleted = get_label_metadata(app, label, state_machine)
-    if deleted:
-        raise DeletedLabel(label)
+    metadata = get_label_metadata(app, label)
 
     latest_history = get_current_history(app, label)
 
