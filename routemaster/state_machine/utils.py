@@ -27,6 +27,7 @@ from routemaster.context import Context
 from routemaster.logging import BaseLogger
 from routemaster.state_machine.types import LabelRef, Metadata
 from routemaster.state_machine.exceptions import (
+    DeletedLabel,
     UnknownLabel,
     UnknownStateMachine,
 )
@@ -52,16 +53,33 @@ def choose_next_state(
     return state_machine.get_state(next_state_name)
 
 
-def get_label_metadata(
+def _get_label_metadata(
     app: App,
     label: LabelRef,
     state_machine: StateMachine,
-) -> Tuple[Dict[str, Any], bool]:
+) -> Optional[Tuple[Dict[str, Any], bool]]:
     """Get the metadata and whether the label has been deleted."""
     return app.session.query(Label.metadata, Label.deleted).filter_by(
         name=label.name,
         state_machine=state_machine.name,
     ).first()
+
+
+def get_label_metadata(app: App, label: LabelRef) -> Metadata:
+    """Returns the metadata associated with a label."""
+    state_machine = get_state_machine(app, label)
+
+    row = _get_label_metadata(app, label, state_machine)
+
+    if row is None:
+        raise UnknownLabel(label)
+
+    metadata, deleted = row
+
+    if deleted:
+        raise DeletedLabel(label)
+
+    return metadata
 
 
 def get_current_state(
@@ -83,11 +101,7 @@ def get_current_history(app: App, label: LabelRef) -> History:
         label_name=label.name,
         label_state_machine=label.state_machine,
     ).order_by(
-        # Our model type stubs define the `id` attribute as `int`, yet
-        # sqlalchemy actually allows the attribute to be used for ordering like
-        # this; ignore the type check here specifically rather than complicate
-        # our type definitions.
-        History.id.desc(),  # type: ignore[attr-defined]
+        History.id.desc(),
     ).first()
 
     if history_entry is None:
@@ -167,14 +181,13 @@ def labels_in_state_with_metadata(
 
     metadata_lookup = Label.metadata
     for part in path:
-        metadata_lookup = metadata_lookup[part]  # type: ignore[call-overload, index]  # noqa: E501
+        metadata_lookup = metadata_lookup[part]  # type: ignore[assignment]  # noqa: E501
 
     return _labels_in_state(
         app,
         state_machine,
         state,
-        # TODO: use the sqlalchemy mypy plugin rather than our stubs file
-        metadata_lookup.astext.in_(values),  # type: ignore[union-attr]
+        metadata_lookup.astext.in_(values),
     )
 
 
@@ -210,11 +223,7 @@ def _labels_in_state(
         History.label_name,
         History.new_state,
         func.row_number().over(
-            # Our model type stubs define the `id` attribute as `int`, yet
-            # sqlalchemy actually allows the attribute to be used for ordering
-            # like this; ignore the type check here specifically rather than
-            # complicate our type definitions.
-            order_by=History.id.desc(),  # type: ignore[attr-defined]
+            order_by=History.id.desc(),
             partition_by=History.label_name,
         ).label('rank'),
     ).filter_by(

@@ -326,7 +326,7 @@ def database_clear(app: TestApp) -> Iterator[None]:
         with app.new_session():
             for table in metadata.tables:
                 app.session.execute(
-                    f'truncate table {table} cascade',
+                    f'truncate table {table} cascade',  # type: ignore[arg-type]  # noqa: E501
                     {},
                 )
 
@@ -514,8 +514,7 @@ def current_state(app: TestApp) -> Callable[[LabelRef], str]:
                 label_name=label.name,
                 label_state_machine=label.state_machine,
             ).order_by(
-                # TODO: use the sqlalchemy mypy plugin rather than our stubs
-                History.id.desc(),  # type: ignore[attr-defined]
+                History.id.desc(),
             ).limit(1).scalar()
     return _inner
 

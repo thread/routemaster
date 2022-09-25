@@ -78,8 +78,7 @@ def _validate_no_labels_in_nonexistent_states(
         History.label_name,
         History.new_state,
         func.row_number().over(
-            # TODO: use the sqlalchemy mypy plugin rather than our stubs file
-            order_by=History.id.desc(),  # type: ignore[attr-defined]
+            order_by=History.id.desc(),
             partition_by=History.label_name,
         ).label('rank'),
     ).filter_by(

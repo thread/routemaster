@@ -6,11 +6,9 @@ from routemaster.state_machine.types import LabelRef
 from routemaster.state_machine.utils import (
     choose_next_state,
     context_for_label,
-    get_state_machine,
     get_label_metadata,
     get_current_history,
 )
-from routemaster.state_machine.exceptions import DeletedLabel
 
 
 def process_gate(
@@ -36,10 +34,7 @@ def process_gate(
 
     gate = state
 
-    state_machine = get_state_machine(app, label)
-    metadata, deleted = get_label_metadata(app, label, state_machine)
-    if deleted:
-        raise DeletedLabel(label)
+    metadata = get_label_metadata(app, label)
 
     history_entry = get_current_history(app, label)
 
