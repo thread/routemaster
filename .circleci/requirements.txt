@@ -1,6 +1,6 @@
 # Requirements for top level CI operations.
 # Don't include Routemaster's own requirements here.
 pip==21.1.2
-setuptools==57.0.0
+setuptools==65.5.1
 tox==2.9.1
 coveralls==1.10.0
