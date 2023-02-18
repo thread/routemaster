@@ -34,6 +34,7 @@ def test_enumerate_state_machines(client, app):
         {
             'name': state_machine.name,
             'labels': f'/state-machines/{state_machine.name}/labels',
+            'view': f'/state-machines/{state_machine.name}/view',
         }
         for state_machine in app.config.state_machines.values()
     ]}
@@ -339,3 +340,15 @@ def test_update_label_410_for_deleted_label(
         content_type='application/json',
     )
     assert response.status_code == 410
+
+
+def test_get_visualisation(client):
+    response = client.get('/state-machines/test_machine/view')
+    assert response.status_code == 200
+    assert 'text/html' in response.headers['Content-Type']
+
+
+def test_get_visualisation_404_for_not_found(client):
+    response = client.get('/state-machines/no_such_machine/view')
+    assert response.status_code == 404
+    assert 'text/html' in response.headers['Content-Type']

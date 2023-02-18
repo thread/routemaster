@@ -2,7 +2,7 @@
 
 import sqlalchemy
 import pkg_resources
-from flask import Flask, abort, jsonify, request
+from flask import Flask, abort, jsonify, request, render_template_string
 
 from routemaster import state_machine
 from routemaster.state_machine import (
@@ -10,6 +10,7 @@ from routemaster.state_machine import (
     UnknownLabel,
     LabelAlreadyExists,
     UnknownStateMachine,
+    nodes_for_cytoscape,
 )
 
 server = Flask('routemaster')
@@ -59,11 +60,41 @@ def get_state_machines():
         'state-machines': [
             {
                 'name': x.name,
+                'view': f'/state-machines/{x.name}/view',
                 'labels': f'/state-machines/{x.name}/labels',
             }
             for x in server.config.app.config.state_machines.values()
         ],
     })
+
+
+@server.route('/state-machines/<state_machine_name>/view', methods=['GET'])
+def view_state_machine(state_machine_name):
+    """
+    Render an image of a state machine.
+
+    Returns:
+    - 200 Ok, HTML: if the state machine exists.
+    - 404 Not Found: if the state machine does not exist.
+    """
+    app = server.config.app
+
+    try:
+        state_machine = app.config.state_machines[state_machine_name]
+    except KeyError:
+        msg = f"State machine '{state_machine_name}' does not exist"
+        abort(404, msg)
+
+    template_string = pkg_resources.resource_string(
+        'routemaster.config',
+        'visualisation.jinja',
+    ).decode('utf-8')
+
+    return render_template_string(
+        template_string,
+        state_machine_name=state_machine_name,
+        state_machine_config=nodes_for_cytoscape(state_machine),
+    )
 
 
 @server.route(

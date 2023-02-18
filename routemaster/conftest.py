@@ -9,6 +9,7 @@ import functools
 import contextlib
 import subprocess
 from typing import Any, Dict
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -488,6 +489,12 @@ def version():
         return pkg_resources.working_set.by_key['routemaster'].version
     except KeyError:  # pragma: no cover
         return 'development'
+
+
+@pytest.fixture()
+def repo_root():
+    """Return root path of the repo."""
+    return Path(__file__).parent.parent
 
 
 @pytest.fixture()
